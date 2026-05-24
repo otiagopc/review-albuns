@@ -18,6 +18,7 @@ let activeBg = 1;
 let currentCapa = "";
 let librarySortDesc = true;
 let isFirstLoad = false;
+let unsavedDraft = null;
 
 // ===== DURAÇÃO HELPERS =====
 function formatarTempo(ms) {
@@ -100,6 +101,7 @@ async function gerar() {
             data: "",
             anotacoes: "",
         };
+        unsavedDraft = { ...estado };
 
         setLoading(false);
         switchView('reviews');
@@ -380,6 +382,8 @@ function getSortableDate(dateStr) {
 function salvarReview() {
     if (!estado.id) return alert("nenhum album para salvar!!!");
 
+    if (!estado.createdAt) estado.createdAt = Date.now();
+
     let historico = getHistorico();
     const index = historico.findIndex((r) => r.id === estado.id || (r.album === estado.album && r.artista === estado.artista));
 
@@ -397,6 +401,7 @@ function salvarReview() {
     }
 
     salvarHistorico(historico);
+    unsavedDraft = null;
     carregarHistorico();
 
     const btn = document.getElementById("btn-salvar");
@@ -416,7 +421,10 @@ function carregarHistorico() {
     const historico = getHistorico();
 
     // Ordena o histórico por data decrescente (mais recente primeiro)
-    historico.sort((a, b) => getSortableDate(b.data) - getSortableDate(a.data));
+    historico.sort((a, b) => {
+        const diff = getSortableDate(b.data) - getSortableDate(a.data);
+        return diff !== 0 ? diff : ((b.createdAt || 0) - (a.createdAt || 0));
+    });
 
     historico.forEach((rev, index) => {
         const wrapper = document.createElement("div");
@@ -429,7 +437,15 @@ function carregarHistorico() {
         texto.textContent = `${rev.album} (${rev.data})`;
 
         div.onclick = () => {
-            estado = estado.id === rev.id ? getEmptyState() : rev;
+            if (estado.id === rev.id) {
+                estado = unsavedDraft ? { ...unsavedDraft } : getEmptyState();
+            } else {
+                const inHistory = getHistorico().some(r => r.id === estado.id);
+                if (!inHistory && estado.id) {
+                    unsavedDraft = { ...estado };
+                }
+                estado = { ...rev };
+            }
             switchView('reviews');
             isFirstLoad = true;
             render();
@@ -815,6 +831,7 @@ function renderDashboard() {
                         artista: r.artista,
                         album: r.album,
                         capa: r.capa,
+                        nota: t.nota,
                         review: r
                     });
                 }
@@ -975,6 +992,7 @@ function renderDashboard() {
     const favListEl = document.getElementById("dash-favorites-list");
     if (favListEl) {
         favListEl.innerHTML = "";
+        favorites.sort((a, b) => (b.nota || 0) - (a.nota || 0));
         const latestFavorites = favorites.slice(0, 5);
         if (latestFavorites.length === 0) {
             favListEl.innerHTML = `<p class="empty-list-msg">nenhuma música favorita marcada ainda!!!</p>`;
@@ -1002,7 +1020,11 @@ function renderDashboard() {
 
                 const crown = document.createElement("span");
                 crown.className = "dash-fav-crown";
-                crown.textContent = "👑";
+                crown.innerHTML = `
+                    <svg class="crown-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                        <path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7z"/>
+                    </svg>
+                `;
 
                 item.append(img, info, crown);
 
@@ -1067,9 +1089,9 @@ function renderLibrary() {
         }
 
         if (librarySortDesc) {
-            return valB - valA;
+            return valA !== valB ? valB - valA : ((b.createdAt || 0) - (a.createdAt || 0));
         } else {
-            return valA - valB;
+            return valA !== valB ? valA - valB : ((a.createdAt || 0) - (b.createdAt || 0));
         }
     });
 
