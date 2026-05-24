@@ -18,7 +18,18 @@ let activeBg = 1;
 let currentCapa = "";
 let librarySortDesc = true;
 let isFirstLoad = false;
-let unsavedDraft = null;
+
+function autoSaveDraft() {
+    if (!estado.id) return;
+    if (estado.isDraft) {
+        let historico = getHistorico();
+        const index = historico.findIndex((r) => r.id === estado.id);
+        if (index !== -1) {
+            historico[index] = { ...estado };
+            salvarHistorico(historico);
+        }
+    }
+}
 
 // ===== DURAÇÃO HELPERS =====
 function formatarTempo(ms) {
@@ -85,23 +96,34 @@ async function gerar() {
             throw new Error(data.error?.message || "Erro desconhecido na API do Spotify");
         }
 
-        estado = {
-            id: data.id,
-            album: data.name,
-            artista: data.artists.map((a) => a.name).join(", "),
-            capa: data.images[0].url,
-            link: data.external_urls.spotify,
-            albumNota: 0,
-            tracks: data.tracks.items.map((t) => ({
-                nome: t.name,
-                nota: 0,
-                fav: false,
-                duration_ms: t.duration_ms || 0,
-            })),
-            data: "",
-            anotacoes: "",
-        };
-        unsavedDraft = { ...estado };
+        const artistNames = data.artists.map((a) => a.name).join(", ");
+        let historico = getHistorico();
+        const index = historico.findIndex((r) => r.id === data.id || (r.album === data.name && r.artista === artistNames));
+
+        if (index !== -1) {
+            estado = { ...historico[index] };
+        } else {
+            estado = {
+                id: data.id,
+                album: data.name,
+                artista: artistNames,
+                capa: data.images[0].url,
+                link: data.external_urls.spotify,
+                albumNota: 0,
+                tracks: data.tracks.items.map((t) => ({
+                    nome: t.name,
+                    nota: 0,
+                    fav: false,
+                    duration_ms: t.duration_ms || 0,
+                })),
+                data: "",
+                anotacoes: "",
+                isDraft: true,
+                createdAt: Date.now()
+            };
+            historico.push({ ...estado });
+            salvarHistorico(historico);
+        }
 
         setLoading(false);
         switchView('reviews');
@@ -228,6 +250,7 @@ function render() {
         reviewNotes.oninput = (e) => {
             estado.anotacoes = e.target.value;
             autoResize();
+            autoSaveDraft();
         };
     }
 
@@ -276,6 +299,7 @@ function render() {
                 const [y, m, d] = val.split('-');
                 estado.data = `${d}/${m}/${y}`;
                 if (datepickerDisplay) datepickerDisplay.textContent = estado.data;
+                autoSaveDraft();
             }
         };
     }
@@ -359,6 +383,8 @@ function render() {
 
     isFirstLoad = false;
 
+    autoSaveDraft();
+
     carregarHistorico();
 }
 
@@ -384,6 +410,8 @@ function salvarReview() {
 
     if (!estado.createdAt) estado.createdAt = Date.now();
 
+    estado.isDraft = false;
+
     let historico = getHistorico();
     const index = historico.findIndex((r) => r.id === estado.id || (r.album === estado.album && r.artista === estado.artista));
 
@@ -401,7 +429,6 @@ function salvarReview() {
     }
 
     salvarHistorico(historico);
-    unsavedDraft = null;
     carregarHistorico();
 
     const btn = document.getElementById("btn-salvar");
@@ -431,19 +458,15 @@ function carregarHistorico() {
         wrapper.className = "review-wrapper";
 
         const div = document.createElement("div");
-        div.className = `review-item ${estado.id === rev.id ? "active-review" : ""}`;
+        div.className = `review-item ${estado.id === rev.id ? "active-review" : ""} ${rev.isDraft ? "draft-review" : ""}`;
 
         const texto = document.createElement("span");
-        texto.textContent = `${rev.album} (${rev.data})`;
+        texto.textContent = rev.isDraft ? `${rev.album} (rascunho)` : `${rev.album} (${rev.data})`;
 
         div.onclick = () => {
             if (estado.id === rev.id) {
-                estado = unsavedDraft ? { ...unsavedDraft } : getEmptyState();
+                estado = getEmptyState();
             } else {
-                const inHistory = getHistorico().some(r => r.id === estado.id);
-                if (!inHistory && estado.id) {
-                    unsavedDraft = { ...estado };
-                }
                 estado = { ...rev };
             }
             switchView('reviews');
@@ -645,43 +668,56 @@ async function importarTXT(event) {
             anotacoesImportadas = notesText;
         }
 
-        estado = {
-            id: data.id,
-            album: data.name,
-            artista: data.artists.map((a) => a.name).join(", "),
-            capa: data.images[0].url,
-            link: data.external_urls.spotify,
-            albumNota: 0,
-            tracks: data.tracks.items.map((t) => ({
-                nome: t.name,
-                nota: 0,
-                fav: false,
-                duration_ms: t.duration_ms || 0,
-            })),
-            data: dataImportada,
-            anotacoes: anotacoesImportadas,
-        };
+        const artistNames = data.artists.map((a) => a.name).join(", ");
+        let historico = getHistorico();
+        const index = historico.findIndex((r) => r.id === data.id || (r.album === data.name && r.artista === artistNames));
 
-        // Lê as notas de cada faixa
-        lines.forEach(line => {
-            const match = line.match(/^\d+\.\s+(.+?)\s+-\s+([\d.]+)\/9\s*(👑)?/);
-            if (match) {
-                const trackName = match[1];
-                const nota = parseFloat(match[2]);
-                const fav = !!match[3];
+        if (index !== -1) {
+            estado = { ...historico[index] };
+        } else {
+            estado = {
+                id: data.id,
+                album: data.name,
+                artista: artistNames,
+                capa: data.images[0].url,
+                link: data.external_urls.spotify,
+                albumNota: 0,
+                tracks: data.tracks.items.map((t) => ({
+                    nome: t.name,
+                    nota: 0,
+                    fav: false,
+                    duration_ms: t.duration_ms || 0,
+                })),
+                data: dataImportada,
+                anotacoes: anotacoesImportadas,
+                isDraft: true,
+                createdAt: Date.now()
+            };
 
-                const trackIndex = estado.tracks.findIndex(t => t.nome === trackName);
-                if (trackIndex !== -1) {
-                    estado.tracks[trackIndex].nota = nota;
-                    estado.tracks[trackIndex].fav = fav;
+            // Lê as notas de cada faixa
+            lines.forEach(line => {
+                const match = line.match(/^\d+\.\s+(.+?)\s+-\s+([\d.]+)\/9\s*(👑)?/);
+                if (match) {
+                    const trackName = match[1];
+                    const nota = parseFloat(match[2]);
+                    const fav = !!match[3];
+
+                    const trackIndex = estado.tracks.findIndex(t => t.nome === trackName);
+                    if (trackIndex !== -1) {
+                        estado.tracks[trackIndex].nota = nota;
+                        estado.tracks[trackIndex].fav = fav;
+                    }
                 }
-            }
-        });
+            });
 
-        // Lê a nota geral do álbum (estrelas)
-        const estrelasLine = lines.find(l => l.includes("★") || l.includes("☆"));
-        if (estrelasLine) {
-            estado.albumNota = (estrelasLine.match(/★/g) || []).length;
+            // Lê a nota geral do álbum (estrelas)
+            const estrelasLine = lines.find(l => l.includes("★") || l.includes("☆"));
+            if (estrelasLine) {
+                estado.albumNota = (estrelasLine.match(/★/g) || []).length;
+            }
+
+            historico.push({ ...estado });
+            salvarHistorico(historico);
         }
 
         setLoading(false);
@@ -778,7 +814,7 @@ function switchView(viewName) {
 }
 
 function renderDashboard() {
-    const historico = getHistorico();
+    const historico = getHistorico().filter(r => !r.isDraft);
 
     // 1. Quantidade total
     const totalAlbums = historico.length;
@@ -1061,7 +1097,7 @@ function renderLibrary() {
     const libraryGrid = document.getElementById("library-grid");
     libraryGrid.innerHTML = "";
 
-    const historico = getHistorico();
+    const historico = getHistorico().filter(r => !r.isDraft);
     if (historico.length === 0) {
         libraryGrid.innerHTML = `<p class="empty-library-msg">sua biblioteca está vazia. crie uma review na aba "reviews" para começar!</p>`;
         return;

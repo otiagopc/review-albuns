@@ -409,6 +409,17 @@ body.bg-active-2::after {
     box-shadow: inset 0 0 10px rgba(var(--color-primary-rgb), 0.05), 0 4px 16px rgba(var(--color-primary-rgb), 0.05);
 }
 
+.draft-review {
+    border-style: dashed !important;
+    border-color: rgba(255, 255, 255, 0.25) !important;
+}
+
+.draft-review.active-review {
+    border-style: dashed !important;
+    border-color: rgba(var(--color-primary-rgb), 0.7) !important;
+    background: rgba(var(--color-primary-rgb), 0.05) !important;
+}
+
 .review-item span {
     font-size: 0.85rem;
     font-weight: 600;
