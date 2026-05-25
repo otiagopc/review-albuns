@@ -221,6 +221,15 @@ function render() {
     const placeholder = document.getElementById("placeholder");
     const notesContainer = document.getElementById("notes-container");
 
+    const layout = document.querySelector(".editor-layout");
+    if (layout) {
+        if (estado.album) {
+            layout.classList.remove("has-placeholder");
+        } else {
+            layout.classList.add("has-placeholder");
+        }
+    }
+
     if (estado.album) {
         header.style.display = "flex";
         tracksDiv.style.display = "block";
@@ -804,22 +813,13 @@ function switchView(viewName) {
         activeNav.classList.add('active');
     }
 
-    // Gerencia o layout de altura fixa no mobile (apenas para a aba de reviews)
-    const appContainer = document.querySelector('.app-container');
-    if (appContainer) {
-        if (viewName === 'reviews') {
-            appContainer.classList.add('fixed-height-layout');
-        } else {
-            appContainer.classList.remove('fixed-height-layout');
-        }
-    }
-
     // Renderiza o conteúdo da aba selecionada
     if (viewName === 'dashboard') {
         renderDashboard();
     } else if (viewName === 'library') {
         renderLibrary();
-    } else if (viewName === 'settings') {
+    } else if (viewName === 'reviews') {
+        render();
     }
 }
 
