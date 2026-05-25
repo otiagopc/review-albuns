@@ -546,7 +546,8 @@ body.bg-active-2::after {
     .search-input {
         width: 100%;
         min-width: 0;
-        flex: none; /* Prevents height collapse in flex column layout */
+        flex: none;
+        /* Prevents height collapse in flex column layout */
     }
 
     .header-buttons {
@@ -710,11 +711,11 @@ button svg {
     }
 
     .album-header .star {
-        font-size: 30px;
+        font-size: clamp(20px, 6.5vw, 30px);
     }
 
     .album-header .estrelas {
-        gap: 6px;
+        gap: clamp(2px, 1vw, 6px);
     }
 
     /* Otimizações das faixas na tracklist */
@@ -753,14 +754,7 @@ button svg {
     }
 }
 
-@media (max-width: 430px) {
-    .album-header .star {
-        font-size: clamp(12px, 7vw, 30px);
-    }
-    .album-header .estrelas {
-        gap: clamp(2px, 1.2vw, 6px);
-    }
-}
+
 
 .capa-wrapper {
     position: relative;
@@ -1515,7 +1509,8 @@ button svg {
     isolation: isolate;
     overflow: hidden;
     container-type: inline-size;
-    height: 128px; /* Fixed default height */
+    height: 128px;
+    /* Fixed default height */
 }
 
 .stat-card:hover {
