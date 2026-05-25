@@ -60,12 +60,10 @@
     <main class="main-content">
       <!-- CABEÇALHO SUPERIOR (BUSCA E AÇÕES GERAIS) -->
       <header class="main-header">
-        <div class="search-box">
-          <input type="text" id="url" placeholder="cole o link do album do spotify aqui">
-          <button onclick="gerar()" class="btn-primary">carregar album</button>
-        </div>
+        <input type="text" id="url" class="search-input" placeholder="cole o link do album do spotify aqui">
 
-        <div class="header-actions">
+        <div class="header-buttons">
+          <button onclick="gerar()" class="btn-primary">carregar album</button>
           <button class="btn-secondary" onclick="document.getElementById('import-file').click()">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
               stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;">
@@ -128,8 +126,7 @@
             </span>
             <div class="stat-details">
               <span class="stat-label">melhor avaliado</span>
-              <span id="dash-best-album" class="stat-value"
-                style="font-size: 0.95rem; line-height: 1.2; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 130px;">-</span>
+              <span id="dash-best-album" class="stat-value">-</span>
             </div>
           </div>
         </div>

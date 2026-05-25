@@ -804,6 +804,16 @@ function switchView(viewName) {
         activeNav.classList.add('active');
     }
 
+    // Gerencia o layout de altura fixa no mobile (apenas para a aba de reviews)
+    const appContainer = document.querySelector('.app-container');
+    if (appContainer) {
+        if (viewName === 'reviews') {
+            appContainer.classList.add('fixed-height-layout');
+        } else {
+            appContainer.classList.remove('fixed-height-layout');
+        }
+    }
+
     // Renderiza o conteúdo da aba selecionada
     if (viewName === 'dashboard') {
         renderDashboard();
@@ -1075,6 +1085,7 @@ function renderDashboard() {
             });
         }
     }
+    adjustCardTextSizes();
 }
 
 function toggleLibrarySortOrder() {
@@ -1443,5 +1454,53 @@ function renderizarCalendario() {
         daysContainer.appendChild(dayDiv);
     }
 }
+
+function adjustCardTextSizes() {
+    const topArtistEl = document.getElementById("dash-top-artist");
+    const bestAlbumEl = document.getElementById("dash-best-album");
+    const elements = [topArtistEl, bestAlbumEl].filter(Boolean);
+
+    // Phase 1: Clear inline style to allow CSS clamp (container query units) to compute default size
+    elements.forEach(el => {
+        el.style.fontSize = "";
+    });
+
+    // Phase 2: Scale down font size step-by-step if it overflows
+    elements.forEach(el => {
+        if (el.clientHeight === 0) return; // If hidden, skip
+
+        const computedStyle = window.getComputedStyle(el);
+        const rootFontSize = parseFloat(window.getComputedStyle(document.documentElement).fontSize) || 16;
+        const currentFontSizePx = parseFloat(computedStyle.fontSize);
+        if (!currentFontSizePx) return;
+
+        let currentSizeRem = currentFontSizePx / rootFontSize;
+        // Cap max size at 1.6rem
+        if (currentSizeRem > 1.6) {
+            currentSizeRem = 1.6;
+        }
+
+        el.style.fontSize = `${currentSizeRem}rem`;
+
+        const minSizeRem = 1.15;
+        const step = 0.03;
+        let maxIterations = 20;
+
+        // Shrink font size while scrollHeight > clientHeight (clamped to 2 lines)
+        while (el.scrollHeight > el.clientHeight && currentSizeRem > minSizeRem && maxIterations > 0) {
+            currentSizeRem = Math.max(minSizeRem, currentSizeRem - step);
+            el.style.fontSize = `${currentSizeRem}rem`;
+            maxIterations--;
+        }
+    });
+}
+
+// Adjust font sizes when window resizes and dashboard is active
+window.addEventListener('resize', () => {
+    const dashboardView = document.getElementById("view-dashboard");
+    if (dashboardView && dashboardView.style.display !== 'none') {
+        adjustCardTextSizes();
+    }
+});
 
 
