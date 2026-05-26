@@ -10,7 +10,17 @@ export default async function handler(req, res) {
         });
     }
 
-    const albumId = url.split("/").pop().split("?")[0];
+    const match = url.match(/album\/([a-zA-Z0-9]+)/);
+    const albumId = match ? match[1] : null;
+
+    if (!albumId) {
+        return res.status(400).json({
+            error: {
+                status: 400,
+                message: "A URL do álbum do Spotify é inválida ou não pôde ser analisada."
+            }
+        });
+    }
 
     // pegar token
     let tokenRes;

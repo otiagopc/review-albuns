@@ -613,20 +613,208 @@ async function repararTudoNoBackground() {
             historico[i] = revReparada;
             mudou = true;
             salvarHistorico(historico);
-            
-            // Re-renderiza biblioteca e histórico progressivamente conforme o reparo avança
-            renderLibrary();
-            carregarHistorico();
         }
+    }
+
+    if (mudou) {
+        // Re-renderiza biblioteca e histórico apenas uma vez no final se houve mudanças
+        renderLibrary();
+        carregarHistorico();
     }
 }
 
-window.onload = () => {
+document.addEventListener("DOMContentLoaded", () => {
+    applyVisualSettings();
+    applyLibraryLayout();
     carregarHistorico();
     inicializarControlesCustomizados();
     switchView('library');
     repararTudoNoBackground();
-};
+});
+
+// ===== APARÊNCIA & TEMAS =====
+function getVisualSettings() {
+    const defaults = {
+        blur: 40,
+        opacity: 40,
+        accentHue: 141,
+        glow: true
+    };
+    return { ...defaults, ...JSON.parse(localStorage.getItem("visual-settings") || "{}") };
+}
+
+function saveVisualSettings(settings) {
+    localStorage.setItem("visual-settings", JSON.stringify(settings));
+}
+
+function applyVisualSettings() {
+    const settings = getVisualSettings();
+
+    // 1. Aplicar desfoque (blur) e overlay (brightness)
+    document.documentElement.style.setProperty('--bg-blur', `${settings.blur}px`);
+    const brightness = 1 - (settings.opacity / 100);
+    document.documentElement.style.setProperty('--bg-brightness', brightness);
+
+    // 2. Aplicar cor de destaque
+    const accentColors = {
+        141: "29, 185, 84", // Spotify Verde
+        270: "135, 50, 230", // Roxo Sintetizador
+        200: "30, 144, 255", // Azul Cyberpunk
+        330: "255, 20, 147", // Rosa Neon
+        25: "255, 100, 30" // Laranja Vinil
+    };
+    const rgb = accentColors[settings.accentHue] || "29, 185, 84";
+    document.documentElement.style.setProperty('--hue-primary', settings.accentHue);
+    document.documentElement.style.setProperty('--color-primary-rgb', rgb);
+
+    // 3. Aplicar Glow
+    if (settings.glow) {
+        document.documentElement.style.setProperty('--glow-alpha-star', '0.7');
+        document.documentElement.style.setProperty('--glow-alpha-hover', '0.9');
+        document.documentElement.style.setProperty('--glow-alpha-capa', '0.85');
+        document.documentElement.style.setProperty('--glow-alpha-chart', '1');
+        document.documentElement.style.setProperty('--glow-alpha-half', '0.3');
+        document.documentElement.style.setProperty('--glow-alpha-logo', '0.3');
+        document.documentElement.style.setProperty('--glow-alpha-nav', '0.6');
+        document.documentElement.style.setProperty('--glow-alpha-input', '0.25');
+        document.documentElement.style.setProperty('--glow-alpha-btn', '0.25');
+        document.documentElement.style.setProperty('--glow-alpha-btn-hover', '0.45');
+        document.documentElement.style.setProperty('--glow-alpha-score', '0.2');
+        document.documentElement.style.setProperty('--glow-alpha-picker-hover', '0.15');
+        document.documentElement.style.setProperty('--glow-alpha-picker-active', '0.2');
+        document.documentElement.style.setProperty('--glow-alpha-day-selected', '0.45');
+        document.documentElement.style.setProperty('--glow-alpha-crown', '0.6');
+        document.documentElement.style.setProperty('--glow-alpha-stat', '0.4');
+        document.documentElement.style.setProperty('--glow-alpha-danger', '0.2');
+        document.documentElement.style.setProperty('--glow-alpha-danger-hover', '0.4');
+        document.documentElement.style.setProperty('--glow-alpha-crown-fav', '0.5');
+        document.documentElement.style.setProperty('--glow-alpha-theme', '0.4');
+        document.documentElement.style.setProperty('--glow-alpha-slider', '0.5');
+    } else {
+        document.documentElement.style.setProperty('--glow-alpha-star', '0');
+        document.documentElement.style.setProperty('--glow-alpha-hover', '0');
+        document.documentElement.style.setProperty('--glow-alpha-capa', '0');
+        document.documentElement.style.setProperty('--glow-alpha-chart', '0');
+        document.documentElement.style.setProperty('--glow-alpha-half', '0');
+        document.documentElement.style.setProperty('--glow-alpha-logo', '0');
+        document.documentElement.style.setProperty('--glow-alpha-nav', '0');
+        document.documentElement.style.setProperty('--glow-alpha-input', '0');
+        document.documentElement.style.setProperty('--glow-alpha-btn', '0');
+        document.documentElement.style.setProperty('--glow-alpha-btn-hover', '0');
+        document.documentElement.style.setProperty('--glow-alpha-score', '0');
+        document.documentElement.style.setProperty('--glow-alpha-picker-hover', '0');
+        document.documentElement.style.setProperty('--glow-alpha-picker-active', '0');
+        document.documentElement.style.setProperty('--glow-alpha-day-selected', '0');
+        document.documentElement.style.setProperty('--glow-alpha-crown', '0');
+        document.documentElement.style.setProperty('--glow-alpha-stat', '0');
+        document.documentElement.style.setProperty('--glow-alpha-danger', '0');
+        document.documentElement.style.setProperty('--glow-alpha-danger-hover', '0');
+        document.documentElement.style.setProperty('--glow-alpha-crown-fav', '0');
+        document.documentElement.style.setProperty('--glow-alpha-theme', '0');
+        document.documentElement.style.setProperty('--glow-alpha-slider', '0');
+    }
+
+    // 4. Sincronizar UI se os elementos existirem na aba ativa
+    syncVisualSettingsUI(settings);
+}
+
+function syncVisualSettingsUI(settings) {
+    const inputBlur = document.getElementById("settings-blur");
+    const valBlur = document.getElementById("val-blur");
+    if (inputBlur && valBlur) {
+        inputBlur.value = settings.blur;
+        valBlur.textContent = `${settings.blur}px`;
+    }
+
+    const inputOpacity = document.getElementById("settings-opacity");
+    const valOpacity = document.getElementById("val-opacity");
+    if (inputOpacity && valOpacity) {
+        inputOpacity.value = settings.opacity;
+        valOpacity.textContent = `${settings.opacity}%`;
+    }
+
+    const inputGlow = document.getElementById("settings-glow");
+    if (inputGlow) {
+        inputGlow.checked = settings.glow;
+    }
+
+    document.querySelectorAll(".theme-dot").forEach(btn => {
+        const hue = parseInt(btn.getAttribute("data-hue"), 10);
+        if (hue === settings.accentHue) {
+            btn.classList.add("active");
+        } else {
+            btn.classList.remove("active");
+        }
+    });
+}
+
+function updateVisualSettings() {
+    const inputBlur = document.getElementById("settings-blur");
+    const inputOpacity = document.getElementById("settings-opacity");
+    const inputGlow = document.getElementById("settings-glow");
+
+    if (!inputBlur || !inputOpacity || !inputGlow) return;
+
+    const blur = parseInt(inputBlur.value, 10);
+    const opacity = parseInt(inputOpacity.value, 10);
+    const glow = inputGlow.checked;
+
+    const currentSettings = getVisualSettings();
+    const newSettings = {
+        ...currentSettings,
+        blur,
+        opacity,
+        glow
+    };
+
+    saveVisualSettings(newSettings);
+    applyVisualSettings();
+}
+
+function setAccentColor(hue, btnElement) {
+    const currentSettings = getVisualSettings();
+    const newSettings = {
+        ...currentSettings,
+        accentHue: parseInt(hue, 10)
+    };
+
+    saveVisualSettings(newSettings);
+    applyVisualSettings();
+}
+
+function getLibraryLayout() {
+    return localStorage.getItem("library-layout") || "grid";
+}
+
+function setLibraryLayout(layout) {
+    localStorage.setItem("library-layout", layout);
+    applyLibraryLayout();
+}
+
+function applyLibraryLayout() {
+    const layout = getLibraryLayout();
+    const grid = document.getElementById("library-grid");
+    const gridBtn = document.getElementById("layout-grid-btn");
+    const listBtn = document.getElementById("layout-list-btn");
+
+    if (grid) {
+        if (layout === "list") {
+            grid.classList.add("list-view");
+        } else {
+            grid.classList.remove("list-view");
+        }
+    }
+
+    if (gridBtn && listBtn) {
+        if (layout === "list") {
+            gridBtn.classList.remove("active");
+            listBtn.classList.add("active");
+        } else {
+            gridBtn.classList.add("active");
+            listBtn.classList.remove("active");
+        }
+    }
+}
 
 // ===== IMPORTAR =====
 async function importarTXT(event) {
@@ -682,53 +870,53 @@ async function importarTXT(event) {
         let historico = getHistorico();
         const index = historico.findIndex((r) => r.id === data.id || (r.album === data.name && r.artista === artistNames));
 
-        if (index !== -1) {
-            estado = { ...historico[index] };
-        } else {
-            estado = {
-                id: data.id,
-                album: data.name,
-                artista: artistNames,
-                capa: data.images[0].url,
-                link: data.external_urls.spotify,
-                albumNota: 0,
-                tracks: data.tracks.items.map((t) => ({
-                    nome: t.name,
-                    nota: 0,
-                    fav: false,
-                    duration_ms: t.duration_ms || 0,
-                })),
-                data: dataImportada,
-                anotacoes: anotacoesImportadas,
-                isDraft: true,
-                createdAt: Date.now()
-            };
+        estado = {
+            id: data.id,
+            album: data.name,
+            artista: artistNames,
+            capa: data.images[0].url,
+            link: data.external_urls.spotify,
+            albumNota: 0,
+            tracks: data.tracks.items.map((t) => ({
+                nome: t.name,
+                nota: 0,
+                fav: false,
+                duration_ms: t.duration_ms || 0,
+            })),
+            data: dataImportada,
+            anotacoes: anotacoesImportadas,
+            isDraft: index !== -1 ? (historico[index].isDraft !== undefined ? historico[index].isDraft : true) : true,
+            createdAt: index !== -1 ? (historico[index].createdAt || Date.now()) : Date.now()
+        };
 
-            // Lê as notas de cada faixa
-            lines.forEach(line => {
-                const match = line.match(/^\d+\.\s+(.+?)\s+-\s+([\d.]+)\/9\s*(👑)?/);
-                if (match) {
-                    const trackName = match[1];
-                    const nota = parseFloat(match[2]);
-                    const fav = !!match[3];
+        // Lê as notas de cada faixa
+        lines.forEach(line => {
+            const match = line.match(/^\d+\.\s+(.+?)\s+-\s+([\d.]+)\/9\s*(👑)?/);
+            if (match) {
+                const trackName = match[1];
+                const nota = parseFloat(match[2]);
+                const fav = !!match[3];
 
-                    const trackIndex = estado.tracks.findIndex(t => t.nome === trackName);
-                    if (trackIndex !== -1) {
-                        estado.tracks[trackIndex].nota = nota;
-                        estado.tracks[trackIndex].fav = fav;
-                    }
+                const trackIndex = estado.tracks.findIndex(t => t.nome === trackName);
+                if (trackIndex !== -1) {
+                    estado.tracks[trackIndex].nota = nota;
+                    estado.tracks[trackIndex].fav = fav;
                 }
-            });
-
-            // Lê a nota geral do álbum (estrelas)
-            const estrelasLine = lines.find(l => l.includes("★") || l.includes("☆"));
-            if (estrelasLine) {
-                estado.albumNota = (estrelasLine.match(/★/g) || []).length;
             }
+        });
 
-            historico.push({ ...estado });
-            salvarHistorico(historico);
+        // Lê a nota geral do álbum (estrelas)
+        const estrelasLine = lines.find(l => l.includes("★") || l.includes("☆"));
+        if (estrelasLine) {
+            estado.albumNota = (estrelasLine.match(/★/g) || []).length;
         }
+
+        if (index !== -1) {
+            historico[index] = { ...estado };
+        } else {
+            historico.push({ ...estado });
+        }
+        salvarHistorico(historico);
 
         setLoading(false);
         switchView('reviews');
@@ -821,6 +1009,8 @@ function switchView(viewName) {
         renderLibrary();
     } else if (viewName === 'reviews') {
         render();
+    } else if (viewName === 'settings') {
+        syncVisualSettingsUI(getVisualSettings());
     }
 }
 
@@ -1106,6 +1296,7 @@ function toggleLibrarySortOrder() {
 
 
 function renderLibrary() {
+    applyLibraryLayout();
     const libraryGrid = document.getElementById("library-grid");
     libraryGrid.innerHTML = "";
 
@@ -1274,8 +1465,7 @@ function inicializarControlesCustomizados() {
         }
 
         // Clique no trigger abre/fecha
-        trigger.addEventListener("click", (e) => {
-            e.stopPropagation();
+        trigger.addEventListener("click", () => {
             // Fecha os outros se estiverem abertos
             document.getElementById("datepicker-calendar")?.classList.remove("open");
             document.getElementById("datepicker-trigger")?.classList.remove("active");
@@ -1285,8 +1475,7 @@ function inicializarControlesCustomizados() {
 
         // Clique nas opções
         options.forEach(opt => {
-            opt.addEventListener("click", (e) => {
-                e.stopPropagation();
+            opt.addEventListener("click", () => {
                 const val = opt.getAttribute("data-value");
                 nativeSelect.value = val;
 
@@ -1308,11 +1497,9 @@ function inicializarControlesCustomizados() {
     const datepickerCalendar = document.getElementById("datepicker-calendar");
 
     if (datepickerTrigger && datepickerCalendar) {
-        datepickerTrigger.addEventListener("click", (e) => {
-            e.stopPropagation();
+        datepickerTrigger.addEventListener("click", () => {
             // Fecha o outro se estiver aberto
             document.getElementById("custom-sort-select")?.classList.remove("active");
-
 
             const isOpen = datepickerCalendar.classList.toggle("open");
             datepickerTrigger.classList.toggle("active", isOpen);
@@ -1336,27 +1523,29 @@ function inicializarControlesCustomizados() {
         const btnNext = document.getElementById("datepicker-next-month");
 
         if (btnPrev) {
-            btnPrev.addEventListener("click", (e) => {
-                e.stopPropagation();
+            btnPrev.addEventListener("click", () => {
                 datepickerActiveDate.setMonth(datepickerActiveDate.getMonth() - 1);
                 renderizarCalendario();
             });
         }
 
         if (btnNext) {
-            btnNext.addEventListener("click", (e) => {
-                e.stopPropagation();
+            btnNext.addEventListener("click", () => {
                 datepickerActiveDate.setMonth(datepickerActiveDate.getMonth() + 1);
                 renderizarCalendario();
             });
         }
     }
 
-    // Fechar ao clicar fora
-    document.addEventListener("click", () => {
-        customSelect?.classList.remove("active");
-        datepickerCalendar?.classList.remove("open");
-        datepickerTrigger?.classList.remove("active");
+    // Fechar ao clicar fora usando .contains()
+    document.addEventListener("click", (e) => {
+        if (customSelect && !customSelect.contains(e.target)) {
+            customSelect.classList.remove("active");
+        }
+        if (datepickerCalendar && datepickerTrigger && !datepickerCalendar.contains(e.target) && !datepickerTrigger.contains(e.target)) {
+            datepickerCalendar.classList.remove("open");
+            datepickerTrigger.classList.remove("active");
+        }
     });
 }
 
@@ -1421,9 +1610,7 @@ function renderizarCalendario() {
             dayDiv.classList.add("selected");
         }
 
-        dayDiv.addEventListener("click", (e) => {
-            e.stopPropagation();
-
+        dayDiv.addEventListener("click", () => {
             const pad = (num) => String(num).padStart(2, '0');
             const dataFormatada = `${pad(day)}/${pad(month + 1)}/${year}`;
 
