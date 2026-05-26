@@ -669,49 +669,15 @@ function applyVisualSettings() {
 
     // 3. Aplicar Glow
     if (settings.glow) {
-        document.documentElement.style.setProperty('--glow-alpha-star', '0.7');
-        document.documentElement.style.setProperty('--glow-alpha-hover', '0.9');
-        document.documentElement.style.setProperty('--glow-alpha-capa', '0.85');
-        document.documentElement.style.setProperty('--glow-alpha-chart', '1');
-        document.documentElement.style.setProperty('--glow-alpha-half', '0.3');
-        document.documentElement.style.setProperty('--glow-alpha-logo', '0.3');
-        document.documentElement.style.setProperty('--glow-alpha-nav', '0.6');
-        document.documentElement.style.setProperty('--glow-alpha-input', '0.25');
-        document.documentElement.style.setProperty('--glow-alpha-btn', '0.25');
-        document.documentElement.style.setProperty('--glow-alpha-btn-hover', '0.45');
-        document.documentElement.style.setProperty('--glow-alpha-score', '0.2');
-        document.documentElement.style.setProperty('--glow-alpha-picker-hover', '0.15');
-        document.documentElement.style.setProperty('--glow-alpha-picker-active', '0.2');
-        document.documentElement.style.setProperty('--glow-alpha-day-selected', '0.45');
-        document.documentElement.style.setProperty('--glow-alpha-crown', '0.6');
-        document.documentElement.style.setProperty('--glow-alpha-stat', '0.4');
-        document.documentElement.style.setProperty('--glow-alpha-danger', '0.2');
-        document.documentElement.style.setProperty('--glow-alpha-danger-hover', '0.4');
-        document.documentElement.style.setProperty('--glow-alpha-crown-fav', '0.5');
-        document.documentElement.style.setProperty('--glow-alpha-theme', '0.4');
-        document.documentElement.style.setProperty('--glow-alpha-slider', '0.5');
+        document.documentElement.style.setProperty('--glow-alpha-low', '0.25');
+        document.documentElement.style.setProperty('--glow-alpha-medium', '0.5');
+        document.documentElement.style.setProperty('--glow-alpha-high', '0.75');
+        document.documentElement.style.setProperty('--glow-alpha-max', '1.0');
     } else {
-        document.documentElement.style.setProperty('--glow-alpha-star', '0');
-        document.documentElement.style.setProperty('--glow-alpha-hover', '0');
-        document.documentElement.style.setProperty('--glow-alpha-capa', '0');
-        document.documentElement.style.setProperty('--glow-alpha-chart', '0');
-        document.documentElement.style.setProperty('--glow-alpha-half', '0');
-        document.documentElement.style.setProperty('--glow-alpha-logo', '0');
-        document.documentElement.style.setProperty('--glow-alpha-nav', '0');
-        document.documentElement.style.setProperty('--glow-alpha-input', '0');
-        document.documentElement.style.setProperty('--glow-alpha-btn', '0');
-        document.documentElement.style.setProperty('--glow-alpha-btn-hover', '0');
-        document.documentElement.style.setProperty('--glow-alpha-score', '0');
-        document.documentElement.style.setProperty('--glow-alpha-picker-hover', '0');
-        document.documentElement.style.setProperty('--glow-alpha-picker-active', '0');
-        document.documentElement.style.setProperty('--glow-alpha-day-selected', '0');
-        document.documentElement.style.setProperty('--glow-alpha-crown', '0');
-        document.documentElement.style.setProperty('--glow-alpha-stat', '0');
-        document.documentElement.style.setProperty('--glow-alpha-danger', '0');
-        document.documentElement.style.setProperty('--glow-alpha-danger-hover', '0');
-        document.documentElement.style.setProperty('--glow-alpha-crown-fav', '0');
-        document.documentElement.style.setProperty('--glow-alpha-theme', '0');
-        document.documentElement.style.setProperty('--glow-alpha-slider', '0');
+        document.documentElement.style.setProperty('--glow-alpha-low', '0');
+        document.documentElement.style.setProperty('--glow-alpha-medium', '0');
+        document.documentElement.style.setProperty('--glow-alpha-high', '0');
+        document.documentElement.style.setProperty('--glow-alpha-max', '0');
     }
 
     // 4. Sincronizar UI se os elementos existirem na aba ativa

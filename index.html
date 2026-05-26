@@ -37,27 +37,10 @@
         doc.style.setProperty('--color-primary-rgb', rgb);
 
         const alphas = {
-          'star': glow ? '0.7' : '0',
-          'hover': glow ? '0.9' : '0',
-          'capa': glow ? '0.85' : '0',
-          'chart': glow ? '1' : '0',
-          'half': glow ? '0.3' : '0',
-          'logo': glow ? '0.3' : '0',
-          'nav': glow ? '0.6' : '0',
-          'input': glow ? '0.25' : '0',
-          'btn': glow ? '0.25' : '0',
-          'btn-hover': glow ? '0.45' : '0',
-          'score': glow ? '0.2' : '0',
-          'picker-hover': glow ? '0.15' : '0',
-          'picker-active': glow ? '0.2' : '0',
-          'day-selected': glow ? '0.45' : '0',
-          'crown': glow ? '0.6' : '0',
-          'stat': glow ? '0.4' : '0',
-          'danger': glow ? '0.2' : '0',
-          'danger-hover': glow ? '0.4' : '0',
-          'crown-fav': glow ? '0.5' : '0',
-          'theme': glow ? '0.4' : '0',
-          'slider': glow ? '0.5' : '0'
+          'low': glow ? '0.25' : '0',
+          'medium': glow ? '0.5' : '0',
+          'high': glow ? '0.75' : '0',
+          'max': glow ? '1.0' : '0'
         };
 
         for (const [key, val] of Object.entries(alphas)) {
