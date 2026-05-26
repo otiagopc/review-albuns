@@ -32,7 +32,37 @@
     --transition-fast: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-slow: 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* Spacing System (Desktop baseline) */
+    --spacing-outer: 24px;
+    --spacing-inner: 24px;
+    --spacing-gap: 24px;
 }
+
+/* ==========================================================================
+   📱 GUIA DE BREAKPOINTS E MODOS DE TELA OFICIAIS
+   ==========================================================================
+   Para manter a responsividade e comportamento fluido em qualquer tela,
+   o projeto divide-se oficialmente em três modos principais:
+
+   1. 🖥️ MODO DESKTOP (Padrão)
+      - Ativo para telas acima de 980px de largura.
+      - Layout em colunas para a barra de navegação e componentes principais.
+      - Ajuste dinâmico de duas colunas no editor de reviews entre 1300px e 980px.
+
+   2. 📟 MODO TABLET
+      - Ativo via `@media (max-width: 980px)`.
+      - A barra de navegação passa a se comportar de forma horizontal no topo.
+      - O layout do aplicativo flui verticalmente em coluna única.
+      - Ajustes da grade de dashboard para 2 colunas.
+
+   3. 📱 MODO CELULAR
+      - Ativo via `@media (max-width: 650px)`.
+      - O cabeçalho do álbum no editor de reviews passa a ser centralizado.
+      - As faixas de música e as estrelas + coroa são organizadas em duas linhas.
+      - O espaçamento (gap) entre as estrelas é distribuído de forma flexível.
+      - O dashboard passa a se comportar em coluna única (telas <= 580px).
+   ========================================================================== */
 
 body {
     font-family: "Manrope", -apple-system, BlinkMacSystemFont, sans-serif;
@@ -115,21 +145,10 @@ body.bg-active-2::after {
     grid-template-columns: 130px 1fr;
     width: 100%;
     max-width: 1360px;
-    margin: 28px;
+    margin: var(--spacing-outer);
     gap: 0;
-    height: calc(100vh - 56px);
+    height: calc(100vh - 2 * var(--spacing-outer));
     box-sizing: border-box;
-}
-
-@media (max-width: 980px) {
-    .app-container {
-        grid-template-columns: 1fr;
-        grid-template-rows: auto 1fr;
-        height: auto;
-        margin: 16px;
-        gap: 16px;
-    }
-
 }
 
 /* ===== COMMON CARD PATTERN ===== */
@@ -159,7 +178,7 @@ body.bg-active-2::after {
     box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
     height: 100%;
     box-sizing: border-box;
-    padding: 24px;
+    padding: var(--spacing-inner);
     overflow-y: auto;
     display: flex;
     flex-direction: column;
@@ -167,30 +186,9 @@ body.bg-active-2::after {
     min-width: 320px;
 }
 
-@media (max-width: 980px) {
-    .nav-sidebar {
-        flex-direction: row;
-        justify-content: space-between;
-        align-items: center;
-        padding: 16px 24px;
-        height: auto;
-        max-height: unset;
-        gap: 16px;
-        border-right: 2px solid var(--border-color);
-        border-radius: var(--radius-xl);
-    }
-}
-
 .logo-area {
     margin-bottom: 12px;
     text-align: center;
-}
-
-@media (max-width: 980px) {
-    .logo-area {
-        margin-bottom: 0;
-        text-align: left;
-    }
 }
 
 .logo-area h1 {
@@ -213,24 +211,11 @@ body.bg-active-2::after {
     text-shadow: 0 0 15px rgba(var(--color-primary-rgb), 0.3);
 }
 
-@media (max-width: 980px) {
-    .logo-area h1 span {
-        display: inline;
-    }
-}
-
 /* Navigation Menu */
 .nav-menu {
     display: flex;
     flex-direction: column;
     gap: 16px;
-}
-
-@media (max-width: 980px) {
-    .nav-menu {
-        flex-direction: row;
-        gap: 12px;
-    }
 }
 
 .nav-item {
@@ -263,7 +248,68 @@ body.bg-active-2::after {
     box-shadow: 0 0 8px rgba(var(--color-primary-rgb), 0.6);
 }
 
+.nav-item:hover {
+    color: var(--text-color);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.nav-item.active {
+    color: var(--color-primary-light);
+    background: rgba(var(--color-primary-rgb), 0.1);
+    box-shadow: inset 0 0 8px rgba(var(--color-primary-rgb), 0.05);
+}
+
+/* ==========================================================================
+   📟 MODO TABLET — BARRA DE NAVEGAÇÃO E APP CONTAINER (max-width: 980px)
+   ========================================================================== */
 @media (max-width: 980px) {
+    :root {
+        --spacing-outer: 16px;
+        --spacing-inner: 16px;
+        --spacing-gap: 16px;
+    }
+
+    .app-container {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto 1fr;
+        height: auto;
+        margin: var(--spacing-outer);
+        gap: var(--spacing-outer);
+    }
+
+    .nav-sidebar {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 24px;
+        height: auto;
+        max-height: unset;
+        gap: 16px;
+        border-right: 2px solid var(--border-color);
+        border-radius: var(--radius-xl);
+    }
+
+    .main-content {
+        border-radius: var(--radius-xl);
+        height: auto;
+        min-height: unset;
+        overflow-y: visible;
+    }
+
+    .logo-area {
+        margin-bottom: 0;
+        text-align: left;
+    }
+
+    .logo-area h1 span {
+        display: inline;
+    }
+
+    .nav-menu {
+        flex-direction: row;
+        gap: 12px;
+    }
+
     .nav-item {
         position: relative;
         flex-direction: row;
@@ -284,15 +330,20 @@ body.bg-active-2::after {
     }
 }
 
-.nav-item:hover {
-    color: var(--text-color);
-    background: rgba(255, 255, 255, 0.04);
-}
+/* ==========================================================================
+   📱 [MODO CELULAR] — APP CONTAINER AJUSTE (max-width: 650px)
+   ========================================================================== */
+@media (max-width: 650px) {
+    :root {
+        --spacing-outer: 8px;
+        --spacing-inner: 8px;
+        --spacing-gap: 8px;
+    }
 
-.nav-item.active {
-    color: var(--color-primary-light);
-    background: rgba(var(--color-primary-rgb), 0.1);
-    box-shadow: inset 0 0 8px rgba(var(--color-primary-rgb), 0.05);
+    .app-container {
+        margin: var(--spacing-outer);
+        gap: var(--spacing-outer);
+    }
 }
 
 .nav-icon {
@@ -459,17 +510,6 @@ body.bg-active-2::after {
 
 /* ===== ÁREA PRINCIPAL (MAIN CONTENT) ===== */
 
-@media (max-width: 980px) {
-    .main-content {
-        border-radius: var(--radius-xl);
-        height: auto;
-        min-height: unset;
-        overflow-y: visible;
-        padding: 16px;
-    }
-
-}
-
 /* ===== CABEÇALHO PRINCIPAL COM BARRA DE BUSCA HORIZONTAL ===== */
 .main-header {
     display: flex;
@@ -535,7 +575,9 @@ body.bg-active-2::after {
     box-sizing: border-box;
 }
 
-/* Fluid responsive wrapping and stacking for the main header */
+/* ==========================================================================
+   📟 [MODO TABLET] — CABEÇALHO E BARRA DE BUSCA (max-width: 720px)
+   ========================================================================== */
 @media (max-width: 720px) {
     .main-header {
         flex-direction: column;
@@ -649,6 +691,9 @@ button svg {
     box-sizing: border-box;
 }
 
+/* ==========================================================================
+   📱 [MODO CELULAR] — CABEÇALHO DO ÁLBUM (max-width: 650px)
+   ========================================================================== */
 @media (max-width: 650px) {
     .album-header {
         flex-direction: column;
@@ -777,6 +822,7 @@ button svg {
     margin-top: 2px;
 }
 
+/* 🖥️ [MODO DESKTOP / TABLET] — GRID DO CABEÇALHO (min-width: 651px) */
 @media (min-width: 651px) {
     .album-info {
         display: grid;
@@ -810,6 +856,7 @@ button svg {
     }
 }
 
+/* 📟 [MODO TABLET] — AJUSTES DE METADADOS DO ÁLBUM (min-width: 651px e max-width: 860px) */
 @media (min-width: 651px) and (max-width: 860px) {
     .album-meta-row {
         grid-column: 1;
@@ -1112,7 +1159,7 @@ button svg {
     background: var(--panel-bg);
     border: 2px solid var(--border-color);
     border-radius: var(--radius-lg);
-    padding: 16px;
+    padding: var(--spacing-inner);
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05);
     box-sizing: border-box;
     isolation: isolate;
@@ -1148,6 +1195,7 @@ button svg {
     gap: 16px;
     flex-grow: 1;
     max-width: 60%;
+    min-width: 0; /* Enable shrinking for ellipsis */
 }
 
 .track-index {
@@ -1166,12 +1214,14 @@ button svg {
     overflow: hidden;
     text-overflow: ellipsis;
     font-size: 0.95rem;
+    min-width: 0; /* Enable shrinking for ellipsis */
 }
 
 .right {
     display: flex;
     align-items: center;
     gap: 20px;
+    flex-shrink: 0; /* Prevent right side elements from being pushed or compressed */
 }
 
 .track-duration {
@@ -1217,15 +1267,16 @@ button svg {
     filter: drop-shadow(0 0 8px rgba(250, 204, 21, 0.6));
 }
 
-/* ===== TRACKLIST — LAYOUT MOBILE EM DUAS LINHAS ===== */
+/* ==========================================================================
+   📱 [MODO CELULAR] — LISTA DE FAIXAS / TRACKLIST (max-width: 650px)
+   ========================================================================== */
 @media (max-width: 650px) {
     .track {
         position: relative;
         display: flex;
         flex-direction: column;
         align-items: flex-start;
-        gap: 10px;
-        padding: 8px 0;
+        padding: 8px;
     }
 
     .track .right {
@@ -1251,7 +1302,7 @@ button svg {
     .track-duration {
         position: absolute;
         top: 10px;
-        right: 0;
+        right: 8px;
         font-size: 0.75rem;
     }
 
@@ -1464,11 +1515,12 @@ button svg {
     align-items: start;
 }
 
+/* 🖥️ [DESKTOP AJUSTE] — LAYOUT EM COLUNA DO EDITOR (max-width: 1300px) */
 @media (max-width: 1300px) {
     .editor-layout {
         display: flex;
         flex-direction: column;
-        gap: 24px;
+        gap: var(--spacing-gap);
         width: 100%;
         max-width: 100%;
         box-sizing: border-box;
@@ -1510,6 +1562,7 @@ button svg {
     isolation: isolate;
 }
 
+/* 🖥️ [DESKTOP AJUSTE] — EDITOR SIDEBAR FIXO (min-width: 1401px) */
 @media (min-width: 1401px) {
     .editor-sidebar {
         position: sticky;
@@ -1520,7 +1573,7 @@ button svg {
 .editor-main {
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: var(--spacing-gap);
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
@@ -1674,6 +1727,9 @@ button svg {
     color: #ffffff;
 }
 
+/* ==========================================================================
+   📟 [MODO TABLET] — GRID DO DASHBOARD (max-width: 1024px)
+   ========================================================================== */
 @media (max-width: 1024px) {
     .dashboard-row {
         grid-template-columns: 1fr;
@@ -2498,7 +2554,18 @@ button svg {
     font-family: monospace;
 }
 
-/* ===== ADDITIONAL RESPONSIVE & MOBILE TWEAKS ===== */
+/* ==========================================================================
+   🖥️ [DESKTOP AJUSTE] — PAINÉIS DO DASHBOARD (max-width: 1120px)
+   ========================================================================== */
+@media (max-width: 1120px) {
+    .dashboard-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* ==========================================================================
+   📱 [MODO CELULAR] — AJUSTES DA BIBLIOTECA E CARDS (max-width: 600px / 580px)
+   ========================================================================== */
 @media (max-width: 600px) {
     .library-header-row {
         flex-direction: column;
@@ -2514,12 +2581,6 @@ button svg {
     .control-group {
         flex-wrap: wrap;
         gap: 8px;
-    }
-}
-
-@media (max-width: 1120px) {
-    .dashboard-grid {
-        grid-template-columns: repeat(2, 1fr);
     }
 }
 
