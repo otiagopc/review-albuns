@@ -385,7 +385,8 @@ function render() {
             right.appendChild(durationSpan);
         }
 
-        right.append(estrelas, crown);
+        estrelas.appendChild(crown);
+        right.append(estrelas);
         div.append(nome, right);
         tracksDiv.appendChild(div);
     });
