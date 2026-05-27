@@ -1038,24 +1038,58 @@ button svg {
     color: var(--color-primary-light);
 }
 
+/* ===== DYNAMIC GLASS DROPDOWNS & POPUPS (UNIFIED STYLE) ===== */
+.dropdown-menu,
+.custom-options,
+.datepicker-calendar {
+    background-color: rgba(13, 17, 28, .75);
+    border: 2px solid rgba(255, 255, 255, 0.12);
+    border-radius: var(--radius-md);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+/* ===== UNIFIED DROPDOWN TRIGGER BUTTONS ===== */
+.custom-select,
+.datepicker-trigger,
+.btn-secondary {
+    background-color: rgba(255, 255, 255, 0.04) !important;
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+    border: 2px solid var(--border-color) !important;
+    border-radius: var(--radius-md) !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+    color: var(--text-color) !important;
+    font-weight: 600 !important;
+    transition: var(--transition-fast) !important;
+}
+
+.custom-select:hover,
+.datepicker-trigger:hover,
+.btn-secondary:hover,
+.dropdown-trigger:hover {
+    background-color: rgba(255, 255, 255, 0.08) !important;
+    border-color: var(--color-primary-light) !important;
+    box-shadow: 0 0 15px rgba(var(--color-primary-rgb), var(--glow-alpha-low)), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+    transform: translateY(-2px) !important;
+}
+
+.custom-select.active,
+.datepicker-trigger.active,
+.dropdown-wrapper.active .dropdown-trigger {
+    background-color: rgba(255, 255, 255, 0.08) !important;
+    border-color: var(--color-primary-light) !important;
+    box-shadow: 0 0 15px rgba(var(--color-primary-rgb), var(--glow-alpha-low)), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+    transform: translateY(-2px) !important;
+}
+
 .datepicker-calendar {
     position: absolute;
     top: 100%;
     right: 0;
     z-index: 110;
-    background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
-    background-color: rgba(13, 17, 28, 0.55);
-    backdrop-filter: blur(30px);
-    -webkit-backdrop-filter: blur(30px);
-    border: 2px solid rgba(255, 255, 255, 0.12);
-    border-radius: var(--radius-lg);
     margin-top: 8px;
     padding: 10px;
     width: 215px;
-    box-shadow:
-        0 24px 60px rgba(0, 0, 0, 0.65),
-        inset 0 1px 0 rgba(255, 255, 255, 0.2),
-        inset 0 0 0 1px rgba(255, 255, 255, 0.05);
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
@@ -1397,13 +1431,17 @@ button svg {
 
 /* ===== BOTÕES DE AÇÕES ===== */
 .album-actions {
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 16px;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 
 .btn-action {
-    flex: 1;
+    width: 100%;
+    box-sizing: border-box;
     padding: 15px 28px;
     border-radius: var(--radius-md);
     border: 2px solid var(--border-color);
@@ -1420,6 +1458,107 @@ button svg {
     border-color: var(--border-color-hover);
     transform: translateY(-2px);
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+
+/* ===== CUSTOM DROPDOWNS FOR ACTIONS ===== */
+.dropdown-wrapper {
+    position: relative;
+    display: inline-flex;
+    box-sizing: border-box;
+}
+
+.album-actions .dropdown-wrapper {
+    width: 100%;
+    display: flex;
+    box-sizing: border-box;
+}
+
+.dropdown-menu {
+    position: absolute;
+    min-width: 180px;
+    padding: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    z-index: 150;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity var(--transition-fast), transform var(--transition-fast), visibility var(--transition-fast);
+}
+
+.dropdown-wrapper.active .dropdown-menu {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
+.dropdown-trigger:hover {
+    border-color: var(--color-primary-light) !important;
+}
+
+.dropdown-wrapper.active .dropdown-trigger {
+    border-color: var(--color-primary-light) !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 0 12px rgba(var(--color-primary-rgb), var(--glow-alpha-low)) !important;
+}
+
+/* Header dropdown expands downwards, aligned right */
+#import-dropdown {
+    top: calc(100% + 8px);
+    right: 0;
+    left: auto;
+    transform: translateY(-10px);
+}
+
+.dropdown-wrapper.active #import-dropdown {
+    transform: translateY(0);
+}
+
+/* Editor dropdown expands upwards, centered */
+#export-dropdown {
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%) translateY(10px);
+}
+
+.dropdown-wrapper.active #export-dropdown {
+    transform: translateX(-50%) translateY(0);
+}
+
+.dropdown-item {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    padding: 6px 10px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: var(--transition-fast);
+    width: 100%;
+}
+
+.dropdown-item:hover {
+    background: var(--panel-bg-hover);
+    color: #ffffff;
+}
+
+.dropdown-item svg {
+    color: inherit;
+    flex-shrink: 0;
+}
+
+.chevron-icon {
+    transition: transform var(--transition-fast);
+    flex-shrink: 0;
+}
+
+.dropdown-wrapper.active .chevron-icon {
+    transform: rotate(180deg);
 }
 
 .btn-save {
@@ -1953,6 +2092,8 @@ button svg {
     margin-bottom: 28px;
     gap: 20px;
     flex-wrap: wrap;
+    position: relative;
+    z-index: 20;
 }
 
 .section-description {
@@ -1996,7 +2137,6 @@ button svg {
     border: 2px solid var(--border-color);
     color: var(--text-color);
     height: 36px;
-    padding: 0 12px;
     display: flex;
     align-items: center;
     border-radius: var(--radius-md);
@@ -2019,6 +2159,9 @@ button svg {
     align-items: center;
     gap: 8px;
     width: 100%;
+    height: 100%;
+    padding: 0 12px;
+    box-sizing: border-box;
 }
 
 .custom-select-trigger .chevron-icon {
@@ -2042,18 +2185,8 @@ button svg {
     left: 0;
     right: 0;
     z-index: 100;
-    background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
-    background-color: rgba(13, 17, 28, 0.55);
-    backdrop-filter: blur(30px);
-    -webkit-backdrop-filter: blur(30px);
-    border: 2px solid rgba(255, 255, 255, 0.12);
-    border-radius: var(--radius-md);
     margin-top: 8px;
     padding: 4px;
-    box-shadow:
-        0 24px 60px rgba(0, 0, 0, 0.65),
-        inset 0 1px 0 rgba(255, 255, 255, 0.2),
-        inset 0 0 0 1px rgba(255, 255, 255, 0.05);
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
@@ -2539,6 +2672,12 @@ button svg {
     max-width: 380px;
     width: 100%;
     transition: border-color var(--transition-fast), background var(--transition-fast), box-shadow var(--transition-fast), transform var(--transition-fast);
+    position: relative;
+    z-index: 1;
+}
+
+.settings-card:has(.custom-select.active) {
+    z-index: 10;
 }
 
 .settings-card:hover {

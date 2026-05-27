@@ -240,7 +240,7 @@ function render() {
         header.style.display = "flex";
         tracksDiv.style.display = "block";
         if (notesContainer) notesContainer.style.display = "block";
-        actionsDiv.style.display = "flex";
+        actionsDiv.style.display = "grid";
         placeholder.style.display = "none";
     } else {
         header.style.display = "none";
@@ -806,6 +806,8 @@ function saveVisualSettings(settings) {
     localStorage.setItem("visual-settings", JSON.stringify(settings));
 }
 
+
+
 function applyVisualSettings() {
     const settings = getVisualSettings();
 
@@ -942,15 +944,10 @@ function applyLibraryLayout() {
 }
 
 // ===== IMPORTAR =====
-async function importarTXT(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    setLoading(true);
-
-    const text = await file.text();
-    event.target.value = ""; // limpa o input para permitir importar o mesmo arquivo depois
-
+async function processarTextoReviewImportado(text) {
+    if (!text || text.trim() === "") {
+        throw new Error("o texto da review está vazio!!!");
+    }
     const lines = text.split('\n');
     let urlLine = "";
 
@@ -965,108 +962,118 @@ async function importarTXT(event) {
     }
 
     if (!urlLine) {
-        setLoading(false);
-        return alert("não encontrei o link do spotify no arquivo!!!");
+        throw new Error("não encontrei o link do spotify no texto!!!");
     }
 
+    const res = await fetch(`/api/album?url=${encodeURIComponent(urlLine)}`);
+    const data = await res.json();
+
+    if (!res.ok || data.error) throw new Error(data.error?.message || "Erro ao buscar dados do Spotify");
+
+    let dataImportada = "";
+    const dataMatch = lines[0].match(/-\s+(\d{2}\/\d{2}\/\d{2,4})/);
+    if (dataMatch) {
+        dataImportada = dataMatch[1];
+    }
+
+    let anotacoesImportadas = "";
+    const estrelasIndex = lines.findIndex(l => l.includes("★") || l.includes("☆"));
+    if (estrelasIndex !== -1 && urlIndex !== -1 && urlIndex > estrelasIndex + 1) {
+        let notesText = lines.slice(estrelasIndex + 1, urlIndex).join("\n").trim();
+        if (notesText.startsWith('"') && notesText.endsWith('"')) {
+            notesText = notesText.substring(1, notesText.length - 1).trim();
+        }
+        anotacoesImportadas = notesText;
+    }
+
+    const artistNames = data.artists.map((a) => a.name).join(", ");
+    let historico = getHistorico();
+    const index = historico.findIndex((r) => r.id === data.id || (r.album === data.name && r.artista === artistNames));
+
+    estado = {
+        id: data.id,
+        album: data.name,
+        artista: artistNames,
+        capa: data.images[0].url,
+        link: data.external_urls.spotify,
+        albumNota: 0,
+        albumNotaCalculada: 0,
+        tracks: data.tracks.items.map((t) => ({
+            nome: t.name,
+            nota: 0,
+            fav: false,
+            duration_ms: t.duration_ms || 0,
+        })),
+        data: dataImportada,
+        anotacoes: anotacoesImportadas,
+        isDraft: index !== -1 ? (historico[index].isDraft !== undefined ? historico[index].isDraft : true) : true,
+        createdAt: index !== -1 ? (historico[index].createdAt || Date.now()) : Date.now()
+    };
+
+    // Lê as notas de cada faixa
+    lines.forEach(line => {
+        const match = line.match(/^\d+\.\s+(.+?)\s+-\s+([\d.]+)\/(9|5)\s*(👑)?/);
+        if (match) {
+            const trackName = match[1];
+            let nota = parseFloat(match[2]);
+            const max = parseInt(match[3], 10);
+            const fav = !!match[4];
+
+            if (max === 5) {
+                nota = deEscala(nota);
+            }
+
+            const trackIndex = estado.tracks.findIndex(t => t.nome === trackName);
+            if (trackIndex !== -1) {
+                estado.tracks[trackIndex].nota = nota;
+                estado.tracks[trackIndex].fav = fav;
+            }
+        }
+    });
+
+    // Lê a nota geral do álbum (estrelas)
+    const estrelasLine = lines.find(l => l.includes("★") || l.includes("☆"));
+    if (estrelasLine) {
+        const countFull = (estrelasLine.match(/★/g) || []).length;
+        const countEmpty = (estrelasLine.match(/☆/g) || []).length;
+        const total = countFull + countEmpty;
+        if (total === 5) {
+            estado.albumNota = deEscala(countFull);
+        } else {
+            estado.albumNota = countFull;
+        }
+    }
+
+    // Calcula a nota automática do álbum se a configuração estiver ativa
+    if (getAutoCalculateMode() !== "desativado") {
+        recalcularNotaAlbum();
+    } else {
+        estado.albumNotaCalculada = 0;
+    }
+
+    if (index !== -1) {
+        historico[index] = { ...estado };
+    } else {
+        historico.push({ ...estado });
+    }
+    salvarHistorico(historico);
+
+    switchView('reviews');
+    isFirstLoad = true;
+    render();
+}
+
+async function importarTXT(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    setLoading(true);
+
     try {
-        const res = await fetch(`/api/album?url=${encodeURIComponent(urlLine)}`);
-        const data = await res.json();
-
-        if (!res.ok || data.error) throw new Error(data.error?.message || "Erro ao buscar dados do Spotify");
-
-        let dataImportada = "";
-        const dataMatch = lines[0].match(/-\s+(\d{2}\/\d{2}\/\d{2,4})/);
-        if (dataMatch) {
-            dataImportada = dataMatch[1];
-        }
-
-        let anotacoesImportadas = "";
-        const estrelasIndex = lines.findIndex(l => l.includes("★") || l.includes("☆"));
-        if (estrelasIndex !== -1 && urlIndex !== -1 && urlIndex > estrelasIndex + 1) {
-            let notesText = lines.slice(estrelasIndex + 1, urlIndex).join("\n").trim();
-            if (notesText.startsWith('"') && notesText.endsWith('"')) {
-                notesText = notesText.substring(1, notesText.length - 1).trim();
-            }
-            anotacoesImportadas = notesText;
-        }
-
-        const artistNames = data.artists.map((a) => a.name).join(", ");
-        let historico = getHistorico();
-        const index = historico.findIndex((r) => r.id === data.id || (r.album === data.name && r.artista === artistNames));
-
-        estado = {
-            id: data.id,
-            album: data.name,
-            artista: artistNames,
-            capa: data.images[0].url,
-            link: data.external_urls.spotify,
-            albumNota: 0,
-            albumNotaCalculada: 0,
-            tracks: data.tracks.items.map((t) => ({
-                nome: t.name,
-                nota: 0,
-                fav: false,
-                duration_ms: t.duration_ms || 0,
-            })),
-            data: dataImportada,
-            anotacoes: anotacoesImportadas,
-            isDraft: index !== -1 ? (historico[index].isDraft !== undefined ? historico[index].isDraft : true) : true,
-            createdAt: index !== -1 ? (historico[index].createdAt || Date.now()) : Date.now()
-        };
-
-        // Lê as notas de cada faixa
-        lines.forEach(line => {
-            const match = line.match(/^\d+\.\s+(.+?)\s+-\s+([\d.]+)\/(9|5)\s*(👑)?/);
-            if (match) {
-                const trackName = match[1];
-                let nota = parseFloat(match[2]);
-                const max = parseInt(match[3], 10);
-                const fav = !!match[4];
-
-                if (max === 5) {
-                    nota = deEscala(nota);
-                }
-
-                const trackIndex = estado.tracks.findIndex(t => t.nome === trackName);
-                if (trackIndex !== -1) {
-                    estado.tracks[trackIndex].nota = nota;
-                    estado.tracks[trackIndex].fav = fav;
-                }
-            }
-        });
-
-        // Lê a nota geral do álbum (estrelas)
-        const estrelasLine = lines.find(l => l.includes("★") || l.includes("☆"));
-        if (estrelasLine) {
-            const countFull = (estrelasLine.match(/★/g) || []).length;
-            const countEmpty = (estrelasLine.match(/☆/g) || []).length;
-            const total = countFull + countEmpty;
-            if (total === 5) {
-                estado.albumNota = deEscala(countFull);
-            } else {
-                estado.albumNota = countFull;
-            }
-        }
-
-        // Calcula a nota automática do álbum se a configuração estiver ativa
-        if (getAutoCalculateMode() !== "desativado") {
-            recalcularNotaAlbum();
-        } else {
-            estado.albumNotaCalculada = 0;
-        }
-
-        if (index !== -1) {
-            historico[index] = { ...estado };
-        } else {
-            historico.push({ ...estado });
-        }
-        salvarHistorico(historico);
-
+        const text = await file.text();
+        event.target.value = ""; // limpa o input para permitir importar o mesmo arquivo depois
+        await processarTextoReviewImportado(text);
         setLoading(false);
-        switchView('reviews');
-        isFirstLoad = true;
-        render();
     } catch (err) {
         setLoading(false);
         render();
@@ -1644,6 +1651,9 @@ function inicializarControlesCustomizados() {
             document.querySelectorAll(".custom-select").forEach(cs => {
                 if (cs !== customSel) cs.classList.remove("active");
             });
+            document.querySelectorAll(".dropdown-wrapper").forEach(w => {
+                w.classList.remove("active");
+            });
             document.getElementById("datepicker-calendar")?.classList.remove("open");
             document.getElementById("datepicker-trigger")?.classList.remove("active");
 
@@ -1678,6 +1688,7 @@ function inicializarControlesCustomizados() {
             e.stopPropagation();
             // Fecha custom-selects se estiverem abertos
             document.querySelectorAll(".custom-select").forEach(cs => cs.classList.remove("active"));
+            document.querySelectorAll(".dropdown-wrapper").forEach(w => w.classList.remove("active"));
 
             const isOpen = datepickerCalendar.classList.toggle("open");
             datepickerTrigger.classList.toggle("active", isOpen);
@@ -1724,11 +1735,92 @@ function inicializarControlesCustomizados() {
                 cs.classList.remove("active");
             }
         });
+        document.querySelectorAll(".dropdown-wrapper").forEach(w => {
+            if (!w.contains(e.target)) {
+                w.classList.remove("active");
+            }
+        });
         if (datepickerCalendar && datepickerTrigger && !datepickerCalendar.contains(e.target) && !datepickerTrigger.contains(e.target)) {
             datepickerCalendar.classList.remove("open");
             datepickerTrigger.classList.remove("active");
         }
     });
+}
+
+// ===== MENU DROPDOWN & CLIPBOARD ACTIONS =====
+function toggleDropdown(event, id) {
+    if (event) {
+        event.stopPropagation();
+        event.preventDefault();
+    }
+    const dropdownMenu = document.getElementById(id);
+    if (!dropdownMenu) return;
+
+    const wrapper = dropdownMenu.closest(".dropdown-wrapper");
+    if (!wrapper) return;
+
+    const isActive = wrapper.classList.contains("active");
+
+    // Fecha outros dropdowns, datepickers ou custom-selects
+    document.querySelectorAll(".dropdown-wrapper").forEach(w => {
+        if (w !== wrapper) w.classList.remove("active");
+    });
+    document.querySelectorAll(".custom-select").forEach(cs => cs.classList.remove("active"));
+    const datepickerCalendar = document.getElementById("datepicker-calendar");
+    const datepickerTrigger = document.getElementById("datepicker-trigger");
+    if (datepickerCalendar && datepickerTrigger) {
+        datepickerCalendar.classList.remove("open");
+        datepickerTrigger.classList.remove("active");
+    }
+
+    if (isActive) {
+        wrapper.classList.remove("active");
+    } else {
+        wrapper.classList.add("active");
+    }
+}
+
+async function colarReviewClipboard() {
+    setLoading(true);
+    try {
+        const text = await navigator.clipboard.readText();
+        await processarTextoReviewImportado(text);
+        setLoading(false);
+        // Fechar dropdowns
+        document.querySelectorAll(".dropdown-wrapper").forEach(w => w.classList.remove("active"));
+    } catch (err) {
+        setLoading(false);
+        render();
+        alert(`erro ao colar review: ${err.message}. verifique se concedeu permissão de clipboard ao site.`);
+        console.error(err);
+    }
+}
+
+async function copiarReviewClipboard() {
+    const texto = gerarTextoReview();
+    if (!texto) return alert("nenhum album para copiar!!!");
+
+    try {
+        await navigator.clipboard.writeText(texto);
+        
+        const btnCopiar = document.getElementById("btn-copiar-item");
+        if (btnCopiar) {
+            const originalHTML = btnCopiar.innerHTML;
+            // Exibir feedback "copiado!!!"
+            btnCopiar.innerHTML = `
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="var(--color-primary-light)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                copiado!!!
+            `;
+            setTimeout(() => {
+                btnCopiar.innerHTML = originalHTML;
+                // Fechar dropdowns
+                document.querySelectorAll(".dropdown-wrapper").forEach(w => w.classList.remove("active"));
+            }, 1500);
+        }
+    } catch (err) {
+        alert("erro ao copiar review para a área de transferência!!!");
+        console.error(err);
+    }
 }
 
 function renderizarCalendario() {
