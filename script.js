@@ -288,35 +288,15 @@ function render() {
 
 
     const dateInput = document.getElementById("review-date");
-    const datepickerDisplay = document.getElementById("datepicker-display");
     if (dateInput) {
-        if (estado.data) {
-            const parts = estado.data.split("/");
-            if (parts.length === 3) {
-                const fullYear = parts[2].length === 2 ? `20${parts[2]}` : parts[2];
-                dateInput.value = `${fullYear}-${parts[1]}-${parts[0]}`;
-            }
-        } else {
+        if (!estado.data) {
             const hoje = new Date();
             const y = hoje.getFullYear();
             const m = String(hoje.getMonth() + 1).padStart(2, '0');
             const d = String(hoje.getDate()).padStart(2, '0');
-            dateInput.value = `${y}-${m}-${d}`;
             estado.data = `${d}/${m}/${y}`;
         }
-        if (datepickerDisplay) {
-            datepickerDisplay.textContent = estado.data;
-        }
-
-        dateInput.onchange = (e) => {
-            const val = e.target.value;
-            if (val) {
-                const [y, m, d] = val.split('-');
-                estado.data = `${d}/${m}/${y}`;
-                if (datepickerDisplay) datepickerDisplay.textContent = estado.data;
-                autoSaveDraft();
-            }
-        };
+        dateInput.value = estado.data;
     }
 
     const capa = document.getElementById("capa");
@@ -1543,7 +1523,7 @@ function renderLibrary() {
         const score = document.createElement("span");
         score.className = "library-card-score";
         const maxScore = getRatingScale() === "5" ? "/5" : "/9";
-        score.textContent = `★ ${formatarNotaExibicao(getEffectiveAlbumNota(rev))}${maxScore}`;
+        score.innerHTML = `<span class="score-star">★</span> ${formatarNotaExibicao(getEffectiveAlbumNota(rev))}${maxScore}`;
 
         const date = document.createElement("span");
         date.className = "library-card-date";
@@ -1617,8 +1597,7 @@ function limparTudo() {
     }
 }
 
-// ===== CONTROLES CUSTOMIZADOS (DROPDOWN & DATEPICKER) =====
-let datepickerActiveDate = new Date(); // Para controlar o mês/ano ativo no visualizador do calendário
+// ===== CONTROLES CUSTOMIZADOS (DROPDOWN & INPUT DE DATA) =====
 
 function inicializarControlesCustomizados() {
     // 1. DROPDOWNS CUSTOMIZADOS GERAIS
@@ -1651,12 +1630,6 @@ function inicializarControlesCustomizados() {
             document.querySelectorAll(".custom-select").forEach(cs => {
                 if (cs !== customSel) cs.classList.remove("active");
             });
-            document.querySelectorAll(".dropdown-wrapper").forEach(w => {
-                w.classList.remove("active");
-            });
-            document.getElementById("datepicker-calendar")?.classList.remove("open");
-            document.getElementById("datepicker-trigger")?.classList.remove("active");
-
             customSel.classList.toggle("active");
         });
 
@@ -1679,53 +1652,65 @@ function inicializarControlesCustomizados() {
         });
     });
 
-    // 2. DATEPICKER CUSTOMIZADO
-    const datepickerTrigger = document.getElementById("datepicker-trigger");
-    const datepickerCalendar = document.getElementById("datepicker-calendar");
+    // 2. INPUT DE DATA MANUAL COM MÁSCARA E VALIDAÇÃO
+    const dateInput = document.getElementById("review-date");
+    if (dateInput) {
+        // Função auxiliar para validar se a data inserida é um dia/mês/ano válido real
+        const validarData = (dataStr) => {
+            if (!dataStr || dataStr.length !== 10) return false;
+            const parts = dataStr.split("/");
+            if (parts.length !== 3) return false;
+            const dia = parseInt(parts[0], 10);
+            const mes = parseInt(parts[1], 10);
+            const ano = parseInt(parts[2], 10);
+            
+            if (isNaN(dia) || isNaN(mes) || isNaN(ano)) return false;
+            if (mes < 1 || mes > 12) return false;
+            if (ano < 1000 || ano > 9999) return false;
+            
+            const diasNoMes = new Date(ano, mes, 0).getDate();
+            if (dia < 1 || dia > diasNoMes) return false;
+            
+            return true;
+        };
 
-    if (datepickerTrigger && datepickerCalendar) {
-        datepickerTrigger.addEventListener("click", (e) => {
-            e.stopPropagation();
-            // Fecha custom-selects se estiverem abertos
-            document.querySelectorAll(".custom-select").forEach(cs => cs.classList.remove("active"));
-            document.querySelectorAll(".dropdown-wrapper").forEach(w => w.classList.remove("active"));
+        // Função para formatar a data de hoje
+        const obterDataHojeFormatada = () => {
+            const hoje = new Date();
+            const d = String(hoje.getDate()).padStart(2, '0');
+            const m = String(hoje.getMonth() + 1).padStart(2, '0');
+            const y = hoje.getFullYear();
+            return `${d}/${m}/${y}`;
+        };
 
-            const isOpen = datepickerCalendar.classList.toggle("open");
-            datepickerTrigger.classList.toggle("active", isOpen);
-
-            if (isOpen) {
-                // Define o mês/ano ativo com base no estado.data se houver, senão data atual
-                if (estado.data) {
-                    const parts = estado.data.split("/");
-                    if (parts.length === 3) {
-                        datepickerActiveDate = new Date(parseInt(parts[2], 10), parseInt(parts[1], 10) - 1, 1);
-                    }
-                } else {
-                    datepickerActiveDate = new Date();
-                }
-                renderizarCalendario();
+        // Evento input para máscara automática DD/MM/AAAA
+        dateInput.addEventListener("input", (e) => {
+            let val = e.target.value.replace(/\D/g, "");
+            if (val.length > 8) val = val.substring(0, 8);
+            
+            let formatted = "";
+            if (val.length > 4) {
+                formatted = `${val.substring(0, 2)}/${val.substring(2, 4)}/${val.substring(4)}`;
+            } else if (val.length > 2) {
+                formatted = `${val.substring(0, 2)}/${val.substring(2)}`;
+            } else {
+                formatted = val;
             }
+            
+            e.target.value = formatted;
+            estado.data = formatted;
+            autoSaveDraft();
         });
 
-        // Navegação de meses
-        const btnPrev = document.getElementById("datepicker-prev-month");
-        const btnNext = document.getElementById("datepicker-next-month");
-
-        if (btnPrev) {
-            btnPrev.addEventListener("click", (e) => {
-                e.stopPropagation();
-                datepickerActiveDate.setMonth(datepickerActiveDate.getMonth() - 1);
-                renderizarCalendario();
-            });
-        }
-
-        if (btnNext) {
-            btnNext.addEventListener("click", (e) => {
-                e.stopPropagation();
-                datepickerActiveDate.setMonth(datepickerActiveDate.getMonth() + 1);
-                renderizarCalendario();
-            });
-        }
+        // Evento blur para validar no focus out e retornar para hoje se inválido
+        dateInput.addEventListener("blur", (e) => {
+            if (!validarData(e.target.value)) {
+                const hojeStr = obterDataHojeFormatada();
+                e.target.value = hojeStr;
+                estado.data = hojeStr;
+                autoSaveDraft();
+            }
+        });
     }
 
     // Fechar ao clicar fora usando .contains()
@@ -1740,10 +1725,6 @@ function inicializarControlesCustomizados() {
                 w.classList.remove("active");
             }
         });
-        if (datepickerCalendar && datepickerTrigger && !datepickerCalendar.contains(e.target) && !datepickerTrigger.contains(e.target)) {
-            datepickerCalendar.classList.remove("open");
-            datepickerTrigger.classList.remove("active");
-        }
     });
 }
 
@@ -1766,12 +1747,6 @@ function toggleDropdown(event, id) {
         if (w !== wrapper) w.classList.remove("active");
     });
     document.querySelectorAll(".custom-select").forEach(cs => cs.classList.remove("active"));
-    const datepickerCalendar = document.getElementById("datepicker-calendar");
-    const datepickerTrigger = document.getElementById("datepicker-trigger");
-    if (datepickerCalendar && datepickerTrigger) {
-        datepickerCalendar.classList.remove("open");
-        datepickerTrigger.classList.remove("active");
-    }
 
     if (isActive) {
         wrapper.classList.remove("active");
@@ -1823,99 +1798,6 @@ async function copiarReviewClipboard() {
     }
 }
 
-function renderizarCalendario() {
-    const calendar = document.getElementById("datepicker-calendar");
-    const daysContainer = document.getElementById("datepicker-days");
-    const monthYearLabel = document.getElementById("datepicker-month-year");
-    const nativeInput = document.getElementById("review-date");
-
-    if (!calendar || !daysContainer || !monthYearLabel) return;
-
-    const year = datepickerActiveDate.getFullYear();
-    const month = datepickerActiveDate.getMonth();
-
-    // Rótulo do mês/ano em português
-    const meses = [
-        "janeiro", "fevereiro", "março", "abril", "maio", "junho",
-        "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"
-    ];
-    monthYearLabel.textContent = `${meses[month]} ${year}`;
-
-    daysContainer.innerHTML = "";
-
-    // Primeiro dia da semana do mês atual (0 = Dom, 1 = Seg, ...)
-    const firstDayIndex = new Date(year, month, 1).getDay();
-
-    // Número total de dias no mês atual
-    const totalDays = new Date(year, month + 1, 0).getDate();
-
-    // Número total de dias no mês anterior
-    const prevMonthTotalDays = new Date(year, month, 0).getDate();
-
-    // Dias do mês anterior (padding no início)
-    for (let i = firstDayIndex - 1; i >= 0; i--) {
-        const dayDiv = document.createElement("div");
-        dayDiv.className = "datepicker-day other-month";
-        dayDiv.textContent = prevMonthTotalDays - i;
-        daysContainer.appendChild(dayDiv);
-    }
-
-    // Dias do mês atual
-    let selectedDay = null;
-    let selectedMonth = null;
-    let selectedYear = null;
-
-    if (estado.data) {
-        const parts = estado.data.split("/");
-        if (parts.length === 3) {
-            selectedDay = parseInt(parts[0], 10);
-            selectedMonth = parseInt(parts[1], 10) - 1;
-            selectedYear = parseInt(parts[2], 10);
-        }
-    }
-
-    for (let day = 1; day <= totalDays; day++) {
-        const dayDiv = document.createElement("div");
-        dayDiv.className = "datepicker-day";
-        dayDiv.textContent = day;
-
-        // Destaca se for o dia selecionado
-        if (day === selectedDay && month === selectedMonth && year === selectedYear) {
-            dayDiv.classList.add("selected");
-        }
-
-        dayDiv.addEventListener("click", () => {
-            const pad = (num) => String(num).padStart(2, '0');
-            const dataFormatada = `${pad(day)}/${pad(month + 1)}/${year}`;
-
-            estado.data = dataFormatada;
-
-            // Atualiza input nativo
-            if (nativeInput) {
-                nativeInput.value = `${year}-${pad(month + 1)}-${pad(day)}`;
-            }
-
-            // Fecha calendário
-            calendar.classList.remove("open");
-            document.getElementById("datepicker-trigger")?.classList.remove("active");
-
-            // Re-renderiza o editor para atualizar estrelas, faixas e display de data
-            render();
-        });
-
-        daysContainer.appendChild(dayDiv);
-    }
-
-    // Dias do próximo mês (padding no fim)
-    const totalSlots = daysContainer.children.length;
-    const remainingSlots = (7 - (totalSlots % 7)) % 7;
-    for (let i = 1; i <= remainingSlots; i++) {
-        const dayDiv = document.createElement("div");
-        dayDiv.className = "datepicker-day other-month";
-        dayDiv.textContent = i;
-        daysContainer.appendChild(dayDiv);
-    }
-}
 
 function adjustCardTextSizes() {
     const topArtistEl = document.getElementById("dash-top-artist");

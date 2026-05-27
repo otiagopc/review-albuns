@@ -270,39 +270,15 @@
                         class="max-score">/9</span></span>
                     <div id="album-stars" class="estrelas"></div>
                   </div>
-                  <div class="custom-datepicker-container">
-                    <input type="hidden" id="review-date">
-                    <div class="datepicker-trigger" id="datepicker-trigger">
-                      <span id="datepicker-display">-</span>
-                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round" class="calendar-icon">
-                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                        <line x1="16" y1="2" x2="16" y2="6"></line>
-                        <line x1="8" y1="2" x2="8" y2="6"></line>
-                        <line x1="3" y1="10" x2="21" y2="10"></line>
-                      </svg>
-                    </div>
-                    <div class="datepicker-calendar" id="datepicker-calendar">
-                      <div class="datepicker-header">
-                        <button class="datepicker-nav-btn" id="datepicker-prev-month" type="button">
-                          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
-                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="15 18 9 12 15 6"></polyline>
-                          </svg>
-                        </button>
-                        <span id="datepicker-month-year">-</span>
-                        <button class="datepicker-nav-btn" id="datepicker-next-month" type="button">
-                          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
-                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="9 18 15 12 9 6"></polyline>
-                          </svg>
-                        </button>
-                      </div>
-                      <div class="datepicker-weekdays">
-                        <span>dom</span><span>seg</span><span>ter</span><span>qua</span><span>qui</span><span>sex</span><span>sáb</span>
-                      </div>
-                      <div class="datepicker-days" id="datepicker-days"></div>
-                    </div>
+                  <div class="date-input-container">
+                    <input type="text" id="review-date" class="date-input" placeholder="dd/mm/aaaa" maxlength="10">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
+                      stroke-linecap="round" stroke-linejoin="round" class="calendar-icon">
+                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                      <line x1="16" y1="2" x2="16" y2="6"></line>
+                      <line x1="8" y1="2" x2="8" y2="6"></line>
+                      <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
                   </div>
                 </div>
               </div>
