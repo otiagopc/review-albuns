@@ -437,6 +437,65 @@
           </div>
 
           <div class="settings-section">
+            <h3>sistema de avaliação</h3>
+            <p class="section-description">personalize as escalas e o método de cálculo das notas das suas reviews.</p>
+
+            <div class="settings-cards">
+              <div class="settings-card">
+                <h4>escala de notas</h4>
+                <p>selecione o sistema de avaliação padrão das suas reviews.</p>
+                <div class="settings-control">
+                  <div class="custom-select-wrapper">
+                    <select id="settings-rating-scale" onchange="updateRatingScaleSettings()" style="display: none;">
+                      <option value="9">0 a 9 (padrão)</option>
+                      <option value="5">0 a 5 estrelas</option>
+                    </select>
+                    <div class="custom-select" id="custom-rating-scale-select">
+                      <div class="custom-select-trigger">
+                        <span>0 a 9 (padrão)</span>
+                        <svg class="chevron-icon" viewBox="0 0 24 24" width="14" height="14" fill="none"
+                          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                      </div>
+                      <div class="custom-options">
+                        <div class="custom-option selected" data-value="9">0 a 9 (padrão)</div>
+                        <div class="custom-option" data-value="5">0 a 5 estrelas</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="settings-card">
+                <h4>cálculo da nota do álbum</h4>
+                <p>escolha se a nota geral do álbum deve ser calculada a partir das faixas.</p>
+                <div class="settings-control">
+                  <div class="custom-select-wrapper">
+                    <select id="settings-auto-calculate" onchange="updateAutoCalculateSettings()" style="display: none;">
+                      <option value="desativado">desativado (manual)</option>
+                      <option value="simples">média simples</option>
+                    </select>
+                    <div class="custom-select" id="custom-auto-calculate-select">
+                      <div class="custom-select-trigger">
+                        <span>desativado (manual)</span>
+                        <svg class="chevron-icon" viewBox="0 0 24 24" width="14" height="14" fill="none"
+                          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                      </div>
+                      <div class="custom-options">
+                        <div class="custom-option selected" data-value="desativado">desativado (manual)</div>
+                        <div class="custom-option" data-value="simples">média simples</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-section">
             <h3>gerenciamento de dados</h3>
             <p class="section-description">gerencie suas reviews salvas localmente no navegador (LocalStorage).</p>
 

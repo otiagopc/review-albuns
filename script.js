@@ -7,6 +7,7 @@ function getEmptyState() {
         capa: "",
         link: "",
         albumNota: 0,
+        albumNotaCalculada: 0,
         tracks: [],
         data: "",
         anotacoes: "",
@@ -110,6 +111,7 @@ async function gerar() {
                 capa: data.images[0].url,
                 link: data.external_urls.spotify,
                 albumNota: 0,
+                albumNotaCalculada: 0,
                 tracks: data.tracks.items.map((t) => ({
                     nome: t.name,
                     nota: 0,
@@ -165,15 +167,19 @@ function atualizarFundo(novaCapa) {
 function criarEstrelas(container, valorAtual, onClick, isAlbum = false) {
     container.innerHTML = "";
     const stars = [];
+    const scale = getRatingScale();
+    const maxStars = scale === "5" ? 5 : 9;
+    // Se for escala 5, ou se for track (não isAlbum), permite meia estrela
+    const permiteMeia = (scale === "5") || !isAlbum;
 
-    for (let i = 1; i <= 9; i++) {
+    for (let i = 1; i <= maxStars; i++) {
         const star = document.createElement("span");
         star.className = "star";
         stars.push(star);
         container.appendChild(star);
 
         star.onclick = (e) => {
-            if (isAlbum) {
+            if (!permiteMeia) {
                 onClick(i);
             } else {
                 const rect = star.getBoundingClientRect();
@@ -189,7 +195,7 @@ function criarEstrelas(container, valorAtual, onClick, isAlbum = false) {
             const i = index + 1;
 
             if (valor >= i) star.classList.add("full");
-            else if (!isAlbum && valor >= i - 0.5) star.classList.add("half");
+            else if (permiteMeia && valor >= i - 0.5) star.classList.add("half");
 
             if (isHover && i <= Math.ceil(valor)) {
                 star.classList.add("hover");
@@ -205,7 +211,7 @@ function criarEstrelas(container, valorAtual, onClick, isAlbum = false) {
             const x = e.clientX - rect.left;
             let preview = index + 1;
 
-            if (!isAlbum && x < rect.width / 2) preview -= 0.5;
+            if (permiteMeia && x < rect.width / 2) preview -= 0.5;
             pintar(preview, true);
         });
     });
@@ -320,11 +326,25 @@ function render() {
 
     atualizarFundo(estado.capa);
 
+    const ratingScale = getRatingScale();
+    const maxScoreLabel = ratingScale === "5" ? "/5" : "/9";
+    const autoCalc = getAutoCalculateMode() !== "desativado";
+
+    const albumStarsEl = document.getElementById("album-stars");
+    if (albumStarsEl) {
+        if (autoCalc) {
+            albumStarsEl.classList.add("stars-calculated");
+        } else {
+            albumStarsEl.classList.remove("stars-calculated");
+        }
+    }
+
     criarEstrelas(
-        document.getElementById("album-stars"),
-        estado.albumNota,
+        albumStarsEl,
+        aEscala(getEffectiveAlbumNota(estado), true),
         (val) => {
-            estado.albumNota = val;
+            if (autoCalc) return;
+            estado.albumNota = deEscala(val);
             render();
         },
         true,
@@ -332,7 +352,8 @@ function render() {
 
     const scoreVal = document.getElementById("album-score-value");
     if (scoreVal) {
-        scoreVal.innerHTML = `<span class="current-score">${estado.albumNota}</span><span class="max-score">/9</span>`;
+        const notaExibida = formatarNotaExibicao(getEffectiveAlbumNota(estado));
+        scoreVal.innerHTML = `<span class="current-score">${notaExibida}</span><span class="max-score">${maxScoreLabel}</span>`;
     }
 
     tracksDiv.innerHTML = "<h3>tracklist</h3>";
@@ -352,11 +373,15 @@ function render() {
 
         const estrelas = document.createElement("div");
         estrelas.className = "estrelas";
-        criarEstrelas(estrelas, track.nota, (val) => {
-            if (track.nota === val) {
+        const notaExibida = aEscala(track.nota, false);
+        criarEstrelas(estrelas, notaExibida, (val) => {
+            if (notaExibida === val) {
                 track.nota = 0;
             } else {
-                track.nota = val;
+                track.nota = deEscala(val);
+            }
+            if (getAutoCalculateMode() !== "desativado") {
+                recalcularNotaAlbum();
             }
             render();
         });
@@ -522,11 +547,16 @@ function gerarTextoReview() {
     }
     let texto = `-${estado.album}- ${dataReview}\n\n`;
 
+    const ratingScale = getRatingScale();
+    const maxLabel = ratingScale === "5" ? "/5" : "/9";
+
     estado.tracks.forEach((t, i) => {
-        texto += `${i + 1}. ${t.nome} - ${t.nota}/9 ${t.fav ? "👑" : ""}\n`;
+        texto += `${i + 1}. ${t.nome} - ${formatarNotaExibicao(t.nota)}${maxLabel} ${t.fav ? "👑" : ""}\n`;
     });
 
-    const estrelasStr = "★".repeat(estado.albumNota) + "☆".repeat(9 - estado.albumNota);
+    const maxStars = ratingScale === "5" ? 5 : 9;
+    const notaEstrelas = aEscala(getEffectiveAlbumNota(estado), true);
+    const estrelasStr = "★".repeat(Math.round(notaEstrelas)) + "☆".repeat(maxStars - Math.round(notaEstrelas));
     texto += `\n${estrelasStr}\n`;
 
     if (estado.anotacoes && estado.anotacoes.trim() !== "") {
@@ -557,6 +587,7 @@ function exportarTXT() {
         }, 2000);
     }
 }
+
 
 // ===== AUTO-REPARAÇÃO EM SEGUNDO PLANO =====
 async function repararReview(rev) {
@@ -624,6 +655,16 @@ async function repararTudoNoBackground() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+    // Sincroniza o estado inicial do sistema de avaliação
+    const selectScale = document.getElementById("settings-rating-scale");
+    if (selectScale) {
+        selectScale.value = getRatingScale();
+    }
+    const selectAuto = document.getElementById("settings-auto-calculate");
+    if (selectAuto) {
+        selectAuto.value = getAutoCalculateMode();
+    }
+
     applyVisualSettings();
     applyLibraryLayout();
     carregarHistorico();
@@ -631,6 +672,124 @@ document.addEventListener("DOMContentLoaded", () => {
     switchView('library');
     repararTudoNoBackground();
 });
+
+// ===== SISTEMA DE AVALIAÇÃO (HELPERS & PERSISTÊNCIA) =====
+function getRatingScale() {
+    return localStorage.getItem("rating-scale") || "9";
+}
+
+function setRatingScale(scale) {
+    localStorage.setItem("rating-scale", scale);
+}
+
+function getAutoCalculateMode() {
+    return localStorage.getItem("auto-calculate-rating") || "desativado";
+}
+
+function setAutoCalculateMode(mode) {
+    localStorage.setItem("auto-calculate-rating", mode);
+}
+
+function aEscala(nota, isAlbum = false) {
+    if (nota === undefined || nota === null) return 0;
+    const scale = getRatingScale();
+    if (scale === "5") {
+        const nota5 = (nota * 5) / 9;
+        return Math.round(nota5 * 2) / 2; // Arredonda para o 0.5 mais próximo
+    }
+    // Escala 9
+    if (isAlbum) {
+        return Math.round(nota); // Álbum na escala 9 só tem estrelas inteiras
+    }
+    return Math.round(nota * 2) / 2; // Faixas suportam meias estrelas
+}
+
+function aEscalaProporcional(nota) {
+    if (nota === undefined || nota === null) return 0;
+    const scale = getRatingScale();
+    if (scale === "5") {
+        return (nota * 5) / 9;
+    }
+    return nota;
+}
+
+function deEscala(notaVal) {
+    if (notaVal === undefined || notaVal === null) return 0;
+    const scale = getRatingScale();
+    if (scale === "5") {
+        const nota9 = (notaVal * 9) / 5;
+        return Math.round(nota9 * 2) / 2; // Arredonda para o 0.5 mais próximo
+    }
+    return notaVal;
+}
+
+function formatarNotaExibicao(nota) {
+    if (nota === undefined || nota === null) return 0;
+    const scale = getRatingScale();
+    const val = scale === "5" ? (nota * 5) / 9 : nota;
+    return Math.round(val * 2) / 2; // Arredonda para o 0.5 mais próximo
+}
+
+function getEffectiveAlbumNota(rev) {
+    if (!rev) return 0;
+    const calcMode = getAutoCalculateMode();
+    if (calcMode === "simples") {
+        if (rev.albumNotaCalculada !== undefined) {
+            return rev.albumNotaCalculada;
+        }
+        // Fallback para reviews antigas que não tem o campo
+        if (rev.tracks && rev.tracks.length > 0) {
+            const ratedTracks = rev.tracks.filter(t => (t.nota || 0) > 0);
+            if (ratedTracks.length > 0) {
+                const sum = ratedTracks.reduce((sum, t) => sum + (t.nota || 0), 0);
+                const media = sum / ratedTracks.length;
+                return Math.round(media * 2) / 2;
+            }
+        }
+        return 0;
+    }
+    return rev.albumNota || 0;
+}
+
+function recalcularNotaAlbum() {
+    if (!estado.tracks || estado.tracks.length === 0) return;
+
+    const calcMode = getAutoCalculateMode();
+    if (calcMode !== "simples") return;
+
+    const ratedTracks = estado.tracks.filter(t => (t.nota || 0) > 0);
+    if (ratedTracks.length === 0) {
+        estado.albumNotaCalculada = 0;
+        return;
+    }
+
+    const sum = ratedTracks.reduce((sum, t) => sum + (t.nota || 0), 0);
+    const media = sum / ratedTracks.length;
+    estado.albumNotaCalculada = Math.round(media * 2) / 2; // Arredonda para o 0.5 mais próximo
+}
+
+function updateRatingScaleSettings() {
+    const select = document.getElementById("settings-rating-scale");
+    if (select) {
+        setRatingScale(select.value);
+        render();
+        renderLibrary();
+        renderDashboard();
+    }
+}
+
+// Vincula o evento global
+function updateAutoCalculateSettings() {
+    const select = document.getElementById("settings-auto-calculate");
+    if (select) {
+        setAutoCalculateMode(select.value);
+        if (select.value !== "desativado" && estado.id) {
+            recalcularNotaAlbum();
+        }
+        render();
+        renderLibrary();
+    }
+}
 
 // ===== APARÊNCIA & TEMAS =====
 function getVisualSettings() {
@@ -843,6 +1002,7 @@ async function importarTXT(event) {
             capa: data.images[0].url,
             link: data.external_urls.spotify,
             albumNota: 0,
+            albumNotaCalculada: 0,
             tracks: data.tracks.items.map((t) => ({
                 nome: t.name,
                 nota: 0,
@@ -857,11 +1017,16 @@ async function importarTXT(event) {
 
         // Lê as notas de cada faixa
         lines.forEach(line => {
-            const match = line.match(/^\d+\.\s+(.+?)\s+-\s+([\d.]+)\/9\s*(👑)?/);
+            const match = line.match(/^\d+\.\s+(.+?)\s+-\s+([\d.]+)\/(9|5)\s*(👑)?/);
             if (match) {
                 const trackName = match[1];
-                const nota = parseFloat(match[2]);
-                const fav = !!match[3];
+                let nota = parseFloat(match[2]);
+                const max = parseInt(match[3], 10);
+                const fav = !!match[4];
+
+                if (max === 5) {
+                    nota = deEscala(nota);
+                }
 
                 const trackIndex = estado.tracks.findIndex(t => t.nome === trackName);
                 if (trackIndex !== -1) {
@@ -874,7 +1039,21 @@ async function importarTXT(event) {
         // Lê a nota geral do álbum (estrelas)
         const estrelasLine = lines.find(l => l.includes("★") || l.includes("☆"));
         if (estrelasLine) {
-            estado.albumNota = (estrelasLine.match(/★/g) || []).length;
+            const countFull = (estrelasLine.match(/★/g) || []).length;
+            const countEmpty = (estrelasLine.match(/☆/g) || []).length;
+            const total = countFull + countEmpty;
+            if (total === 5) {
+                estado.albumNota = deEscala(countFull);
+            } else {
+                estado.albumNota = countFull;
+            }
+        }
+
+        // Calcula a nota automática do álbum se a configuração estiver ativa
+        if (getAutoCalculateMode() !== "desativado") {
+            recalcularNotaAlbum();
+        } else {
+            estado.albumNotaCalculada = 0;
         }
 
         if (index !== -1) {
@@ -990,9 +1169,9 @@ function renderDashboard() {
     // 2. Média geral de notas
     let sumNotas = 0;
     historico.forEach(r => {
-        sumNotas += (r.albumNota || 0);
+        sumNotas += (getEffectiveAlbumNota(r) || 0);
     });
-    const mediaGeral = totalAlbums > 0 ? (sumNotas / totalAlbums).toFixed(1) : "0.0";
+    const mediaGeral = totalAlbums > 0 ? formatarNotaExibicao(sumNotas / totalAlbums).toFixed(1) : "0.0";
     document.getElementById("dash-average-score").textContent = mediaGeral;
 
     // 3. Artista mais ouvido
@@ -1040,8 +1219,8 @@ function renderDashboard() {
                 }
             });
         }
-        if (r.albumNota > maxNota) {
-            maxNota = r.albumNota;
+        if (getEffectiveAlbumNota(r) > maxNota) {
+            maxNota = getEffectiveAlbumNota(r);
             bestAlbum = r;
         }
     });
@@ -1052,7 +1231,9 @@ function renderDashboard() {
     const bestAlbumEl = document.getElementById("dash-best-album");
     if (bestAlbumEl) {
         if (bestAlbum) {
-            const displayStr = `${bestAlbum.album} (${bestAlbum.albumNota}/9)`;
+            const scale = getRatingScale();
+            const maxScore = scale === "5" ? "/5" : "/9";
+            const displayStr = `${bestAlbum.album} (${formatarNotaExibicao(getEffectiveAlbumNota(bestAlbum))}${maxScore})`;
             bestAlbumEl.textContent = displayStr;
             bestAlbumEl.title = displayStr;
         } else {
@@ -1062,15 +1243,46 @@ function renderDashboard() {
     }
 
     // 4. Distribuição de Notas (Gráfico de Barras Vertical com Eixo Y e Grid Lines)
-    const counts = Array(10).fill(0); // Índices de 0 a 9
+    const scale = getRatingScale();
+    const maxStars = scale === "5" ? 5 : 9;
+    const isBase5 = (scale === "5");
+
+    // Gerar lista de valores possíveis dependendo da escala ativa
+    const ratingValues = [];
+    const stepVal = isBase5 ? 0.5 : 1;
+    for (let val = stepVal; val <= maxStars; val += stepVal) {
+        ratingValues.push(val);
+    }
+
+    // Inicializa a contagem para cada valor possível
+    const counts = {};
+    ratingValues.forEach(val => {
+        counts[val] = 0;
+    });
+
     historico.forEach(r => {
-        const note = Math.round(r.albumNota);
-        if (note >= 1 && note <= 9) {
+        const rawNote = aEscalaProporcional(getEffectiveAlbumNota(r));
+        const note = isBase5 ? (Math.round(rawNote * 2) / 2) : Math.round(rawNote);
+        if (counts[note] !== undefined) {
             counts[note]++;
         }
     });
 
-    const maxRatingCount = Math.max(...counts.slice(1), 1);
+    const maxRatingCountRaw = Math.max(...Object.values(counts), 1);
+
+    // Escolhe o melhor tamanho de passo (1, 2, 5, 10, 20, 50, etc.)
+    // para que a quantidade de divisões/ticks no eixo Y fique entre 2 e 5.
+    const steps = [1, 2, 5, 10, 20, 50, 100, 250, 500, 1000];
+    let step = 1;
+    for (const s of steps) {
+        if (Math.ceil(maxRatingCountRaw / s) <= 5) {
+            step = s;
+            break;
+        }
+    }
+
+    // O valor máximo do gráfico será o próximo múltiplo do passo escolhido
+    const chartMaxVal = Math.ceil(maxRatingCountRaw / step) * step;
 
     // Gerar ticks do Eixo Y e Linhas de Grade dinamicamente
     const yAxisContainer = document.getElementById("chart-y-axis");
@@ -1080,21 +1292,14 @@ function renderDashboard() {
         yAxisContainer.innerHTML = "";
         gridLinesContainer.innerHTML = "";
 
-        let ticks = [];
-        if (maxRatingCount <= 3) {
-            for (let i = maxRatingCount; i >= 0; i--) {
-                ticks.push(i);
-            }
-        } else {
-            const t1 = maxRatingCount;
-            const t2 = Math.round(maxRatingCount * 2 / 3);
-            const t3 = Math.round(maxRatingCount / 3);
-            const t4 = 0;
-            ticks = [...new Set([t1, t2, t3, t4])];
+        // Gerar os ticks de 0 até chartMaxVal de step em step
+        const ticks = [];
+        for (let val = 0; val <= chartMaxVal; val += step) {
+            ticks.push(val);
         }
 
         ticks.forEach(val => {
-            const pct = (val / maxRatingCount) * 100;
+            const pct = (val / chartMaxVal) * 100;
 
             // Marcação no Eixo Y
             const tick = document.createElement("span");
@@ -1114,9 +1319,9 @@ function renderDashboard() {
     const chartContainer = document.getElementById("rating-distribution-chart");
     chartContainer.innerHTML = "";
 
-    for (let i = 1; i <= 9; i++) {
-        const count = counts[i];
-        const pct = (count / maxRatingCount) * 100;
+    ratingValues.forEach(val => {
+        const count = counts[val];
+        const pct = (count / chartMaxVal) * 100;
 
         const col = document.createElement("div");
         col.className = "chart-col";
@@ -1130,7 +1335,7 @@ function renderDashboard() {
 
         const label = document.createElement("span");
         label.className = "chart-label";
-        label.textContent = `${i}★`;
+        label.textContent = val;
 
         barWrapper.appendChild(bar);
         col.append(barWrapper, label);
@@ -1140,11 +1345,11 @@ function renderDashboard() {
         setTimeout(() => {
             bar.style.height = `${pct}%`;
         }, 50);
-    }
+    });
 
     // 5. Top 10 Álbuns
     const topAlbums = [...historico]
-        .sort((a, b) => (b.albumNota || 0) - (a.albumNota || 0))
+        .sort((a, b) => (getEffectiveAlbumNota(b) || 0) - (getEffectiveAlbumNota(a) || 0))
         .slice(0, 10);
 
     const topContainer = document.getElementById("dash-top-albums");
@@ -1176,7 +1381,8 @@ function renderDashboard() {
 
             const score = document.createElement("span");
             score.className = "dash-top-album-score";
-            score.textContent = `${rev.albumNota}/9`;
+            const maxScore = getRatingScale() === "5" ? "/5" : "/9";
+            score.textContent = `${formatarNotaExibicao(getEffectiveAlbumNota(rev))}${maxScore}`;
 
             item.append(img, info, score);
 
@@ -1283,8 +1489,8 @@ function renderLibrary() {
             valA = getSortableDate(a.data);
             valB = getSortableDate(b.data);
         } else if (sortBy === 'score') {
-            valA = a.albumNota || 0;
-            valB = b.albumNota || 0;
+            valA = getEffectiveAlbumNota(a) || 0;
+            valB = getEffectiveAlbumNota(b) || 0;
         } else if (sortBy === 'tracks_count') {
             valA = a.tracks ? a.tracks.length : 0;
             valB = b.tracks ? b.tracks.length : 0;
@@ -1329,7 +1535,8 @@ function renderLibrary() {
 
         const score = document.createElement("span");
         score.className = "library-card-score";
-        score.textContent = `★ ${rev.albumNota}/9`;
+        const maxScore = getRatingScale() === "5" ? "/5" : "/9";
+        score.textContent = `★ ${formatarNotaExibicao(getEffectiveAlbumNota(rev))}${maxScore}`;
 
         const date = document.createElement("span");
         date.className = "library-card-date";
@@ -1407,22 +1614,22 @@ function limparTudo() {
 let datepickerActiveDate = new Date(); // Para controlar o mês/ano ativo no visualizador do calendário
 
 function inicializarControlesCustomizados() {
-    // 1. DROPDOWN DE ORDENAÇÃO
-    const customSelect = document.getElementById("custom-sort-select");
-    const nativeSelect = document.getElementById("library-sort-by");
+    // 1. DROPDOWNS CUSTOMIZADOS GERAIS
+    document.querySelectorAll(".custom-select").forEach(customSel => {
+        const nativeSel = customSel.previousElementSibling;
+        if (!nativeSel || nativeSel.tagName !== "SELECT") return;
 
-    if (customSelect && nativeSelect) {
-        const trigger = customSelect.querySelector(".custom-select-trigger");
+        const trigger = customSel.querySelector(".custom-select-trigger");
+        if (!trigger) return;
         const triggerText = trigger.querySelector("span");
-        const optionsContainer = customSelect.querySelector(".custom-options");
-        const options = customSelect.querySelectorAll(".custom-option");
+        const options = customSel.querySelectorAll(".custom-option");
 
         // Sincroniza estado inicial do trigger
-        const selectedOpt = nativeSelect.querySelector(`option[value="${nativeSelect.value}"]`);
-        if (selectedOpt) {
+        const selectedOpt = nativeSel.querySelector(`option[value="${nativeSel.value}"]`);
+        if (selectedOpt && triggerText) {
             triggerText.textContent = selectedOpt.textContent;
             options.forEach(opt => {
-                if (opt.getAttribute("data-value") === nativeSelect.value) {
+                if (opt.getAttribute("data-value") === nativeSel.value) {
                     opt.classList.add("selected");
                 } else {
                     opt.classList.remove("selected");
@@ -1431,41 +1638,46 @@ function inicializarControlesCustomizados() {
         }
 
         // Clique no trigger abre/fecha
-        trigger.addEventListener("click", () => {
-            // Fecha os outros se estiverem abertos
+        trigger.addEventListener("click", (e) => {
+            e.stopPropagation();
+            // Fecha outros dropdowns/datepickers
+            document.querySelectorAll(".custom-select").forEach(cs => {
+                if (cs !== customSel) cs.classList.remove("active");
+            });
             document.getElementById("datepicker-calendar")?.classList.remove("open");
             document.getElementById("datepicker-trigger")?.classList.remove("active");
 
-            customSelect.classList.toggle("active");
+            customSel.classList.toggle("active");
         });
 
         // Clique nas opções
         options.forEach(opt => {
             opt.addEventListener("click", () => {
                 const val = opt.getAttribute("data-value");
-                nativeSelect.value = val;
+                nativeSel.value = val;
 
                 // Atualiza classes selecionadas
                 options.forEach(o => o.classList.remove("selected"));
                 opt.classList.add("selected");
-                triggerText.textContent = opt.textContent;
+                if (triggerText) triggerText.textContent = opt.textContent;
 
-                customSelect.classList.remove("active");
+                customSel.classList.remove("active");
 
-                // Dispara evento de mudança no select nativo para rodar o renderLibrary()
-                nativeSelect.dispatchEvent(new Event("change"));
+                // Dispara evento de mudança no select nativo
+                nativeSel.dispatchEvent(new Event("change"));
             });
         });
-    }
+    });
 
     // 2. DATEPICKER CUSTOMIZADO
     const datepickerTrigger = document.getElementById("datepicker-trigger");
     const datepickerCalendar = document.getElementById("datepicker-calendar");
 
     if (datepickerTrigger && datepickerCalendar) {
-        datepickerTrigger.addEventListener("click", () => {
-            // Fecha o outro se estiver aberto
-            document.getElementById("custom-sort-select")?.classList.remove("active");
+        datepickerTrigger.addEventListener("click", (e) => {
+            e.stopPropagation();
+            // Fecha custom-selects se estiverem abertos
+            document.querySelectorAll(".custom-select").forEach(cs => cs.classList.remove("active"));
 
             const isOpen = datepickerCalendar.classList.toggle("open");
             datepickerTrigger.classList.toggle("active", isOpen);
@@ -1489,14 +1701,16 @@ function inicializarControlesCustomizados() {
         const btnNext = document.getElementById("datepicker-next-month");
 
         if (btnPrev) {
-            btnPrev.addEventListener("click", () => {
+            btnPrev.addEventListener("click", (e) => {
+                e.stopPropagation();
                 datepickerActiveDate.setMonth(datepickerActiveDate.getMonth() - 1);
                 renderizarCalendario();
             });
         }
 
         if (btnNext) {
-            btnNext.addEventListener("click", () => {
+            btnNext.addEventListener("click", (e) => {
+                e.stopPropagation();
                 datepickerActiveDate.setMonth(datepickerActiveDate.getMonth() + 1);
                 renderizarCalendario();
             });
@@ -1505,9 +1719,11 @@ function inicializarControlesCustomizados() {
 
     // Fechar ao clicar fora usando .contains()
     document.addEventListener("click", (e) => {
-        if (customSelect && !customSelect.contains(e.target)) {
-            customSelect.classList.remove("active");
-        }
+        document.querySelectorAll(".custom-select").forEach(cs => {
+            if (!cs.contains(e.target)) {
+                cs.classList.remove("active");
+            }
+        });
         if (datepickerCalendar && datepickerTrigger && !datepickerCalendar.contains(e.target) && !datepickerTrigger.contains(e.target)) {
             datepickerCalendar.classList.remove("open");
             datepickerTrigger.classList.remove("active");

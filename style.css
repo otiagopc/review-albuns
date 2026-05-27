@@ -673,7 +673,7 @@ button svg {
 .review-workspace {
     display: flex;
     flex-direction: column;
-    gap: 32px;
+    gap: calc(var(--spacing) + 8px);
     height: 100%;
     width: 100%;
     max-width: 100%;
@@ -686,7 +686,6 @@ button svg {
     display: flex;
     gap: 20px;
     align-items: center;
-    padding-bottom: 16px;
     border-bottom: none;
     width: 100%;
     max-width: 100%;
@@ -938,6 +937,15 @@ button svg {
     gap: 6px;
 }
 
+.estrelas.stars-calculated {
+    opacity: 0.85;
+    pointer-events: none;
+}
+
+.estrelas.stars-calculated .star {
+    cursor: default;
+}
+
 .star {
     font-size: 30px;
     cursor: pointer;
@@ -1166,6 +1174,10 @@ button svg {
     box-sizing: border-box;
     isolation: isolate;
     overflow: hidden;
+}
+
+.tracks-list h3 {
+    margin-left: 10px;
 }
 
 .track {
@@ -1398,9 +1410,7 @@ button svg {
     color: var(--text-color);
     background: rgba(255, 255, 255, 0.03);
     font-weight: 700;
-    text-transform: uppercase;
-    font-size: 0.8rem;
-    letter-spacing: 1px;
+    font-size: 0.9rem;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     transition: var(--transition-fast);
 }
@@ -1427,10 +1437,6 @@ button svg {
     transform: translateY(-2px);
 }
 
-.btn-copy:hover {
-    border-color: var(--color-primary-light);
-    box-shadow: 0 0 15px rgba(var(--color-primary-rgb), var(--glow-alpha-low));
-}
 
 /* ===== CARREGAMENTO (SPINNER) ===== */
 .spinner-container {
@@ -1516,7 +1522,7 @@ button svg {
 .editor-layout {
     display: grid;
     grid-template-columns: 280px 1fr;
-    gap: 32px;
+    gap: 24px;
     align-items: start;
 }
 
@@ -1525,7 +1531,7 @@ button svg {
     .editor-layout {
         display: flex;
         flex-direction: column;
-        gap: var(--spacing);
+        gap: calc(var(--spacing) + 8px);
         width: 100%;
         max-width: 100%;
         box-sizing: border-box;
@@ -2529,7 +2535,9 @@ button svg {
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.05);
     box-sizing: border-box;
     isolation: isolate;
-    overflow: hidden;
+    overflow: visible;
+    max-width: 380px;
+    width: 100%;
     transition: border-color var(--transition-fast), background var(--transition-fast), box-shadow var(--transition-fast), transform var(--transition-fast);
 }
 
