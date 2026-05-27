@@ -169,24 +169,14 @@ function criarEstrelas(container, valorAtual, onClick, isAlbum = false) {
     const stars = [];
     const scale = getRatingScale();
     const maxStars = scale === "5" ? 5 : 9;
-    // Se for escala 5, ou se for track (não isAlbum), permite meia estrela
     const permiteMeia = (scale === "5") || !isAlbum;
 
+    // Criar os elementos visuais das estrelas
     for (let i = 1; i <= maxStars; i++) {
         const star = document.createElement("span");
         star.className = "star";
         stars.push(star);
         container.appendChild(star);
-
-        star.onclick = (e) => {
-            if (!permiteMeia) {
-                onClick(i);
-            } else {
-                const rect = star.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                onClick(x < rect.width / 2 ? i - 0.5 : i);
-            }
-        };
     }
 
     function pintar(valor, isHover = false) {
@@ -205,18 +195,124 @@ function criarEstrelas(container, valorAtual, onClick, isAlbum = false) {
 
     pintar(valorAtual, false);
 
-    stars.forEach((star, index) => {
-        star.addEventListener("mousemove", (e) => {
-            const rect = star.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            let preview = index + 1;
+    // Calcular o valor com base na coordenada horizontal do ponteiro
+    function calcularValor(clientX) {
+        if (stars.length === 0) return 0;
+        const firstRect = stars[0].getBoundingClientRect();
+        const lastRect = stars[stars.length - 1].getBoundingClientRect();
 
-            if (permiteMeia && x < rect.width / 2) preview -= 0.5;
-            pintar(preview, true);
-        });
-    });
+        if (clientX < firstRect.left) {
+            return 0;
+        }
+        if (clientX > lastRect.right) {
+            return maxStars;
+        }
 
-    container.addEventListener("mouseleave", () => pintar(valorAtual, false));
+        // Tenta encontrar a estrela específica sob o ponteiro
+        for (let idx = 0; idx < stars.length; idx++) {
+            const rect = stars[idx].getBoundingClientRect();
+            if (clientX >= rect.left && clientX <= rect.right) {
+                if (!permiteMeia) {
+                    return idx + 1;
+                } else {
+                    const relativeX = clientX - rect.left;
+                    return relativeX < rect.width / 2 ? idx + 0.5 : idx + 1;
+                }
+            }
+        }
+
+        // Fallback: calcula qual estrela está mais próxima caso esteja no espaço entre estrelas (gaps)
+        let closestIdx = 0;
+        let minDistance = Infinity;
+        for (let idx = 0; idx < stars.length; idx++) {
+            const rect = stars[idx].getBoundingClientRect();
+            const starCenter = rect.left + rect.width / 2;
+            const dist = Math.abs(clientX - starCenter);
+            if (dist < minDistance) {
+                minDistance = dist;
+                closestIdx = idx;
+            }
+        }
+
+        if (!permiteMeia) {
+            return closestIdx + 1;
+        } else {
+            const rect = stars[closestIdx].getBoundingClientRect();
+            const relativeX = clientX - rect.left;
+            return relativeX < rect.width / 2 ? closestIdx + 0.5 : closestIdx + 1;
+        }
+    }
+
+    // Configurar o contêiner para não scrollar no mobile ao arrastar nas estrelas
+    container.style.touchAction = "none";
+    container.style.userSelect = "none";
+    container.style.webkitUserSelect = "none";
+
+    let isDragging = false;
+    let lastValue = valorAtual;
+
+    container.onpointerdown = (e) => {
+        // Ignora se for clique na coroa
+        if (e.target && e.target.closest('.crown-btn')) return;
+        // Ignora se o clique for fora dos limites físicos das estrelas
+        const firstRect = stars[0].getBoundingClientRect();
+        const lastRect = stars[stars.length - 1].getBoundingClientRect();
+        const starsTop = firstRect.top;
+        const starsBottom = firstRect.bottom;
+        if (e.clientX < firstRect.left || e.clientX > lastRect.right ||
+            e.clientY < starsTop || e.clientY > starsBottom) return;
+        // Aceita apenas clique esquerdo do mouse ou interações touch
+        if (e.button !== 0 && e.pointerType === "mouse") return;
+        
+        isDragging = true;
+        container.setPointerCapture(e.pointerId);
+        
+        const val = calcularValor(e.clientX);
+        lastValue = val;
+        pintar(val, true);
+    };
+
+    container.onpointermove = (e) => {
+        if (isDragging) {
+            const val = calcularValor(e.clientX);
+            lastValue = val;
+            pintar(val, true);
+        } else {
+            const isOverCrown = e.target && e.target.closest('.crown-btn');
+            const firstRect = stars[0].getBoundingClientRect();
+            const lastRect = stars[stars.length - 1].getBoundingClientRect();
+
+            if (isOverCrown || e.clientX < firstRect.left || e.clientX > lastRect.right) {
+                pintar(valorAtual, false);
+            } else {
+                // Preview de hover padrão
+                const val = calcularValor(e.clientX);
+                pintar(val, true);
+            }
+        }
+    };
+
+    container.onpointerup = (e) => {
+        if (isDragging) {
+            container.releasePointerCapture(e.pointerId);
+            isDragging = false;
+            onClick(lastValue);
+        }
+    };
+
+    container.onpointercancel = (e) => {
+        if (isDragging) {
+            container.releasePointerCapture(e.pointerId);
+            isDragging = false;
+            pintar(valorAtual, false);
+        }
+    };
+
+    container.onpointerleave = () => {
+        if (!isDragging) {
+            pintar(valorAtual, false);
+        }
+    };
 }
 
 // ===== RENDER =====
