@@ -54,6 +54,27 @@ function formatarTempoTotal(ms) {
     return `${minutos} min`;
 }
 
+function formatarTempoTotalDashboard(ms) {
+    if (!ms) return "0 min";
+    const totalSegundos = Math.floor(ms / 1000);
+    const minutos = Math.floor(totalSegundos / 60);
+    const horas = Math.floor(minutos / 60);
+    const minsRestantes = minutos % 60;
+    
+    if (horas >= 24) {
+        const dias = Math.floor(horas / 24);
+        const horasRestantes = horas % 24;
+        if (horasRestantes > 0) {
+            return `${dias}d ${horasRestantes}h`;
+        }
+        return `${dias}d`;
+    }
+    if (horas > 0) {
+        return `${horas}h ${minsRestantes}m`;
+    }
+    return `${minutos} min`;
+}
+
 function calcularDuracaoTotal(tracks) {
     if (!tracks || !Array.isArray(tracks)) return 0;
     return tracks.reduce((sum, t) => sum + (t.duration_ms || 0), 0);
@@ -1278,9 +1299,10 @@ function renderDashboard() {
     }
     document.getElementById("dash-top-artist").textContent = topArtist !== "-" ? `${topArtist} (${maxCount}x)` : "-";
 
-    // 3.1. Músicas Avaliadas, Músicas Favoritas, Melhor Avaliado e Lista de Favoritas
+    // 3.1. Músicas Avaliadas, Tempo Total, Melhor Avaliado e Lista de Favoritas
     let totalTracks = 0;
     let totalFavTracks = 0;
+    let totalDurationMs = 0;
     let bestAlbum = null;
     let maxNota = -1;
     const favorites = [];
@@ -1289,6 +1311,7 @@ function renderDashboard() {
         if (r.tracks && Array.isArray(r.tracks)) {
             totalTracks += r.tracks.length;
             r.tracks.forEach(t => {
+                totalDurationMs += (t.duration_ms || 0);
                 if (t.fav) {
                     totalFavTracks++;
                     favorites.push({
@@ -1309,7 +1332,15 @@ function renderDashboard() {
     });
 
     document.getElementById("dash-total-tracks").textContent = totalTracks;
-    document.getElementById("dash-total-favorites").textContent = totalFavTracks;
+    
+    const durationEl = document.getElementById("dash-total-duration");
+    if (durationEl) {
+        durationEl.textContent = formatarTempoTotalDashboard(totalDurationMs);
+        const totalSegundos = Math.floor(totalDurationMs / 1000);
+        const minutos = Math.floor(totalSegundos / 60);
+        const horas = Math.floor(minutos / 60);
+        durationEl.title = `Total exato: ${horas}h ${minutos % 60}m`;
+    }
 
     const bestAlbumEl = document.getElementById("dash-best-album");
     if (bestAlbumEl) {
@@ -1561,7 +1592,21 @@ function renderLibrary() {
         return;
     }
 
+    const searchInput = document.getElementById("library-search");
+    const busca = searchInput ? searchInput.value.toLowerCase().trim() : "";
+
     let filteredHistorico = [...historico];
+    if (busca) {
+        filteredHistorico = filteredHistorico.filter(r => 
+            (r.album && r.album.toLowerCase().includes(busca)) || 
+            (r.artista && r.artista.toLowerCase().includes(busca))
+        );
+    }
+
+    if (filteredHistorico.length === 0) {
+        libraryGrid.innerHTML = `<p class="empty-library-msg">nenhum álbum encontrado para "${busca}"</p>`;
+        return;
+    }
 
     // ORDENAÇÃO
     const sortBy = document.getElementById("library-sort-by").value;
@@ -1821,7 +1866,39 @@ function inicializarControlesCustomizados() {
                 w.classList.remove("active");
             }
         });
+        
+        // Fechar busca da biblioteca ao clicar fora
+        const searchWrapper = document.getElementById("library-search-wrapper");
+        const searchInput = document.getElementById("library-search");
+        if (searchWrapper && searchInput && !searchWrapper.contains(e.target)) {
+            if (searchWrapper.classList.contains("expanded")) {
+                const hadValue = searchInput.value !== "";
+                searchInput.value = "";
+                searchWrapper.classList.remove("expanded");
+                if (hadValue) {
+                    renderLibrary();
+                }
+            }
+        }
     });
+}
+
+function toggleLibrarySearch(e) {
+    if (e) {
+        e.stopPropagation();
+        e.preventDefault();
+    }
+    const wrapper = document.getElementById("library-search-wrapper");
+    const input = document.getElementById("library-search");
+    if (!wrapper || !input) return;
+
+    const isExpanded = wrapper.classList.contains("expanded");
+    if (!isExpanded) {
+        wrapper.classList.add("expanded");
+        setTimeout(() => {
+            input.focus();
+        }, 50);
+    }
 }
 
 // ===== MENU DROPDOWN & CLIPBOARD ACTIONS =====
