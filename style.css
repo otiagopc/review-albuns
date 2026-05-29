@@ -1,7 +1,7 @@
 :root {
-    /* Palette (HSL) */
+    /* Paleta de Cores (HSL) */
     --hue-primary: 141;
-    /* Spotify Green */
+    /* Verde Spotify */
 
     --color-primary: hsl(var(--hue-primary), 73%, 42%);
     --color-primary-light: hsl(var(--hue-primary), 75%, 55%);
@@ -33,11 +33,11 @@
     --transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-slow: 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 
-    /* Spacing System (Desktop baseline) */
+    /* Sistema de Espaçamento */
     --spacing: 24px;
 
     --bg-blur: 40px;
-    --bg-brightness: 0.4;
+    --bg-brightness: 0.6;
 
     --glow-alpha-low: 0.25;
     --glow-alpha-medium: 0.5;
@@ -83,7 +83,7 @@ body {
     overflow-x: hidden;
 }
 
-/* Background image blending (for dynamic cover background with blur) */
+/* Mescla da imagem de fundo (para fundo dinâmico com blur da capa) */
 body::before,
 body::after {
     content: "";
@@ -145,7 +145,7 @@ body.bg-active-2::after {
     margin-bottom: 12px;
 }
 
-/* ===== APP CONTAINER ===== */
+/* Container Principal da Aplicação */
 .app-container {
     display: grid;
     grid-template-columns: 130px 1fr;
@@ -157,7 +157,6 @@ body.bg-active-2::after {
     box-sizing: border-box;
 }
 
-/* ===== COMMON CARD PATTERN ===== */
 /* ===== BARRA LATERAL DEDICADA DE NAVEGAÇÃO (NAV SIDEBAR) ===== */
 .nav-sidebar {
     background: var(--panel-bg);
@@ -241,7 +240,7 @@ body.bg-active-2::after {
     transition: var(--transition-fast);
 }
 
-/* Active indicator vertical bar */
+/* Barra vertical indicadora de item ativo */
 .nav-item.active::before {
     content: "";
     position: absolute;
@@ -265,9 +264,7 @@ body.bg-active-2::after {
     box-shadow: inset 0 0 8px rgba(var(--color-primary-rgb), 0.05);
 }
 
-/* ==========================================================================
-   📟 MODO TABLET — BARRA DE NAVEGAÇÃO E APP CONTAINER (max-width: 980px)
-   ========================================================================== */
+/* Responsividade para Tablet (max-width: 980px) */
 @media (max-width: 980px) {
     :root {
         --spacing: 16px;
@@ -334,9 +331,7 @@ body.bg-active-2::after {
     }
 }
 
-/* ==========================================================================
-   📱 [MODO CELULAR] — APP CONTAINER AJUSTE (max-width: 650px)
-   ========================================================================== */
+/* Responsividade para Celular (max-width: 650px) */
 @media (max-width: 650px) {
     :root {
         --spacing: 8px;
@@ -363,27 +358,6 @@ body.bg-active-2::after {
     transform: scale(1.1);
 }
 
-/* Sidebar divider */
-.divider {
-    border: none;
-    border-top: 2px solid var(--border-color);
-    margin: 4px 0;
-}
-
-/* History block inside sidebar */
-.history-section {
-    background: var(--card-bg);
-    border: 2px solid rgba(255, 255, 255, 0.03);
-    border-radius: var(--radius-lg);
-    padding: 20px 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    flex-grow: 1;
-    overflow-y: auto;
-    min-height: 200px;
-}
-
 .history-header {
     display: flex;
     justify-content: center;
@@ -398,11 +372,6 @@ body.bg-active-2::after {
     color: #ffffff;
     text-transform: uppercase;
     letter-spacing: 1px;
-}
-
-.backup-buttons {
-    display: flex;
-    gap: 6px;
 }
 
 .btn-icon {
@@ -510,9 +479,9 @@ body.bg-active-2::after {
     transform: scale(1.1);
 }
 
-/* ===== ÁREA PRINCIPAL (MAIN CONTENT) ===== */
+/* Área Principal (Main Content) */
 
-/* ===== CABEÇALHO PRINCIPAL COM BARRA DE BUSCA HORIZONTAL ===== */
+/* Cabeçalho Principal e Barra de Busca */
 .main-header {
     display: flex;
     justify-content: space-between;
@@ -523,7 +492,7 @@ body.bg-active-2::after {
     flex-shrink: 0;
 }
 
-/* Horizontal Search Box Input */
+/* Input de busca de links do Spotify */
 .search-input {
     flex: 1;
     min-width: min(290px, 100%);
@@ -558,7 +527,7 @@ body.bg-active-2::after {
     box-sizing: border-box;
 }
 
-/* Header Action Buttons */
+/* Botões de Ação do Cabeçalho */
 .header-buttons {
     display: flex;
     gap: 12px;
@@ -577,9 +546,7 @@ body.bg-active-2::after {
     box-sizing: border-box;
 }
 
-/* ==========================================================================
-   📟 [MODO TABLET] — CABEÇALHO E BARRA DE BUSCA (max-width: 720px)
-   ========================================================================== */
+/* Responsividade do Cabeçalho para Tablet (max-width: 720px) */
 @media (max-width: 720px) {
     .main-header {
         flex-direction: column;
@@ -591,7 +558,7 @@ body.bg-active-2::after {
         width: 100%;
         min-width: 0;
         flex: none;
-        /* Prevents height collapse in flex column layout */
+        /* Impede o colapso de altura no layout flex em coluna */
     }
 
     .header-buttons {
@@ -601,12 +568,12 @@ body.bg-active-2::after {
     .header-buttons button,
     .header-buttons .btn-secondary {
         flex: 1;
-        /* Both buttons take exactly 50% width */
+        /* Botões com 50% de largura cada no tablet/celular */
         justify-content: center;
     }
 }
 
-/* Button style reset/helpers & Standard styles */
+/* Estilos Padronizados dos Botões */
 button {
     font-family: inherit;
     font-size: 0.9rem;
@@ -623,7 +590,7 @@ button svg {
     flex-shrink: 0;
 }
 
-/* 1. Verde (Green style) - linear gradient corresponding to note distribution, clear border */
+/* Botão Principal Verde (Gradiente) */
 .btn-primary {
     background: linear-gradient(90deg, hsl(var(--hue-primary), 75%, 55%) 0%, hsl(var(--hue-primary), 73%, 42%) 100%);
     border: 2px solid var(--color-primary-light);
@@ -639,7 +606,7 @@ button svg {
     transform: translateY(-2px);
 }
 
-/* 2. Vidro (Glass style) - transparent background, glass border */
+/* Botão Secundário Vidro (Transparente) */
 .btn-secondary {
     background: rgba(255, 255, 255, 0.03);
     border: 2px solid var(--border-color);
@@ -654,7 +621,7 @@ button svg {
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
 }
 
-/* Empty State / Placeholder */
+/* Estado Vazio (Placeholder) */
 .empty-state {
     width: 100%;
     max-width: 540px;
@@ -681,7 +648,7 @@ button svg {
     box-sizing: border-box;
 }
 
-/* ===== CABEÇALHO DO ÁLBUM (WORKSPACE HEADER) ===== */
+/* Cabeçalho do Álbum no Editor */
 .album-header {
     display: flex;
     gap: 20px;
@@ -692,9 +659,7 @@ button svg {
     box-sizing: border-box;
 }
 
-/* ==========================================================================
-   📱 [MODO CELULAR] — CABEÇALHO DO ÁLBUM (max-width: 650px)
-   ========================================================================== */
+/* Responsividade do Cabeçalho do Álbum para Celular (max-width: 650px) */
 @media (max-width: 650px) {
     .album-header {
         flex-direction: column;
@@ -766,8 +731,6 @@ button svg {
 
 }
 
-
-
 .capa-wrapper {
     position: relative;
     width: 220px;
@@ -823,7 +786,7 @@ button svg {
     margin-top: 2px;
 }
 
-/* 🖥️ [MODO DESKTOP / TABLET] — GRID DO CABEÇALHO (min-width: 651px) */
+/* Grid do Cabeçalho para Desktop e Tablet (min-width: 651px) */
 @media (min-width: 651px) {
     .album-info {
         display: grid;
@@ -857,7 +820,7 @@ button svg {
     }
 }
 
-/* 📟 [MODO TABLET] — AJUSTES DE METADADOS DO ÁLBUM (min-width: 651px e max-width: 860px) */
+/* Metadados do Álbum para Tablet (651px a 860px) */
 @media (min-width: 651px) and (max-width: 860px) {
     .album-meta-row {
         grid-column: 1;
@@ -893,7 +856,7 @@ button svg {
     text-shadow: none;
 }
 
-/* ===== SCORE CONTAINER & NUMERICAL DISPLAY ===== */
+/* Exibição Numérica da Nota Geral */
 .stars-score-container {
     display: flex;
     align-items: center;
@@ -906,7 +869,7 @@ button svg {
 
 .stars-score-container .estrelas {
     transform: translateY(6px);
-    /* Nudge stars down slightly */
+    /* Ajuste de alinhamento das estrelas */
 }
 
 .album-score-value {
@@ -930,7 +893,7 @@ button svg {
     margin-left: 2px;
 }
 
-/* ===== ESTRELAS COM BRILHO NEON ===== */
+/* Widget de Estrelas com Brilho Neon */
 .estrelas {
     display: flex;
     align-items: center;
@@ -988,7 +951,7 @@ button svg {
     transform: scale(1.3);
 }
 
-/* ===== INPUT DE DATA ===== */
+/* Campo de Data da Review */
 
 .date-input-container {
     position: relative;
@@ -1036,7 +999,7 @@ button svg {
     color: var(--color-primary-light);
 }
 
-/* ===== DYNAMIC GLASS DROPDOWNS & POPUPS (UNIFIED STYLE) ===== */
+/* Estilo Glassmorphic para Dropdowns e Menus */
 .dropdown-menu,
 .custom-options {
     background-color: rgba(13, 17, 28, .75);
@@ -1045,7 +1008,7 @@ button svg {
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
 }
 
-/* ===== UNIFIED DROPDOWN TRIGGER BUTTONS ===== */
+/* Botões de Abertura de Dropdown Unificados */
 .custom-select,
 .btn-secondary {
     background-color: rgba(255, 255, 255, 0.04) !important;
@@ -1076,7 +1039,7 @@ button svg {
     transform: translateY(-2px) !important;
 }
 
-/* ===== LISTA DE FAIXAS (PLAYLIST) ===== */
+/* Seção de Tracklist (Faixas do Álbum) */
 .tracks-list {
     display: flex;
     flex-direction: column;
@@ -1117,7 +1080,7 @@ button svg {
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
 }
 
-/* Track Name Wrapper layout */
+/* Estrutura do Título da Faixa */
 .track-name-container {
     display: flex;
     align-items: center;
@@ -1125,7 +1088,7 @@ button svg {
     flex-grow: 1;
     max-width: 60%;
     min-width: 0;
-    /* Enable shrinking for ellipsis */
+    /* Habilita encolhimento para exibição de reticências */
 }
 
 .track-index {
@@ -1153,7 +1116,7 @@ button svg {
     align-items: center;
     gap: 20px;
     flex-shrink: 0;
-    /* Prevent right side elements from being pushed or compressed */
+    /* Impede a compressão dos controles à direita */
 }
 
 .track-duration {
@@ -1163,7 +1126,7 @@ button svg {
     opacity: 0.85;
 }
 
-/* ===== COROA (FAVORITA) ===== */
+/* Botão de Coroa para Faixa Favorita */
 .crown-btn {
     background: transparent;
     border: none;
@@ -1199,9 +1162,7 @@ button svg {
     filter: drop-shadow(0 0 8px rgba(250, 204, 21, var(--glow-alpha-high)));
 }
 
-/* ==========================================================================
-   📱 [MODO CELULAR] — LISTA DE FAIXAS / TRACKLIST (max-width: 650px)
-   ========================================================================== */
+/* Responsividade da Tracklist para Celular (max-width: 650px) */
 @media (max-width: 650px) {
     .track {
         position: relative;
@@ -1274,7 +1235,7 @@ button svg {
     stroke: none;
 }
 
-/* ===== ANOTAÇÕES DA REVIEW ===== */
+/* Campo de Anotações/Resenha */
 .notes-container {
     display: flex;
     flex-direction: column;
@@ -1310,7 +1271,7 @@ button svg {
     color: var(--text-muted);
 }
 
-/* ===== BOTÕES DE AÇÕES ===== */
+/* Botões de Ação do Editor (Salvar/Exportar) */
 .album-actions {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -1318,7 +1279,6 @@ button svg {
     width: 100%;
     box-sizing: border-box;
 }
-
 
 .btn-action {
     width: 100%;
@@ -1341,7 +1301,7 @@ button svg {
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
 }
 
-/* ===== CUSTOM DROPDOWNS FOR ACTIONS ===== */
+/* Dropdowns Customizados das Ações */
 .dropdown-wrapper {
     position: relative;
     display: inline-flex;
@@ -1384,7 +1344,7 @@ button svg {
     box-shadow: 0 0 12px rgba(var(--color-primary-rgb), var(--glow-alpha-low)) !important;
 }
 
-/* Header dropdown expands downwards, aligned right */
+/* Dropdown do cabeçalho alinhado para baixo e à direita */
 #import-dropdown {
     top: calc(100% + 8px);
     right: 0;
@@ -1396,7 +1356,7 @@ button svg {
     transform: translateY(0);
 }
 
-/* Editor dropdown expands upwards, centered */
+/* Dropdown do editor alinhado para cima e centralizado */
 #export-dropdown {
     bottom: calc(100% + 8px);
     left: 50%;
@@ -1457,8 +1417,7 @@ button svg {
     transform: translateY(-2px);
 }
 
-
-/* ===== CARREGAMENTO (SPINNER) ===== */
+/* Indicador Visual de Carregamento (Spinner) */
 .spinner-container {
     display: flex;
     justify-content: center;
@@ -1486,8 +1445,6 @@ button svg {
     }
 }
 
-
-
 .top-albums-list {
     margin-top: 16px;
     display: flex;
@@ -1495,9 +1452,7 @@ button svg {
     gap: 8px;
 }
 
-
-
-/* Animations helper */
+/* Helpers de Animação */
 @keyframes fadeInUp {
     from {
         opacity: 0;
@@ -1520,7 +1475,7 @@ button svg {
     }
 }
 
-/* ===== ABA VISIBILITY & ANIMATION ===== */
+/* Visibilidade e Transições entre Abas SPA */
 .app-view {
     display: none;
     animation: fadeInView 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
@@ -1538,7 +1493,7 @@ button svg {
     }
 }
 
-/* ===== EDITOR LAYOUT (REVIEWS VIEW) ===== */
+/* Layout do Editor de Reviews */
 .editor-layout {
     display: grid;
     grid-template-columns: 280px 1fr;
@@ -1546,7 +1501,7 @@ button svg {
     align-items: start;
 }
 
-/* 🖥️ [DESKTOP AJUSTE] — LAYOUT EM COLUNA DO EDITOR (max-width: 1300px) */
+/* Responsividade do Editor para Telas Médias (max-width: 1300px) */
 @media (max-width: 1300px) {
     .editor-layout {
         display: flex;
@@ -1593,7 +1548,7 @@ button svg {
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.3);
 }
 
-/* 🖥️ [DESKTOP AJUSTE] — EDITOR SIDEBAR FIXO (min-width: 1401px) */
+/* Fixação do Histórico Lateral em Telas Grandes (min-width: 1401px) */
 @media (min-width: 1401px) {
     .editor-sidebar {
         position: sticky;
@@ -1610,7 +1565,7 @@ button svg {
     box-sizing: border-box;
 }
 
-/* ===== DASHBOARD PANELS & CARDS ===== */
+/* Painéis e Cards do Dashboard */
 .dashboard-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -1632,7 +1587,7 @@ button svg {
     overflow: hidden;
     container-type: inline-size;
     height: 128px;
-    /* Fixed default height */
+    /* Altura padrão fixa */
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.2);
 }
 
@@ -1724,7 +1679,7 @@ button svg {
     isolation: isolate;
     overflow: hidden;
 
-    /* Make the entire container square and compact */
+    /* Contêiner de métricas compacto e quadrado */
     width: 100%;
     max-width: 340px;
     aspect-ratio: 1 / 1;
@@ -1758,9 +1713,7 @@ button svg {
     color: #ffffff;
 }
 
-/* ==========================================================================
-   📟 [MODO TABLET] — GRID DO DASHBOARD (max-width: 1024px)
-   ========================================================================== */
+/* Responsividade do Dashboard para Tablet (max-width: 1024px) */
 @media (max-width: 1024px) {
     .dashboard-row {
         grid-template-columns: 1fr;
@@ -1788,7 +1741,7 @@ button svg {
     }
 }
 
-/* VERTICAL RATING CHART (RYM / Spotify Wrapped Style with Grid Lines & Y-Axis) */
+/* Gráfico de Distribuição de Avaliações */
 .chart-container-wrapper {
     display: grid;
     grid-template-columns: 24px 1fr;
@@ -1802,7 +1755,7 @@ button svg {
 .chart-y-axis {
     position: relative;
     height: calc(100% - 24px);
-    /* Aligns with bar heights, excluding labels */
+    /* Alinhamento das linhas de grade */
     margin-bottom: 24px;
 }
 
@@ -1825,7 +1778,7 @@ button svg {
     position: absolute;
     top: 0;
     height: calc(100% - 24px);
-    /* Aligns with bar heights, excluding labels */
+    /* Alinhamento com a altura das barras, excluindo os rótulos */
     left: 0;
     right: 0;
     pointer-events: none;
@@ -1876,7 +1829,7 @@ button svg {
 .chart-bar {
     width: 100%;
     height: 0;
-    /* Animated in JS */
+    /* Barras com animação via JS */
     background: linear-gradient(180deg, hsl(var(--hue-primary), 75%, 55%) 0%, hsl(var(--hue-primary), 73%, 48%) 100%);
     border: 2px solid var(--color-primary-light);
     border-radius: 3px;
@@ -1893,7 +1846,7 @@ button svg {
     height: 16px;
 }
 
-/* TOP ALBUMS DASHBOARD LIST */
+/* Lista de Top Álbuns no Dashboard */
 .dash-top-album-item {
     display: flex;
     align-items: center;
@@ -1958,7 +1911,7 @@ button svg {
     padding: 20px 0;
 }
 
-/* ===== LIBRARY GRID VIEW ===== */
+/* Visualização da Biblioteca (Grade de Cards) */
 .library-title {
     font-size: 2.2rem;
     font-weight: 800;
@@ -2006,7 +1959,7 @@ button svg {
     text-transform: lowercase;
 }
 
-/* ===== CUSTOM SELECT DROPDOWN ===== */
+/* Seletores Customizados (Configurações e Ordenação) */
 .custom-select-wrapper {
     position: relative;
     user-select: none;
@@ -2124,7 +2077,7 @@ button svg {
     transform: translateY(-2px);
 }
 
-/* Glued Sorting Controls Group */
+/* Controles de Ordenação e Filtragem */
 .control-group {
     display: flex;
     align-items: center;
@@ -2150,7 +2103,6 @@ button svg {
     border-bottom-left-radius: 0 !important;
     margin-left: 0 !important;
 }
-
 
 .library-grid {
     display: grid;
@@ -2322,7 +2274,7 @@ button svg {
     background: rgba(255, 255, 255, 0.01);
 }
 
-/* Layout Toggle Buttons */
+/* Botões de Alternar Layout (Grade/Lista) */
 .layout-toggle-group {
     display: flex;
     gap: 4px;
@@ -2360,7 +2312,7 @@ button svg {
     background: rgba(var(--color-primary-rgb), 0.12);
 }
 
-/* Compact List View in Library */
+/* Visualização em Lista Compacta na Biblioteca */
 .library-grid.list-view {
     display: flex;
     flex-direction: column;
@@ -2459,7 +2411,7 @@ button svg {
     transform: none;
 }
 
-/* Responsividade do layout de lista compacta */
+/* Responsividade da Lista para Telas Menores */
 @media (max-width: 980px) {
     .library-grid.list-view .library-card-notes {
         display: none;
@@ -2538,7 +2490,7 @@ button svg {
     }
 }
 
-/* ===== SETTINGS VIEW ===== */
+/* Layout da Tela de Opções (Configurações) */
 .settings-container {
     display: flex;
     flex-direction: column;
@@ -2654,82 +2606,7 @@ button svg {
     transform: translateY(-2px);
 }
 
-.info-section {
-    padding-top: 24px;
-    border-top: none;
-}
-
-/* ===== CHANGELOG TIMELINE (SOBRE O GERADOR) ===== */
-.changelog-container {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    margin-top: 20px;
-    position: relative;
-    padding-left: 20px;
-}
-
-/* Linha vertical do tempo */
-.changelog-container::before {
-    content: "";
-    position: absolute;
-    left: 4px;
-    top: 10px;
-    bottom: 10px;
-    width: 2px;
-    background: rgba(255, 255, 255, 0.08);
-}
-
-.changelog-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 16px;
-    position: relative;
-}
-
-/* Marcador (ponto) na linha do tempo */
-.changelog-item::before {
-    content: "";
-    position: absolute;
-    left: -20px;
-    top: 8px;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--text-muted);
-    border: 2px solid var(--bg-color);
-    transition: var(--transition-fast);
-    z-index: 1;
-}
-
-.changelog-item:hover::before {
-    background: var(--color-primary-light);
-    box-shadow: 0 0 10px rgba(var(--color-primary-rgb), var(--glow-alpha-high));
-    transform: scale(1.3);
-}
-
-.changelog-version {
-    font-size: 0.72rem;
-    font-weight: 800;
-    color: var(--color-primary-light);
-    background: rgba(var(--color-primary-rgb), 0.12);
-    padding: 3px 8px;
-    border-radius: var(--radius-sm);
-    min-width: 46px;
-    text-align: center;
-    border: 2px solid rgba(var(--color-primary-rgb), 0.2);
-    text-shadow: 0 0 8px rgba(var(--color-primary-rgb), var(--glow-alpha-low));
-    flex-shrink: 0;
-}
-
-.changelog-text {
-    font-size: 0.82rem;
-    color: var(--text-muted);
-    line-height: 1.5;
-    flex: 1;
-}
-
-/* ===== FAVORITES PANEL (DASHBOARD) ===== */
+/* Painel de Músicas Favoritas no Dashboard */
 .favorites-panel {
     background: var(--panel-bg);
     border: 2px solid var(--border-color);
@@ -2817,7 +2694,7 @@ button svg {
     text-shadow: 0 0 8px rgba(250, 204, 21, var(--glow-alpha-medium));
 }
 
-/* ===== RATING CHART HEADER SUMMARY ===== */
+/* Resumo Numérico do Painel de Distribuição */
 .chart-title {
     margin-bottom: 4px !important;
     border-bottom: none !important;
@@ -2847,18 +2724,14 @@ button svg {
     font-family: monospace;
 }
 
-/* ==========================================================================
-   🖥️ [DESKTOP AJUSTE] — PAINÉIS DO DASHBOARD (max-width: 1120px)
-   ========================================================================== */
+/* Responsividade dos Painéis do Dashboard (max-width: 1120px) */
 @media (max-width: 1120px) {
     .dashboard-grid {
         grid-template-columns: repeat(2, 1fr);
     }
 }
 
-/* ==========================================================================
-   📱 [MODO CELULAR] — AJUSTES DA BIBLIOTECA E CARDS (max-width: 650px / 580px)
-   ========================================================================== */
+/* Responsividade da Biblioteca para Celular (max-width: 650px) */
 @media (max-width: 650px) {
     .library-header-row {
         flex-direction: column;
@@ -2882,7 +2755,7 @@ button svg {
     }
 }
 
-/* ===== ESTILOS ADICIONAIS PARA CONTROLES DE APARÊNCIA E PERSONALIZAÇÃO ===== */
+/* Estilos de Aparência Estáticos do Tema */
 .settings-control {
     display: flex;
     flex-direction: column;
@@ -2890,174 +2763,7 @@ button svg {
     margin-top: 8px;
 }
 
-.control-label-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 0.8rem;
-    font-weight: 700;
-    color: var(--text-muted);
-}
-
-.control-value {
-    font-family: monospace;
-    color: var(--color-primary-light);
-}
-
-.slider-container {
-    position: relative;
-    width: 100%;
-    padding: 8px 0;
-    display: flex;
-    align-items: center;
-}
-
-.settings-slider {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 100%;
-    height: 6px;
-    border-radius: 3px;
-    background: rgba(255, 255, 255, 0.08);
-    outline: none;
-    transition: background var(--transition-fast);
-    position: relative;
-    z-index: 2;
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-.slider-default-marker {
-    position: absolute;
-    top: 50%;
-    width: 10px;
-    height: 10px;
-    background-color: var(--text-muted);
-    border-radius: 50%;
-    transform: translate(-50%, -50%);
-    pointer-events: none;
-    z-index: 1;
-    opacity: 0.6;
-}
-
-.settings-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 14px;
-    height: 14px;
-    border-radius: 50%;
-    background: var(--color-primary-light);
-    cursor: pointer;
-    box-shadow: 0 0 10px rgba(var(--color-primary-rgb), var(--glow-alpha-medium));
-    transition: transform var(--transition-fast);
-}
-
-.settings-slider::-webkit-slider-thumb:hover {
-    transform: scale(1.2);
-}
-
-.settings-slider::-moz-range-thumb {
-    width: 14px;
-    height: 14px;
-    border: none;
-    border-radius: 50%;
-    background: var(--color-primary-light);
-    cursor: pointer;
-    box-shadow: 0 0 10px rgba(var(--color-primary-rgb), var(--glow-alpha-medium));
-    transition: transform var(--transition-fast);
-}
-
-.settings-slider::-moz-range-thumb:hover {
-    transform: scale(1.2);
-}
-
-.settings-slider::-moz-range-track {
-    background: transparent;
-    border: none;
-}
-
-.theme-picker {
-    display: flex;
-    gap: 12px;
-    margin-top: 8px;
-}
-
-.theme-dot {
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    border: 2px solid transparent;
-    cursor: pointer;
-    transition: transform var(--transition-fast), border-color var(--transition-fast);
-}
-
-.theme-dot:hover {
-    transform: scale(1.15);
-}
-
-.theme-dot.active {
-    border-color: #ffffff;
-    transform: scale(1.15);
-    box-shadow: 0 0 12px rgba(255, 255, 255, var(--glow-alpha-medium));
-}
-
-.toggle-control-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 8px;
-    font-size: 0.85rem;
-    font-weight: 700;
-    color: var(--text-muted);
-}
-
-.switch-container {
-    position: relative;
-    display: inline-block;
-    width: 44px;
-    height: 22px;
-}
-
-.switch-container input {
-    opacity: 0;
-    width: 0;
-    height: 0;
-}
-
-.switch-slider {
-    position: absolute;
-    cursor: pointer;
-    inset: 0;
-    background-color: rgba(255, 255, 255, 0.08);
-    border: 2px solid var(--border-color);
-    border-radius: 22px;
-    transition: var(--transition-fast);
-}
-
-.switch-slider:before {
-    position: absolute;
-    content: "";
-    height: 12px;
-    width: 12px;
-    left: 3px;
-    bottom: 3px;
-    background-color: var(--text-muted);
-    border-radius: 50%;
-    transition: var(--transition-fast);
-}
-
-.switch-container input:checked+.switch-slider {
-    background-color: rgba(var(--color-primary-rgb), 0.1);
-    border-color: var(--color-primary-light);
-}
-
-.switch-container input:checked+.switch-slider:before {
-    transform: translateX(22px);
-    background-color: var(--color-primary-light);
-}
-
-/* ===== BUSCA DA BIBLIOTECA ===== */
+/* Campo de Busca Expansível na Biblioteca */
 .library-search-wrapper {
     position: relative;
     display: flex;
@@ -3128,7 +2834,7 @@ button svg {
     background-color: transparent !important;
     border-color: transparent !important;
     box-shadow: none !important;
-    pointer-events: none; /* Funciona como ícone estático quando aberta */
+    pointer-events: none; /* Ícone de busca estático quando expandido */
     transform: none !important;
 }
 
@@ -3156,13 +2862,13 @@ button svg {
         align-items: center !important;
         gap: 12px !important;
     }
-    
+
     .library-search-wrapper {
         width: 100% !important;
         min-width: 0 !important;
     }
 
-    /* Força exibição expandida em celular por padrão */
+    /* Força barra de busca aberta em telas móveis */
     .library-search-input {
         opacity: 1 !important;
         pointer-events: auto !important;
@@ -3205,7 +2911,7 @@ button svg {
         min-width: 0 !important;
         width: 100% !important;
     }
-    
+
     .library-controls .layout-toggle-group {
         display: flex !important;
         gap: 6px !important;

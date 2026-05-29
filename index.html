@@ -4,70 +4,29 @@
 <head>
   <meta charset="UTF-8">
   <title>loopd</title>
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMiIgaGVpZ2h0PSIzMiIgdmlld0JveD0iLTEuMiAtMS4yIDI2LjQgMjYuNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMURCOTU0IiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+IDxwb2x5bGluZSBwb2ludHM9IjE3IDEgMjEgNSAxNyA5Ij48L3BvbHlsaW5lPiA8cGF0aCBkPSJNMyAxMVY5YTQgNCAwIDAgMSA0LTRoMTQiPjwvcGF0aD4gPHBvbHlsaW5lIHBvaW50cz0iNyAyMyAzIDE5IDcgMTUiPjwvcG9seWxpbmU+IDxwYXRoIGQ9Ik0yMSAxM3YyYTQgNCAwIDAgMS00IDRIMyI+PC9wYXRoPiA8L3N2Zz4=">
-  <link rel="shortcut icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMiIgaGVpZ2h0PSIzMiIgdmlld0JveD0iLTEuMiAtMS4yIDI2LjQgMjYuNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMURCOTU0IiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+IDxwb2x5bGluZSBwb2ludHM9IjE3IDEgMjEgNSAxNyA5Ij48L3BvbHlsaW5lPiA8cGF0aCBkPSJNMyAxMVY5YTQgNCAwIDAgMSA0LTRoMTQiPjwvcGF0aD4gPHBvbHlsaW5lIHBvaW50cz0iNyAyMyAzIDE5IDcgMTUiPjwvcG9seWxpbmU+IDxwYXRoIGQ9Ik0yMSAxM3YyYTQgNCAwIDAgMS00IDRIMyI+PC9wYXRoPiA8L3N2Zz4=">
+  <link rel="icon" type="image/svg+xml"
+    href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMiIgaGVpZ2h0PSIzMiIgdmlld0JveD0iLTEuMiAtMS4yIDI2LjQgMjYuNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMURCOTU0IiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+IDxwb2x5bGluZSBwb2ludHM9IjE3IDEgMjEgNSAxNyA5Ij48L3BvbHlsaW5lPiA8cGF0aCBkPSJNMyAxMVY5YTQgNCAwIDAgMSA0LTRoMTQiPjwvcGF0aD4gPHBvbHlsaW5lIHBvaW50cz0iNyAyMyAzIDE5IDcgMTUiPjwvcG9seWxpbmU+IDxwYXRoIGQ9Ik0yMSAxM3YyYTQgNCAwIDAgMS00IDRIMyI+PC9wYXRoPiA8L3N2Zz4=">
+  <link rel="shortcut icon" type="image/svg+xml"
+    href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMiIgaGVpZ2h0PSIzMiIgdmlld0JveD0iLTEuMiAtMS4yIDI2LjQgMjYuNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMURCOTU0IiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+IDxwb2x5bGluZSBwb2ludHM9IjE3IDEgMjEgNSAxNyA5Ij48L3BvbHlsaW5lPiA8cGF0aCBkPSJNMyAxMVY5YTQgNCAwIDAgMSA0LTRoMTQiPjwvcGF0aD4gPHBvbHlsaW5lIHBvaW50cz0iNyAyMyAzIDE5IDcgMTUiPjwvcG9seWxpbmU+IDxwYXRoIGQ9Ik0yMSAxM3YyYTQgNCAwIDAgMS00IDRIMyI+PC9wYXRoPiA8L3N2Zz4=">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
-  <script>
-    // Carregar configurações visuais antes do render para evitar flash de cor padrão (verde)
-    (function() {
-      try {
-        const settings = JSON.parse(localStorage.getItem("visual-settings") || "{}");
-        const blur = settings.blur !== undefined ? settings.blur : 40;
-        const opacity = settings.opacity !== undefined ? settings.opacity : 40;
-        const hue = settings.accentHue !== undefined ? settings.accentHue : 141;
-        const glow = settings.glow !== undefined ? settings.glow : true;
-
-        const doc = document.documentElement;
-        doc.style.setProperty('--bg-blur', `${blur}px`);
-        doc.style.setProperty('--bg-brightness', 1 - (opacity / 100));
-        doc.style.setProperty('--hue-primary', hue);
-
-        const accentColors = {
-          141: "29, 185, 84",
-          270: "135, 50, 230",
-          200: "30, 144, 255",
-          330: "255, 20, 147",
-          25: "255, 100, 30"
-        };
-        const rgb = accentColors[hue] || "29, 185, 84";
-        doc.style.setProperty('--color-primary-rgb', rgb);
-
-        const alphas = {
-          'low': glow ? '0.25' : '0',
-          'medium': glow ? '0.5' : '0',
-          'high': glow ? '0.75' : '0',
-          'max': glow ? '1.0' : '0'
-        };
-
-        for (const [key, val] of Object.entries(alphas)) {
-          doc.style.setProperty(`--glow-alpha-${key}`, val);
-        }
-      } catch (e) {
-        console.error("Erro ao aplicar configurações visuais antecipadas:", e);
-      }
-    })();
-  </script>
 </head>
 
 <body>
-
   <div class="app-container">
-    <!-- BARRA LATERAL DEDICADA DE NAVEGAÇÃO -->
+    <!-- Barra lateral de navegação principal (SPA) -->
     <aside class="nav-sidebar">
       <div class="logo-area">
         <h1><span>loopd</span></h1>
       </div>
 
-      <!-- MENU DE NAVEGAÇÃO DO MOCKUP -->
       <nav class="nav-menu">
         <a href="#" id="nav-library" class="nav-item active" onclick="switchView('library')">
           <svg class="nav-icon" viewBox="0 0 24 24" width="24" height="24">
-            <path
-              d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 19.5A2.5 2.5 0 0 0 6.5 22H20M4 19.5V5A2.5 2.5 0 0 1 6.5 2.5H20v14H6.5" />
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 19.5A2.5 2.5 0 0 0 6.5 22H20M4 19.5V5A2.5 2.5 0 0 1 6.5 2.5H20v14H6.5" />
           </svg>
           <span>biblioteca</span>
         </a>
@@ -88,17 +47,16 @@
         <a href="#" id="nav-settings" class="nav-item" onclick="switchView('settings')">
           <svg class="nav-icon" viewBox="0 0 24 24" width="24" height="24">
             <circle cx="12" cy="12" r="3" />
-            <path
-              d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
           </svg>
           <span>opções</span>
         </a>
       </nav>
     </aside>
 
-    <!-- CONTEÚDO PRINCIPAL -->
+    <!-- Conteúdo principal da aplicação -->
     <main class="main-content">
-      <!-- CABEÇALHO SUPERIOR (BUSCA E AÇÕES GERAIS) -->
+      <!-- Cabeçalho superior com barra de busca e importador -->
       <header class="main-header">
         <input type="text" id="url" class="search-input" placeholder="cole o link do album do spotify aqui">
 
@@ -107,8 +65,9 @@
           <div class="dropdown-wrapper">
             <button class="btn-secondary dropdown-trigger" onclick="toggleDropdown(event, 'import-dropdown')">
               <span>importar review</span>
-              <svg class="chevron-icon" viewBox="0 0 24 24" width="14" height="14" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 8px; flex-shrink: 0;">
+              <svg class="chevron-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                style="margin-left: 8px; flex-shrink: 0;">
                 <polyline points="6 9 12 15 18 9"></polyline>
               </svg>
             </button>
@@ -134,7 +93,7 @@
         </div>
       </header>
 
-      <!-- ABA DASHBOARD -->
+      <!-- Aba do Dashboard -->
       <div id="view-dashboard" class="app-view">
         <div class="dashboard-grid">
           <div class="stat-card">
@@ -190,9 +149,9 @@
         </div>
 
         <div class="dashboard-row">
-          <!-- Coluna Esquerda (Gráfico e Músicas Favoritas) -->
+          <!-- Coluna esquerda: gráfico e músicas favoritas -->
           <div class="dashboard-col-left">
-            <!-- Gráfico de Distribuição de Notas -->
+            <!-- Gráfico de distribuição de notas -->
             <div class="chart-panel">
               <h3 class="chart-title">distribuição de notas</h3>
               <div class="chart-stats-summary-row">
@@ -204,35 +163,35 @@
                 <div class="chart-main-area">
                   <div id="chart-grid-lines" class="chart-grid-lines"></div>
                   <div id="rating-distribution-chart" class="bar-chart">
-                    <!-- Gerado via JS -->
+                    <!-- Gerado dinamicamente via script.js -->
                   </div>
                 </div>
               </div>
             </div>
 
-            <!-- Painel de Músicas Favoritas -->
+            <!-- Painel de músicas favoritas -->
             <div class="favorites-panel">
               <h3>músicas favoritas</h3>
               <div id="dash-favorites-list" class="favorites-list">
-                <!-- Gerado via JS -->
+                <!-- Gerado dinamicamente via script.js -->
               </div>
             </div>
           </div>
 
-          <!-- Top Albuns list -->
+          <!-- Coluna direita: Top 10 álbuns -->
           <div class="top-albums-panel">
             <h3>seu top 10 álbuns</h3>
             <div id="dash-top-albums" class="top-albums-list">
-              <!-- Gerado via JS -->
+              <!-- Gerado dinamicamente via script.js -->
             </div>
           </div>
         </div>
       </div>
 
-      <!-- ABA REVIEWS (EDITOR) -->
+      <!-- Aba do Editor de Reviews -->
       <div id="view-reviews" class="app-view" style="display: none;">
         <div class="editor-layout has-placeholder">
-          <!-- HISTÓRICO (PLAYLISTS SALVAS) DENTRO DO EDITOR -->
+          <!-- Barra lateral com histórico de reviews -->
           <aside class="editor-sidebar" id="editor-sidebar">
             <div class="history-header">
               <h2>histórico de reviews</h2>
@@ -240,18 +199,16 @@
             <div id="historico"></div>
           </aside>
 
-          <!-- ÁREA DO EDITOR -->
+          <!-- Painel principal do editor de review -->
           <div class="editor-main">
-            <p id="placeholder" class="empty-state">cole o link de um álbum do spotify no cabeçalho ou selecione um do
-              histórico para começar a sua avaliação!</p>
+            <p id="placeholder" class="empty-state">cole o link de um álbum do spotify no cabeçalho ou selecione um do histórico para começar a sua avaliação!</p>
 
             <div id="loading" class="spinner-container" style="display: none;">
               <div class="spinner"></div>
             </div>
 
-            <!-- WORKSPACE DE REVIEW -->
+            <!-- Formulários e controles do editor de review ativo -->
             <div class="review-workspace">
-
               <div id="header" class="album-header" style="display: none;">
                 <div class="capa-wrapper">
                   <img id="capa" alt="capa do album" />
@@ -265,8 +222,7 @@
                     <div id="album-meta-info" class="album-meta-info"></div>
                   </div>
                   <div class="stars-score-container">
-                    <span id="album-score-value" class="album-score-value"><span class="current-score">0</span><span
-                        class="max-score">/9</span></span>
+                    <span id="album-score-value" class="album-score-value"><span class="current-score">0</span><span class="max-score">/9</span></span>
                     <div id="album-stars" class="estrelas"></div>
                   </div>
                   <div class="date-input-container">
@@ -282,13 +238,10 @@
                 </div>
               </div>
 
-
-
               <div id="tracks" class="tracks-list" style="display: none;"></div>
 
               <div id="notes-container" class="notes-container" style="display: none;">
-                <textarea id="review-notes" class="review-notes"
-                  placeholder="escreva sua resenha ou anotações sobre o álbum aqui..."></textarea>
+                <textarea id="review-notes" class="review-notes" placeholder="escreva sua resenha ou anotações sobre o álbum aqui..."></textarea>
               </div>
 
               <div id="album-actions" class="album-actions" style="display: none;">
@@ -298,7 +251,8 @@
                     onclick="toggleDropdown(event, 'export-dropdown')" style="width: 100%;">
                     <span>exportar review</span>
                     <svg class="chevron-icon" viewBox="0 0 24 24" width="14" height="14" fill="none"
-                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 8px; flex-shrink: 0;">
+                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                      style="margin-left: 8px; flex-shrink: 0;">
                       <polyline points="18 15 12 9 6 15"></polyline>
                     </svg>
                   </button>
@@ -321,31 +275,34 @@
                   </div>
                 </div>
               </div>
-
             </div>
           </div>
         </div>
       </div>
 
-      <!-- ABA LIBRARY -->
+      <!-- Aba de Biblioteca de Reviews -->
       <div id="view-library" class="app-view" style="display: none;">
         <h2 class="library-title">sua biblioteca de reviews</h2>
         <div class="library-header-row">
           <p class="section-description">todos os álbuns salvos por você</p>
 
-          <!-- CONTROLES DE ORDENAÇÃO -->
+          <!-- Filtros, busca e controles de visualização -->
           <div class="library-controls">
-            <!-- BUSCA RÁPIDA -->
+            <!-- Barra de busca rápida -->
             <div class="library-search-wrapper" id="library-search-wrapper">
-              <button id="library-search-btn" class="btn-icon-toggle library-search-btn" onclick="toggleLibrarySearch(event)" title="buscar">
-                <svg class="library-search-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <button id="library-search-btn" class="btn-icon-toggle library-search-btn"
+                onclick="toggleLibrarySearch(event)" title="buscar">
+                <svg class="library-search-icon" viewBox="0 0 24 24" width="16" height="16" fill="none"
+                  stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                   <circle cx="11" cy="11" r="8"></circle>
                   <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                 </svg>
               </button>
-              <input type="text" id="library-search" class="library-search-input" placeholder="buscar álbum ou artista..." oninput="renderLibrary()">
+              <input type="text" id="library-search" class="library-search-input"
+                placeholder="buscar álbum ou artista..." oninput="renderLibrary()">
             </div>
 
+            <!-- Controles de ordenação -->
             <div class="control-group">
               <label for="library-sort-by">ordenar por:</label>
               <div class="custom-select-wrapper">
@@ -379,6 +336,8 @@
                 </svg>
               </button>
             </div>
+
+            <!-- Alternar layout (grade ou lista) -->
             <div class="layout-toggle-group">
               <button id="layout-grid-btn" class="btn-layout-toggle active" onclick="setLibraryLayout('grid')"
                 title="visualização em grade">
@@ -406,79 +365,14 @@
           </div>
         </div>
         <div id="library-grid" class="library-grid">
-          <!-- Cards de reviews gerados dinamicamente -->
+          <!-- Cards de reviews gerados dinamicamente via script.js -->
         </div>
       </div>
 
-      <!-- ABA SETTINGS -->
+      <!-- Aba de Opções/Configurações -->
       <div id="view-settings" class="app-view" style="display: none;">
         <div class="settings-container">
           <h2>configurações e dados</h2>
-
-          <div class="settings-section">
-            <h3>aparência e personalização</h3>
-            <p class="section-description">ajuste o visual da aplicação de acordo com a sua preferência.</p>
-
-            <div class="settings-cards">
-              <div class="settings-card">
-                <h4>fundo dinâmico</h4>
-                <p>desfoque da capa e escurecimento do plano de fundo.</p>
-                <div class="settings-control">
-                  <div class="control-label-row">
-                    <label for="settings-blur">desfoque (blur):</label>
-                    <span id="val-blur" class="control-value">40px</span>
-                  </div>
-                  <div class="slider-container">
-                    <input type="range" id="settings-blur" class="settings-slider" min="10" max="100" value="40"
-                      step="5" oninput="updateVisualSettings()">
-                    <span class="slider-default-marker" style="left: calc(7px + (100% - 14px) * (1 / 3));"
-                      title="Padrão: 40px"></span>
-                  </div>
-                </div>
-                <div class="settings-control">
-                  <div class="control-label-row">
-                    <label for="settings-opacity">escurecimento (overlay):</label>
-                    <span id="val-opacity" class="control-value">40%</span>
-                  </div>
-                  <div class="slider-container">
-                    <input type="range" id="settings-opacity" class="settings-slider" min="20" max="90" value="40"
-                      step="5" oninput="updateVisualSettings()">
-                    <span class="slider-default-marker" style="left: calc(7px + (100% - 14px) * (2 / 7));"
-                      title="Padrão: 40%"></span>
-                  </div>
-                </div>
-              </div>
-
-              <div class="settings-card">
-                <h4>cor de destaque</h4>
-                <p>escolha a tonalidade das estrelas, botões e elementos de foco.</p>
-                <div class="theme-picker">
-                  <button class="theme-dot" data-hue="141" style="background-color: hsl(141, 73%, 42%);"
-                    onclick="setAccentColor(141, this)" title="Spotify Verde"></button>
-                  <button class="theme-dot" data-hue="270" style="background-color: hsl(270, 73%, 55%);"
-                    onclick="setAccentColor(270, this)" title="Roxo Sintetizador"></button>
-                  <button class="theme-dot" data-hue="200" style="background-color: hsl(200, 73%, 50%);"
-                    onclick="setAccentColor(200, this)" title="Azul Cyberpunk"></button>
-                  <button class="theme-dot" data-hue="330" style="background-color: hsl(330, 75%, 55%);"
-                    onclick="setAccentColor(330, this)" title="Rosa Neon"></button>
-                  <button class="theme-dot" data-hue="25" style="background-color: hsl(25, 75%, 50%);"
-                    onclick="setAccentColor(25, this)" title="Laranja Vinil"></button>
-                </div>
-              </div>
-
-              <div class="settings-card">
-                <h4>brilho luminoso (glow)</h4>
-                <p>ativa ou desativa o efeito neon nas estrelas e na capa do álbum.</p>
-                <div class="toggle-control-row">
-                  <span>habilitar efeito glow</span>
-                  <label class="switch-container">
-                    <input type="checkbox" id="settings-glow" checked onchange="updateVisualSettings()">
-                    <span class="switch-slider"></span>
-                  </label>
-                </div>
-              </div>
-            </div>
-          </div>
 
           <div class="settings-section">
             <h3>sistema de avaliação</h3>
@@ -567,7 +461,6 @@
               </div>
             </div>
           </div>
-
         </div>
       </div>
     </main>

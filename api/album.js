@@ -22,7 +22,7 @@ export default async function handler(req, res) {
         });
     }
 
-    // pegar token
+    // Obtenção do token de acesso temporário da API do Spotify (autenticação Client Credentials)
     let tokenRes;
     try {
         tokenRes = await fetch("https://accounts.spotify.com/api/token", {
@@ -46,7 +46,17 @@ export default async function handler(req, res) {
         });
     }
 
-    const tokenData = await tokenRes.json();
+    let tokenData;
+    try {
+        tokenData = await tokenRes.json();
+    } catch (err) {
+        return res.status(500).json({
+            error: {
+                status: 500,
+                message: "Resposta inválida (não-JSON) do serviço de autenticação do Spotify."
+            }
+        });
+    }
     const token = tokenData.access_token;
 
     if (!token) {
@@ -58,7 +68,7 @@ export default async function handler(req, res) {
         });
     }
 
-    // pegar dados do álbum
+    // Requisição das informações detalhadas do álbum (títulos, faixas, durações e capas) no Spotify
     const albumRes = await fetch(
         `https://api.spotify.com/v1/albums/${albumId}`,
         {
@@ -69,7 +79,12 @@ export default async function handler(req, res) {
     );
 
     if (!albumRes.ok) {
-        const errorData = await albumRes.json();
+        let errorData = {};
+        try {
+            errorData = await albumRes.json();
+        } catch (err) {
+            // Ignora erro de JSON e utiliza a mensagem de erro padrão abaixo
+        }
         return res.status(albumRes.status).json({
             error: {
                 status: albumRes.status,
@@ -78,7 +93,17 @@ export default async function handler(req, res) {
         });
     }
 
-    const albumData = await albumRes.json();
+    let albumData;
+    try {
+        albumData = await albumRes.json();
+    } catch (err) {
+        return res.status(500).json({
+            error: {
+                status: 500,
+                message: "Resposta inválida (não-JSON) recebida da API do Spotify."
+            }
+        });
+    }
 
     res.status(200).json(albumData);
 }

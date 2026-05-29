@@ -1,4 +1,28 @@
-// ===== ESTADO GLOBAL =====
+// Limpeza automática de configurações visuais obsoletas do LocalStorage
+if (localStorage.getItem("visual-settings")) {
+    localStorage.removeItem("visual-settings");
+}
+
+// === 1. VARIÁVEIS DE ESTADO E VALORES GLOBAIS ===
+
+let estado = {
+    id: "",
+    album: "",
+    artista: "",
+    capa: "",
+    link: "",
+    albumNota: 0,
+    albumNotaCalculada: 0,
+    tracks: [],
+    data: "",
+    anotacoes: "",
+};
+let activeBg = 1;
+let currentCapa = "";
+let librarySortDesc = true;
+let isFirstLoad = false;
+
+// Retorna um objeto de estado vazio para redefinir o editor de reviews
 function getEmptyState() {
     return {
         id: "",
@@ -14,12 +38,23 @@ function getEmptyState() {
     };
 }
 
-let estado = getEmptyState();
-let activeBg = 1;
-let currentCapa = "";
-let librarySortDesc = true;
-let isFirstLoad = false;
+// === 2. FUNÇÕES AUXILIARES E UTILITÁRIOS ===
 
+// Retorna a data de hoje formatada como DD/MM/AAAA
+function getDataHoje() {
+    const hoje = new Date();
+    const d = String(hoje.getDate()).padStart(2, "0");
+    const m = String(hoje.getMonth() + 1).padStart(2, "0");
+    const y = hoje.getFullYear();
+    return `${d}/${m}/${y}`;
+}
+
+// Retorna o sufixo correspondente à escala ativa (/5 ou /9)
+function getMaxScoreLabel() {
+    return getRatingScale() === "5" ? "/5" : "/9";
+}
+
+// Salva automaticamente o rascunho da review caso esteja em modo de rascunho
 function autoSaveDraft() {
     if (!estado.id) return;
     if (estado.isDraft) {
@@ -32,35 +67,61 @@ function autoSaveDraft() {
     }
 }
 
-// ===== DURAÇÃO HELPERS =====
+// Redireciona a visualização para o Editor de Reviews carregando o álbum fornecido
+function navegarParaReview(rev, clonar = false) {
+    estado = clonar ? { ...rev } : rev;
+    switchView("reviews");
+    isFirstLoad = true;
+    render();
+}
+
+// Deleta uma review do histórico pelo ID ou nome sem exibir mensagem de confirmação
+function deletarReviewSemConfirmacao(revId, revAlbum, revArtista) {
+    const origHistorico = getHistorico();
+    const origIndex = origHistorico.findIndex(r => r.id === revId || (r.album === revAlbum && r.artista === revArtista));
+    if (origIndex !== -1) {
+        origHistorico.splice(origIndex, 1);
+        salvarHistorico(origHistorico);
+    }
+    if (estado.id === revId) {
+        estado = getEmptyState();
+        render();
+    }
+}
+
+// === 3. UTILITÁRIOS DE CONVERSÃO DE TEMPO E DURAÇÃO ===
+
+// Converte milissegundos em uma string formatada (MM:SS)
 function formatarTempo(ms) {
     if (!ms) return "";
     const totalSegundos = Math.floor(ms / 1000);
     const minutos = Math.floor(totalSegundos / 60);
     const segundos = totalSegundos % 60;
-    return `${minutos}:${segundos.toString().padStart(2, '0')}`;
+    return `${minutos}:${segundos.toString().padStart(2, "0")}`;
 }
 
+// Converte milissegundos na duração total exibida no editor (ex: 1h 20min ou 45 min)
 function formatarTempoTotal(ms) {
     if (!ms) return "";
     const totalSegundos = Math.floor(ms / 1000);
     const minutos = Math.floor(totalSegundos / 60);
     const horas = Math.floor(minutos / 60);
     const minsRestantes = minutos % 60;
-    
+
     if (horas > 0) {
         return `${horas}h ${minsRestantes}min`;
     }
     return `${minutos} min`;
 }
 
+// Converte milissegundos na duração total exibida no dashboard (ex: 2d 5h, 3h 15m ou 40 min)
 function formatarTempoTotalDashboard(ms) {
     if (!ms) return "0 min";
     const totalSegundos = Math.floor(ms / 1000);
     const minutos = Math.floor(totalSegundos / 60);
     const horas = Math.floor(minutos / 60);
     const minsRestantes = minutos % 60;
-    
+
     if (horas >= 24) {
         const dias = Math.floor(horas / 24);
         const horasRestantes = horas % 24;
@@ -75,20 +136,21 @@ function formatarTempoTotalDashboard(ms) {
     return `${minutos} min`;
 }
 
+// Retorna a soma da duração de todas as músicas em milissegundos
 function calcularDuracaoTotal(tracks) {
     if (!tracks || !Array.isArray(tracks)) return 0;
     return tracks.reduce((sum, t) => sum + (t.duration_ms || 0), 0);
 }
 
+// === 4. COMPONENTES VISUAIS DA INTERFACE ===
 
-// ===== UI & LOADING =====
+// Ativa ou desativa a tela de carregamento (spinner) e exibe os contêineres apropriados
 function setLoading(isLoading) {
     const loading = document.getElementById("loading");
     const placeholder = document.getElementById("placeholder");
     const header = document.getElementById("header");
     const tracksDiv = document.getElementById("tracks");
     const actionsDiv = document.getElementById("album-actions");
-
     const notesContainer = document.getElementById("notes-container");
 
     if (isLoading) {
@@ -103,7 +165,174 @@ function setLoading(isLoading) {
     }
 }
 
-// ===== API & DADOS =====
+// Utiliza a imagem de capa do álbum para aplicar de fundo da página com efeito de transição suave
+function atualizarFundo(novaCapa) {
+    if (novaCapa === currentCapa) return;
+
+    if (!novaCapa) {
+        document.body.classList.remove("bg-active-1", "bg-active-2");
+        currentCapa = "";
+        return;
+    }
+
+    activeBg = activeBg === 1 ? 2 : 1;
+    document.body.style.setProperty(`--bg-${activeBg}`, `url('${novaCapa}')`);
+
+    if (activeBg === 1) {
+        document.body.classList.add("bg-active-1");
+        document.body.classList.remove("bg-active-2");
+    } else {
+        document.body.classList.add("bg-active-2");
+        document.body.classList.remove("bg-active-1");
+    }
+
+    currentCapa = novaCapa;
+}
+
+// === 5. WIDGET INTERATIVO DE AVALIAÇÃO COM ESTRELAS ===
+
+// Cria e gerencia a barra de estrelas interativa com suporte a toque e arraste do mouse
+function criarEstrelas(container, valorAtual, onClick, isAlbum = false) {
+    container.innerHTML = "";
+    const stars = [];
+    const scale = getRatingScale();
+    const maxStars = scale === "5" ? 5 : 9;
+    const permiteMeia = (scale === "5") || !isAlbum;
+
+    for (let i = 1; i <= maxStars; i++) {
+        const star = document.createElement("span");
+        star.className = "star";
+        stars.push(star);
+        container.appendChild(star);
+    }
+
+    function pintar(valor, isHover = false) {
+        stars.forEach((star, index) => {
+            star.classList.remove("full", "half", "hover");
+            const i = index + 1;
+
+            if (valor >= i) star.classList.add("full");
+            else if (permiteMeia && valor >= i - 0.5) star.classList.add("half");
+
+            if (isHover && i <= Math.ceil(valor)) {
+                star.classList.add("hover");
+            }
+        });
+    }
+
+    pintar(valorAtual, false);
+
+    function calcularValor(clientX) {
+        if (stars.length === 0) return 0;
+        const firstRect = stars[0].getBoundingClientRect();
+        const lastRect = stars[stars.length - 1].getBoundingClientRect();
+
+        if (clientX < firstRect.left) return 0;
+        if (clientX > lastRect.right) return maxStars;
+
+        for (let idx = 0; idx < stars.length; idx++) {
+            const rect = stars[idx].getBoundingClientRect();
+            if (clientX >= rect.left && clientX <= rect.right) {
+                if (!permiteMeia) {
+                    return idx + 1;
+                } else {
+                    const relativeX = clientX - rect.left;
+                    return relativeX < rect.width / 2 ? idx + 0.5 : idx + 1;
+                }
+            }
+        }
+
+        let closestIdx = 0;
+        let minDistance = Infinity;
+        for (let idx = 0; idx < stars.length; idx++) {
+            const rect = stars[idx].getBoundingClientRect();
+            const starCenter = rect.left + rect.width / 2;
+            const dist = Math.abs(clientX - starCenter);
+            if (dist < minDistance) {
+                minDistance = dist;
+                closestIdx = idx;
+            }
+        }
+
+        if (!permiteMeia) {
+            return closestIdx + 1;
+        } else {
+            const rect = stars[closestIdx].getBoundingClientRect();
+            const relativeX = clientX - rect.left;
+            return relativeX < rect.width / 2 ? closestIdx + 0.5 : closestIdx + 1;
+        }
+    }
+
+    container.style.touchAction = "none";
+    container.style.userSelect = "none";
+    container.style.webkitUserSelect = "none";
+
+    let isDragging = false;
+    let lastValue = valorAtual;
+
+    container.onpointerdown = (e) => {
+        if (e.target && e.target.closest('.crown-btn')) return;
+        const firstRect = stars[0].getBoundingClientRect();
+        const lastRect = stars[stars.length - 1].getBoundingClientRect();
+        const starsTop = firstRect.top;
+        const starsBottom = firstRect.bottom;
+        if (e.clientX < firstRect.left || e.clientX > lastRect.right ||
+            e.clientY < starsTop || e.clientY > starsBottom) return;
+        if (e.button !== 0 && e.pointerType === "mouse") return;
+
+        isDragging = true;
+        container.setPointerCapture(e.pointerId);
+
+        const val = calcularValor(e.clientX);
+        lastValue = val;
+        pintar(val, true);
+    };
+
+    container.onpointermove = (e) => {
+        if (isDragging) {
+            const val = calcularValor(e.clientX);
+            lastValue = val;
+            pintar(val, true);
+        } else {
+            const isOverCrown = e.target && e.target.closest('.crown-btn');
+            const firstRect = stars[0].getBoundingClientRect();
+            const lastRect = stars[stars.length - 1].getBoundingClientRect();
+
+            if (isOverCrown || e.clientX < firstRect.left || e.clientX > lastRect.right) {
+                pintar(valorAtual, false);
+            } else {
+                const val = calcularValor(e.clientX);
+                pintar(val, true);
+            }
+        }
+    };
+
+    container.onpointerup = (e) => {
+        if (isDragging) {
+            container.releasePointerCapture(e.pointerId);
+            isDragging = false;
+            onClick(lastValue);
+        }
+    };
+
+    container.onpointercancel = (e) => {
+        if (isDragging) {
+            container.releasePointerCapture(e.pointerId);
+            isDragging = false;
+            pintar(valorAtual, false);
+        }
+    };
+
+    container.onpointerleave = () => {
+        if (!isDragging) {
+            pintar(valorAtual, false);
+        }
+    };
+}
+
+// === 6. INTEGRAÇÃO COM A API E CRIAÇÃO DE REVIEWS ===
+
+// Busca os dados do álbum na API do Spotify através do link do usuário
 async function gerar() {
     const url = document.getElementById("url").value.trim();
     if (!url) return alert("por favor cole um link valido do spotify!!!");
@@ -149,9 +378,7 @@ async function gerar() {
         }
 
         setLoading(false);
-        switchView('reviews');
-        isFirstLoad = true;
-        render();
+        navegarParaReview(estado);
     } catch (err) {
         setLoading(false);
         render();
@@ -160,183 +387,9 @@ async function gerar() {
     }
 }
 
-// ===== FUNDO & UI =====
-function atualizarFundo(novaCapa) {
-    if (novaCapa === currentCapa) return;
+// === 7. RENDERIZAÇÃO DO EDITOR DE REVIEW ===
 
-    if (!novaCapa) {
-        document.body.classList.remove("bg-active-1", "bg-active-2");
-        currentCapa = "";
-        return;
-    }
-
-    activeBg = activeBg === 1 ? 2 : 1;
-    document.body.style.setProperty(`--bg-${activeBg}`, `url('${novaCapa}')`);
-
-    if (activeBg === 1) {
-        document.body.classList.add("bg-active-1");
-        document.body.classList.remove("bg-active-2");
-    } else {
-        document.body.classList.add("bg-active-2");
-        document.body.classList.remove("bg-active-1");
-    }
-
-    currentCapa = novaCapa;
-}
-
-// ===== COMPONENTES =====
-function criarEstrelas(container, valorAtual, onClick, isAlbum = false) {
-    container.innerHTML = "";
-    const stars = [];
-    const scale = getRatingScale();
-    const maxStars = scale === "5" ? 5 : 9;
-    const permiteMeia = (scale === "5") || !isAlbum;
-
-    // Criar os elementos visuais das estrelas
-    for (let i = 1; i <= maxStars; i++) {
-        const star = document.createElement("span");
-        star.className = "star";
-        stars.push(star);
-        container.appendChild(star);
-    }
-
-    function pintar(valor, isHover = false) {
-        stars.forEach((star, index) => {
-            star.classList.remove("full", "half", "hover");
-            const i = index + 1;
-
-            if (valor >= i) star.classList.add("full");
-            else if (permiteMeia && valor >= i - 0.5) star.classList.add("half");
-
-            if (isHover && i <= Math.ceil(valor)) {
-                star.classList.add("hover");
-            }
-        });
-    }
-
-    pintar(valorAtual, false);
-
-    // Calcular o valor com base na coordenada horizontal do ponteiro
-    function calcularValor(clientX) {
-        if (stars.length === 0) return 0;
-        const firstRect = stars[0].getBoundingClientRect();
-        const lastRect = stars[stars.length - 1].getBoundingClientRect();
-
-        if (clientX < firstRect.left) {
-            return 0;
-        }
-        if (clientX > lastRect.right) {
-            return maxStars;
-        }
-
-        // Tenta encontrar a estrela específica sob o ponteiro
-        for (let idx = 0; idx < stars.length; idx++) {
-            const rect = stars[idx].getBoundingClientRect();
-            if (clientX >= rect.left && clientX <= rect.right) {
-                if (!permiteMeia) {
-                    return idx + 1;
-                } else {
-                    const relativeX = clientX - rect.left;
-                    return relativeX < rect.width / 2 ? idx + 0.5 : idx + 1;
-                }
-            }
-        }
-
-        // Fallback: calcula qual estrela está mais próxima caso esteja no espaço entre estrelas (gaps)
-        let closestIdx = 0;
-        let minDistance = Infinity;
-        for (let idx = 0; idx < stars.length; idx++) {
-            const rect = stars[idx].getBoundingClientRect();
-            const starCenter = rect.left + rect.width / 2;
-            const dist = Math.abs(clientX - starCenter);
-            if (dist < minDistance) {
-                minDistance = dist;
-                closestIdx = idx;
-            }
-        }
-
-        if (!permiteMeia) {
-            return closestIdx + 1;
-        } else {
-            const rect = stars[closestIdx].getBoundingClientRect();
-            const relativeX = clientX - rect.left;
-            return relativeX < rect.width / 2 ? closestIdx + 0.5 : closestIdx + 1;
-        }
-    }
-
-    // Configurar o contêiner para não scrollar no mobile ao arrastar nas estrelas
-    container.style.touchAction = "none";
-    container.style.userSelect = "none";
-    container.style.webkitUserSelect = "none";
-
-    let isDragging = false;
-    let lastValue = valorAtual;
-
-    container.onpointerdown = (e) => {
-        // Ignora se for clique na coroa
-        if (e.target && e.target.closest('.crown-btn')) return;
-        // Ignora se o clique for fora dos limites físicos das estrelas
-        const firstRect = stars[0].getBoundingClientRect();
-        const lastRect = stars[stars.length - 1].getBoundingClientRect();
-        const starsTop = firstRect.top;
-        const starsBottom = firstRect.bottom;
-        if (e.clientX < firstRect.left || e.clientX > lastRect.right ||
-            e.clientY < starsTop || e.clientY > starsBottom) return;
-        // Aceita apenas clique esquerdo do mouse ou interações touch
-        if (e.button !== 0 && e.pointerType === "mouse") return;
-        
-        isDragging = true;
-        container.setPointerCapture(e.pointerId);
-        
-        const val = calcularValor(e.clientX);
-        lastValue = val;
-        pintar(val, true);
-    };
-
-    container.onpointermove = (e) => {
-        if (isDragging) {
-            const val = calcularValor(e.clientX);
-            lastValue = val;
-            pintar(val, true);
-        } else {
-            const isOverCrown = e.target && e.target.closest('.crown-btn');
-            const firstRect = stars[0].getBoundingClientRect();
-            const lastRect = stars[stars.length - 1].getBoundingClientRect();
-
-            if (isOverCrown || e.clientX < firstRect.left || e.clientX > lastRect.right) {
-                pintar(valorAtual, false);
-            } else {
-                // Preview de hover padrão
-                const val = calcularValor(e.clientX);
-                pintar(val, true);
-            }
-        }
-    };
-
-    container.onpointerup = (e) => {
-        if (isDragging) {
-            container.releasePointerCapture(e.pointerId);
-            isDragging = false;
-            onClick(lastValue);
-        }
-    };
-
-    container.onpointercancel = (e) => {
-        if (isDragging) {
-            container.releasePointerCapture(e.pointerId);
-            isDragging = false;
-            pintar(valorAtual, false);
-        }
-    };
-
-    container.onpointerleave = () => {
-        if (!isDragging) {
-            pintar(valorAtual, false);
-        }
-    };
-}
-
-// ===== RENDER =====
+// Atualiza e desenha toda a interface do editor com base no estado atual do álbum
 function render() {
     const header = document.getElementById("header");
     const tracksDiv = document.getElementById("tracks");
@@ -376,7 +429,6 @@ function render() {
             reviewNotes.style.height = reviewNotes.scrollHeight + "px";
         };
 
-        // Ajusta o tamanho inicial se já houver texto (ex: ao importar)
         setTimeout(autoResize, 0);
 
         reviewNotes.oninput = (e) => {
@@ -403,15 +455,10 @@ function render() {
         }
     }
 
-
     const dateInput = document.getElementById("review-date");
     if (dateInput) {
         if (!estado.data) {
-            const hoje = new Date();
-            const y = hoje.getFullYear();
-            const m = String(hoje.getMonth() + 1).padStart(2, '0');
-            const d = String(hoje.getDate()).padStart(2, '0');
-            estado.data = `${d}/${m}/${y}`;
+            estado.data = getDataHoje();
         }
         dateInput.value = estado.data;
     }
@@ -423,8 +470,7 @@ function render() {
 
     atualizarFundo(estado.capa);
 
-    const ratingScale = getRatingScale();
-    const maxScoreLabel = ratingScale === "5" ? "/5" : "/9";
+    const maxScoreLabel = getMaxScoreLabel();
     const autoCalc = getAutoCalculateMode() !== "desativado";
 
     const albumStarsEl = document.getElementById("album-stars");
@@ -514,21 +560,23 @@ function render() {
     });
 
     isFirstLoad = false;
-
     autoSaveDraft();
-
     carregarHistorico();
 }
 
-// ===== STORAGE & HISTÓRICO =====
+// === 8. PERSISTÊNCIA DAS REVIEWS E HISTÓRICO ===
+
+// Recupera a lista completa de reviews salvas no LocalStorage
 function getHistorico() {
     return JSON.parse(localStorage.getItem("reviews")) || [];
 }
 
+// Salva a lista de reviews no LocalStorage
 function salvarHistorico(historico) {
     localStorage.setItem("reviews", JSON.stringify(historico));
 }
 
+// Converte a string de data (DD/MM/AAAA) em um número inteiro comparável (AAAAMMDD)
 function getSortableDate(dateStr) {
     if (!dateStr) return 0;
     const parts = dateStr.split('/');
@@ -537,11 +585,11 @@ function getSortableDate(dateStr) {
     return parseInt(`${y}${parts[1]}${parts[0]}`, 10);
 }
 
+// Salva a review atual de forma definitiva no LocalStorage (remover status de rascunho)
 function salvarReview() {
     if (!estado.id) return alert("nenhum album para salvar!!!");
 
     if (!estado.createdAt) estado.createdAt = Date.now();
-
     estado.isDraft = false;
 
     let historico = getHistorico();
@@ -573,19 +621,20 @@ function salvarReview() {
     }
 }
 
+// Renderiza a lista de histórico de reviews na barra lateral esquerda do editor
 function carregarHistorico() {
     const container = document.getElementById("historico");
+    if (!container) return;
     container.innerHTML = "";
 
     const historico = getHistorico();
 
-    // Ordena o histórico por data decrescente (mais recente primeiro)
     historico.sort((a, b) => {
         const diff = getSortableDate(b.data) - getSortableDate(a.data);
         return diff !== 0 ? diff : ((b.createdAt || 0) - (a.createdAt || 0));
     });
 
-    historico.forEach((rev, index) => {
+    historico.forEach((rev) => {
         const wrapper = document.createElement("div");
         wrapper.className = "review-wrapper";
 
@@ -597,13 +646,10 @@ function carregarHistorico() {
 
         div.onclick = () => {
             if (estado.id === rev.id) {
-                estado = getEmptyState();
+                navegarParaReview(getEmptyState());
             } else {
-                estado = { ...rev };
+                navegarParaReview(rev, true);
             }
-            switchView('reviews');
-            isFirstLoad = true;
-            render();
         };
 
         const del = document.createElement("span");
@@ -611,20 +657,8 @@ function carregarHistorico() {
         del.className = "delete-btn";
         del.onclick = (e) => {
             e.stopPropagation();
-
-            let origHistorico = getHistorico();
-            const origIndex = origHistorico.findIndex(r => r.id === rev.id || (r.album === rev.album && r.artista === rev.artista));
-            if (origIndex !== -1) {
-                origHistorico.splice(origIndex, 1);
-                salvarHistorico(origHistorico);
-            }
+            deletarReviewSemConfirmacao(rev.id, rev.album, rev.artista);
             carregarHistorico();
-
-            // Se deletou o álbum atual, limpa a tela
-            if (estado.id === rev.id) {
-                estado = getEmptyState();
-                render();
-            }
         };
 
         div.append(texto, del);
@@ -633,19 +667,20 @@ function carregarHistorico() {
     });
 }
 
-// ===== EXPORT & COPIAR =====
+// === 9. EXPORTAÇÃO E IMPORTAÇÃO EM TEXTO OU BACKUP ===
+
+// Gera uma representação textual formatada da review atual para copiar ou exportar
 function gerarTextoReview() {
     if (!estado.id) return "";
 
     let dataReview = estado.data;
     if (!dataReview) {
-        const hoje = new Date();
-        dataReview = `${String(hoje.getDate()).padStart(2, '0')}/${String(hoje.getMonth() + 1).padStart(2, '0')}/${hoje.getFullYear()}`;
+        dataReview = getDataHoje();
     }
     let texto = `-${estado.album}- ${dataReview}\n\n`;
 
     const ratingScale = getRatingScale();
-    const maxLabel = ratingScale === "5" ? "/5" : "/9";
+    const maxLabel = getMaxScoreLabel();
 
     estado.tracks.forEach((t, i) => {
         texto += `${i + 1}. ${t.nome} - ${formatarNotaExibicao(t.nota)}${maxLabel} ${t.fav ? "👑" : ""}\n`;
@@ -661,10 +696,10 @@ function gerarTextoReview() {
     }
 
     texto += `\n(${estado.link})\n————————————————————————`;
-
     return texto;
 }
 
+// Baixa um arquivo de texto (.txt) contendo o template formatado da review atual
 function exportarTXT() {
     const texto = gerarTextoReview();
     if (!texto) return alert("nenhum album para exportar!!!");
@@ -674,6 +709,7 @@ function exportarTXT() {
     a.href = URL.createObjectURL(blob);
     a.download = `${estado.album}.txt`;
     a.click();
+    URL.revokeObjectURL(a.href);
 
     const btn = document.getElementById("btn-exportar");
     if (btn) {
@@ -685,362 +721,7 @@ function exportarTXT() {
     }
 }
 
-
-// ===== AUTO-REPARAÇÃO EM SEGUNDO PLANO =====
-async function repararReview(rev) {
-    const temDuracao = rev.tracks && rev.tracks.length > 0 && rev.tracks[0].duration_ms !== undefined;
-    if (temDuracao) return rev;
-
-    try {
-        const url = rev.link;
-        if (!url) return rev;
-
-        const res = await fetch(`/api/album?url=${encodeURIComponent(url)}`);
-        if (!res.ok) return rev;
-        const data = await res.json();
-
-        // Se a API retornou erro (ex: credenciais inválidas ou limite excedido),
-        // não marca como reparado para permitir retentar depois que corrigir as credenciais
-        if (data.error) {
-            console.warn(`[Reparo] Não foi possível reparar o álbum "${rev.album}":`, data.error.message);
-            return rev;
-        }
-
-        // Repara durações das tracks
-        if (rev.tracks && Array.isArray(rev.tracks) && data.tracks && data.tracks.items) {
-            rev.tracks.forEach((track) => {
-                const matchingTrack = data.tracks.items.find(t => t.name === track.nome);
-                if (matchingTrack) {
-                    track.duration_ms = matchingTrack.duration_ms || 0;
-                }
-            });
-        }
-
-        // Repara ID se necessário
-        if (!rev.id) {
-            rev.id = data.id;
-        }
-
-        return rev;
-    } catch (e) {
-        console.error("Erro ao auto-reparar review:", e);
-        return rev;
-    }
-}
-
-async function repararTudoNoBackground() {
-    let historico = getHistorico();
-    let mudou = false;
-
-    for (let i = 0; i < historico.length; i++) {
-        const rev = historico[i];
-        const temDuracao = rev.tracks && rev.tracks.length > 0 && rev.tracks[0].duration_ms !== undefined;
-
-        if (!temDuracao) {
-            const revReparada = await repararReview(rev);
-            historico[i] = revReparada;
-            mudou = true;
-            salvarHistorico(historico);
-        }
-    }
-
-    if (mudou) {
-        // Re-renderiza biblioteca e histórico apenas uma vez no final se houve mudanças
-        renderLibrary();
-        carregarHistorico();
-    }
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-    // Sincroniza o estado inicial do sistema de avaliação
-    const selectScale = document.getElementById("settings-rating-scale");
-    if (selectScale) {
-        selectScale.value = getRatingScale();
-    }
-    const selectAuto = document.getElementById("settings-auto-calculate");
-    if (selectAuto) {
-        selectAuto.value = getAutoCalculateMode();
-    }
-
-    applyVisualSettings();
-    applyLibraryLayout();
-    carregarHistorico();
-    inicializarControlesCustomizados();
-    switchView('library');
-    repararTudoNoBackground();
-});
-
-// ===== SISTEMA DE AVALIAÇÃO (HELPERS & PERSISTÊNCIA) =====
-function getRatingScale() {
-    return localStorage.getItem("rating-scale") || "9";
-}
-
-function setRatingScale(scale) {
-    localStorage.setItem("rating-scale", scale);
-}
-
-function getAutoCalculateMode() {
-    return localStorage.getItem("auto-calculate-rating") || "desativado";
-}
-
-function setAutoCalculateMode(mode) {
-    localStorage.setItem("auto-calculate-rating", mode);
-}
-
-function aEscala(nota, isAlbum = false) {
-    if (nota === undefined || nota === null) return 0;
-    const scale = getRatingScale();
-    if (scale === "5") {
-        const nota5 = (nota * 5) / 9;
-        return Math.round(nota5 * 2) / 2; // Arredonda para o 0.5 mais próximo
-    }
-    // Escala 9
-    if (isAlbum) {
-        return Math.round(nota); // Álbum na escala 9 só tem estrelas inteiras
-    }
-    return Math.round(nota * 2) / 2; // Faixas suportam meias estrelas
-}
-
-function aEscalaProporcional(nota) {
-    if (nota === undefined || nota === null) return 0;
-    const scale = getRatingScale();
-    if (scale === "5") {
-        return (nota * 5) / 9;
-    }
-    return nota;
-}
-
-function deEscala(notaVal) {
-    if (notaVal === undefined || notaVal === null) return 0;
-    const scale = getRatingScale();
-    if (scale === "5") {
-        const nota9 = (notaVal * 9) / 5;
-        return Math.round(nota9 * 2) / 2; // Arredonda para o 0.5 mais próximo
-    }
-    return notaVal;
-}
-
-function formatarNotaExibicao(nota) {
-    if (nota === undefined || nota === null) return 0;
-    const scale = getRatingScale();
-    const val = scale === "5" ? (nota * 5) / 9 : nota;
-    return Math.round(val * 2) / 2; // Arredonda para o 0.5 mais próximo
-}
-
-function getEffectiveAlbumNota(rev) {
-    if (!rev) return 0;
-    const calcMode = getAutoCalculateMode();
-    if (calcMode === "simples") {
-        if (rev.albumNotaCalculada !== undefined) {
-            return rev.albumNotaCalculada;
-        }
-        // Fallback para reviews antigas que não tem o campo
-        if (rev.tracks && rev.tracks.length > 0) {
-            const ratedTracks = rev.tracks.filter(t => (t.nota || 0) > 0);
-            if (ratedTracks.length > 0) {
-                const sum = ratedTracks.reduce((sum, t) => sum + (t.nota || 0), 0);
-                const media = sum / ratedTracks.length;
-                return Math.round(media * 2) / 2;
-            }
-        }
-        return 0;
-    }
-    return rev.albumNota || 0;
-}
-
-function recalcularNotaAlbum() {
-    if (!estado.tracks || estado.tracks.length === 0) return;
-
-    const calcMode = getAutoCalculateMode();
-    if (calcMode !== "simples") return;
-
-    const ratedTracks = estado.tracks.filter(t => (t.nota || 0) > 0);
-    if (ratedTracks.length === 0) {
-        estado.albumNotaCalculada = 0;
-        return;
-    }
-
-    const sum = ratedTracks.reduce((sum, t) => sum + (t.nota || 0), 0);
-    const media = sum / ratedTracks.length;
-    estado.albumNotaCalculada = Math.round(media * 2) / 2; // Arredonda para o 0.5 mais próximo
-}
-
-function updateRatingScaleSettings() {
-    const select = document.getElementById("settings-rating-scale");
-    if (select) {
-        setRatingScale(select.value);
-        render();
-        renderLibrary();
-        renderDashboard();
-    }
-}
-
-// Vincula o evento global
-function updateAutoCalculateSettings() {
-    const select = document.getElementById("settings-auto-calculate");
-    if (select) {
-        setAutoCalculateMode(select.value);
-        if (select.value !== "desativado" && estado.id) {
-            recalcularNotaAlbum();
-        }
-        render();
-        renderLibrary();
-    }
-}
-
-// ===== APARÊNCIA & TEMAS =====
-function getVisualSettings() {
-    const defaults = {
-        blur: 40,
-        opacity: 40,
-        accentHue: 141,
-        glow: true
-    };
-    return { ...defaults, ...JSON.parse(localStorage.getItem("visual-settings") || "{}") };
-}
-
-function saveVisualSettings(settings) {
-    localStorage.setItem("visual-settings", JSON.stringify(settings));
-}
-
-
-
-function applyVisualSettings() {
-    const settings = getVisualSettings();
-
-    // 1. Aplicar desfoque (blur) e overlay (brightness)
-    document.documentElement.style.setProperty('--bg-blur', `${settings.blur}px`);
-    const brightness = 1 - (settings.opacity / 100);
-    document.documentElement.style.setProperty('--bg-brightness', brightness);
-
-    // 2. Aplicar cor de destaque
-    const accentColors = {
-        141: "29, 185, 84", // Spotify Verde
-        270: "135, 50, 230", // Roxo Sintetizador
-        200: "30, 144, 255", // Azul Cyberpunk
-        330: "255, 20, 147", // Rosa Neon
-        25: "255, 100, 30" // Laranja Vinil
-    };
-    const rgb = accentColors[settings.accentHue] || "29, 185, 84";
-    document.documentElement.style.setProperty('--hue-primary', settings.accentHue);
-    document.documentElement.style.setProperty('--color-primary-rgb', rgb);
-
-    // 3. Aplicar Glow
-    if (settings.glow) {
-        document.documentElement.style.setProperty('--glow-alpha-low', '0.25');
-        document.documentElement.style.setProperty('--glow-alpha-medium', '0.5');
-        document.documentElement.style.setProperty('--glow-alpha-high', '0.75');
-        document.documentElement.style.setProperty('--glow-alpha-max', '1.0');
-    } else {
-        document.documentElement.style.setProperty('--glow-alpha-low', '0');
-        document.documentElement.style.setProperty('--glow-alpha-medium', '0');
-        document.documentElement.style.setProperty('--glow-alpha-high', '0');
-        document.documentElement.style.setProperty('--glow-alpha-max', '0');
-    }
-
-    // 4. Sincronizar UI se os elementos existirem na aba ativa
-    syncVisualSettingsUI(settings);
-}
-
-function syncVisualSettingsUI(settings) {
-    const inputBlur = document.getElementById("settings-blur");
-    const valBlur = document.getElementById("val-blur");
-    if (inputBlur && valBlur) {
-        inputBlur.value = settings.blur;
-        valBlur.textContent = `${settings.blur}px`;
-    }
-
-    const inputOpacity = document.getElementById("settings-opacity");
-    const valOpacity = document.getElementById("val-opacity");
-    if (inputOpacity && valOpacity) {
-        inputOpacity.value = settings.opacity;
-        valOpacity.textContent = `${settings.opacity}%`;
-    }
-
-    const inputGlow = document.getElementById("settings-glow");
-    if (inputGlow) {
-        inputGlow.checked = settings.glow;
-    }
-
-    document.querySelectorAll(".theme-dot").forEach(btn => {
-        const hue = parseInt(btn.getAttribute("data-hue"), 10);
-        if (hue === settings.accentHue) {
-            btn.classList.add("active");
-        } else {
-            btn.classList.remove("active");
-        }
-    });
-}
-
-function updateVisualSettings() {
-    const inputBlur = document.getElementById("settings-blur");
-    const inputOpacity = document.getElementById("settings-opacity");
-    const inputGlow = document.getElementById("settings-glow");
-
-    if (!inputBlur || !inputOpacity || !inputGlow) return;
-
-    const blur = parseInt(inputBlur.value, 10);
-    const opacity = parseInt(inputOpacity.value, 10);
-    const glow = inputGlow.checked;
-
-    const currentSettings = getVisualSettings();
-    const newSettings = {
-        ...currentSettings,
-        blur,
-        opacity,
-        glow
-    };
-
-    saveVisualSettings(newSettings);
-    applyVisualSettings();
-}
-
-function setAccentColor(hue, btnElement) {
-    const currentSettings = getVisualSettings();
-    const newSettings = {
-        ...currentSettings,
-        accentHue: parseInt(hue, 10)
-    };
-
-    saveVisualSettings(newSettings);
-    applyVisualSettings();
-}
-
-function getLibraryLayout() {
-    return localStorage.getItem("library-layout") || "grid";
-}
-
-function setLibraryLayout(layout) {
-    localStorage.setItem("library-layout", layout);
-    applyLibraryLayout();
-}
-
-function applyLibraryLayout() {
-    const layout = getLibraryLayout();
-    const grid = document.getElementById("library-grid");
-    const gridBtn = document.getElementById("layout-grid-btn");
-    const listBtn = document.getElementById("layout-list-btn");
-
-    if (grid) {
-        if (layout === "list") {
-            grid.classList.add("list-view");
-        } else {
-            grid.classList.remove("list-view");
-        }
-    }
-
-    if (gridBtn && listBtn) {
-        if (layout === "list") {
-            gridBtn.classList.remove("active");
-            listBtn.classList.add("active");
-        } else {
-            gridBtn.classList.add("active");
-            listBtn.classList.remove("active");
-        }
-    }
-}
-
-// ===== IMPORTAR =====
+// Processa o conteúdo de texto formatado importado (.txt ou clipboard) para montar a review
 async function processarTextoReviewImportado(text) {
     if (!text || text.trim() === "") {
         throw new Error("o texto da review está vazio!!!");
@@ -1048,7 +729,6 @@ async function processarTextoReviewImportado(text) {
     const lines = text.split('\n');
     let urlLine = "";
 
-    // Procura o link do Spotify nas últimas linhas
     let urlIndex = -1;
     for (let i = lines.length - 1; i >= 0; i--) {
         if (lines[i].includes("spotify.com")) {
@@ -1107,7 +787,6 @@ async function processarTextoReviewImportado(text) {
         createdAt: index !== -1 ? (historico[index].createdAt || Date.now()) : Date.now()
     };
 
-    // Lê as notas de cada faixa
     lines.forEach(line => {
         const match = line.match(/^\d+\.\s+(.+?)\s+-\s+([\d.]+)\/(9|5)\s*(👑)?/);
         if (match) {
@@ -1128,7 +807,6 @@ async function processarTextoReviewImportado(text) {
         }
     });
 
-    // Lê a nota geral do álbum (estrelas)
     const estrelasLine = lines.find(l => l.includes("★") || l.includes("☆"));
     if (estrelasLine) {
         const countFull = (estrelasLine.match(/★/g) || []).length;
@@ -1141,7 +819,6 @@ async function processarTextoReviewImportado(text) {
         }
     }
 
-    // Calcula a nota automática do álbum se a configuração estiver ativa
     if (getAutoCalculateMode() !== "desativado") {
         recalcularNotaAlbum();
     } else {
@@ -1155,11 +832,10 @@ async function processarTextoReviewImportado(text) {
     }
     salvarHistorico(historico);
 
-    switchView('reviews');
-    isFirstLoad = true;
-    render();
+    navegarParaReview(estado);
 }
 
+// Trata o evento de carregamento de arquivo de texto (.txt) importado
 async function importarTXT(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -1168,7 +844,7 @@ async function importarTXT(event) {
 
     try {
         const text = await file.text();
-        event.target.value = ""; // limpa o input para permitir importar o mesmo arquivo depois
+        event.target.value = "";
         await processarTextoReviewImportado(text);
         setLoading(false);
     } catch (err) {
@@ -1179,7 +855,7 @@ async function importarTXT(event) {
     }
 }
 
-// ===== BACKUP COMPLETO =====
+// Exporta todo o histórico de reviews em formato de arquivo JSON para backup
 function exportarHistoricoCompleto() {
     const historico = getHistorico();
     if (historico.length === 0) return alert("historico vazio!!!");
@@ -1198,6 +874,7 @@ function exportarHistoricoCompleto() {
     URL.revokeObjectURL(url);
 }
 
+// Importa um backup completo de reviews de um arquivo JSON anteriormente exportado
 async function importarHistoricoCompleto(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -1228,21 +905,249 @@ async function importarHistoricoCompleto(event) {
     event.target.value = "";
 }
 
-// ===== VIEWS (SPA NAVEGAÇÃO) & VIEWS RENDER =====
+// === 10. REPARAÇÃO AUTOMÁTICA DE DADOS OBRIGATÓRIOS ===
 
+// Preenche dados incompletos de uma review antiga, como durações de faixas, buscando na API
+async function repararReview(rev) {
+    const temDuracao = rev.tracks && rev.tracks.length > 0 && rev.tracks[0].duration_ms !== undefined;
+    if (temDuracao) return rev;
+
+    try {
+        const url = rev.link;
+        if (!url) return rev;
+
+        const res = await fetch(`/api/album?url=${encodeURIComponent(url)}`);
+        if (!res.ok) return rev;
+        const data = await res.json();
+
+        if (data.error) {
+            console.warn(`[Reparo] Não foi possível reparar o álbum "${rev.album}":`, data.error.message);
+            return rev;
+        }
+
+        if (rev.tracks && Array.isArray(rev.tracks) && data.tracks && data.tracks.items) {
+            rev.tracks.forEach((track) => {
+                const matchingTrack = data.tracks.items.find(t => t.name === track.nome);
+                if (matchingTrack) {
+                    track.duration_ms = matchingTrack.duration_ms || 0;
+                }
+            });
+        }
+
+        if (!rev.id) {
+            rev.id = data.id;
+        }
+
+        return rev;
+    } catch (e) {
+        console.error("Erro ao auto-reparar review:", e);
+        return rev;
+    }
+}
+
+// Varre todas as reviews do histórico aplicando auto-reparação nas que precisarem
+async function repararTudoNoBackground() {
+    let historico = getHistorico();
+    let mudou = false;
+
+    for (let i = 0; i < historico.length; i++) {
+        const rev = historico[i];
+        const temDuracao = rev.tracks && rev.tracks.length > 0 && rev.tracks[0].duration_ms !== undefined;
+
+        if (!temDuracao) {
+            const revReparada = await repararReview(rev);
+            historico[i] = revReparada;
+            mudou = true;
+            salvarHistorico(historico);
+        }
+    }
+
+    if (mudou) {
+        renderLibrary();
+        carregarHistorico();
+    }
+}
+
+// === 11. SISTEMA DE CONFIGURAÇÃO DE ESCALAS DE NOTAS ===
+
+// Obtém a escala de nota ativa do LocalStorage (padrão é "9")
+function getRatingScale() {
+    return localStorage.getItem("rating-scale") || "9";
+}
+
+// Salva a preferência de escala de notas no LocalStorage
+function setRatingScale(scale) {
+    localStorage.setItem("rating-scale", scale);
+}
+
+// Obtém a preferência ativa do modo de cálculo de média das faixas
+function getAutoCalculateMode() {
+    return localStorage.getItem("auto-calculate-rating") || "desativado";
+}
+
+// Salva a preferência do modo de cálculo de média no LocalStorage
+function setAutoCalculateMode(mode) {
+    localStorage.setItem("auto-calculate-rating", mode);
+}
+
+// Converte a nota de base interna (Base 9) para a escala selecionada para exibição/estrelas
+function aEscala(nota, isAlbum = false) {
+    if (nota === undefined || nota === null) return 0;
+    const scale = getRatingScale();
+    if (scale === "5") {
+        const nota5 = (nota * 5) / 9;
+        return Math.round(nota5 * 2) / 2;
+    }
+    if (isAlbum) {
+        return Math.round(nota);
+    }
+    return Math.round(nota * 2) / 2;
+}
+
+// Converte a nota interna proporcionalmente para a escala configurada (sem arredondamento)
+function aEscalaProporcional(nota) {
+    if (nota === undefined || nota === null) return 0;
+    const scale = getRatingScale();
+    if (scale === "5") {
+        return (nota * 5) / 9;
+    }
+    return nota;
+}
+
+// Converte a nota inserida na escala visual para a base interna do banco de dados (Base 9)
+function deEscala(notaVal) {
+    if (notaVal === undefined || notaVal === null) return 0;
+    const scale = getRatingScale();
+    if (scale === "5") {
+        const nota9 = (notaVal * 9) / 5;
+        return Math.round(nota9 * 2) / 2;
+    }
+    return notaVal;
+}
+
+// Retorna o valor formatado para a nota exibida numericamente na tela
+function formatarNotaExibicao(nota) {
+    if (nota === undefined || nota === null) return 0;
+    const scale = getRatingScale();
+    const val = scale === "5" ? (nota * 5) / 9 : nota;
+    return Math.round(val * 2) / 2;
+}
+
+// Retorna a nota efetiva do álbum (nota manual ou média calculada das faixas)
+function getEffectiveAlbumNota(rev) {
+    if (!rev) return 0;
+    const calcMode = getAutoCalculateMode();
+    if (calcMode === "simples") {
+        if (rev.albumNotaCalculada !== undefined) {
+            return rev.albumNotaCalculada;
+        }
+        if (rev.tracks && rev.tracks.length > 0) {
+            const ratedTracks = rev.tracks.filter(t => (t.nota || 0) > 0);
+            if (ratedTracks.length > 0) {
+                const sum = ratedTracks.reduce((sum, t) => sum + (t.nota || 0), 0);
+                const media = sum / ratedTracks.length;
+                return Math.round(media * 2) / 2;
+            }
+        }
+        return 0;
+    }
+    return rev.albumNota || 0;
+}
+
+// Recalcula a nota do álbum a partir da média simples das notas das faixas avaliadas
+function recalcularNotaAlbum() {
+    if (!estado.tracks || estado.tracks.length === 0) return;
+
+    const calcMode = getAutoCalculateMode();
+    if (calcMode !== "simples") return;
+
+    const ratedTracks = estado.tracks.filter(t => (t.nota || 0) > 0);
+    if (ratedTracks.length === 0) {
+        estado.albumNotaCalculada = 0;
+        return;
+    }
+
+    const sum = ratedTracks.reduce((sum, t) => sum + (t.nota || 0), 0);
+    const media = sum / ratedTracks.length;
+    estado.albumNotaCalculada = Math.round(media * 2) / 2;
+}
+
+// Executa a troca da escala de notas das reviews e re-renderiza o app
+function updateRatingScaleSettings() {
+    const select = document.getElementById("settings-rating-scale");
+    if (select) {
+        setRatingScale(select.value);
+        render();
+        renderLibrary();
+        renderDashboard();
+    }
+}
+
+// Executa a troca do modo de cálculo da nota do álbum e atualiza o estado
+function updateAutoCalculateSettings() {
+    const select = document.getElementById("settings-auto-calculate");
+    if (select) {
+        setAutoCalculateMode(select.value);
+        if (select.value !== "desativado" && estado.id) {
+            recalcularNotaAlbum();
+        }
+        render();
+        renderLibrary();
+    }
+}
+
+// === 12. CONTROLES DE LAYOUT DA BIBLIOTECA ===
+
+// Obtém o layout da biblioteca ativo (padrão é "grid")
+function getLibraryLayout() {
+    return localStorage.getItem("library-layout") || "grid";
+}
+
+// Salva a preferência de layout da biblioteca e atualiza a exibição
+function setLibraryLayout(layout) {
+    localStorage.setItem("library-layout", layout);
+    applyLibraryLayout();
+}
+
+// Aplica as classes CSS necessárias para refletir a escolha de layout (grade ou lista)
+function applyLibraryLayout() {
+    const layout = getLibraryLayout();
+    const grid = document.getElementById("library-grid");
+    const gridBtn = document.getElementById("layout-grid-btn");
+    const listBtn = document.getElementById("layout-list-btn");
+
+    if (grid) {
+        if (layout === "list") {
+            grid.classList.add("list-view");
+        } else {
+            grid.classList.remove("list-view");
+        }
+    }
+
+    if (gridBtn && listBtn) {
+        if (layout === "list") {
+            gridBtn.classList.remove("active");
+            listBtn.classList.add("active");
+        } else {
+            gridBtn.classList.add("active");
+            listBtn.classList.remove("active");
+        }
+    }
+}
+
+// === 13. NAVEGAÇÃO ENTRE ABAS SPA (SPA ROUTING) ===
+
+// Alterna a exibição das seções (views) e atualiza os botões ativos do menu
 function switchView(viewName) {
-    // Esconde todas as visualizações
     document.querySelectorAll('.app-view').forEach(view => {
         view.style.display = 'none';
     });
 
-    // Exibe a visualização ativa
     const targetView = document.getElementById(`view-${viewName}`);
     if (targetView) {
         targetView.style.display = 'block';
     }
 
-    // Atualiza a classe ativa no menu lateral
     document.querySelectorAll('.nav-item').forEach(item => {
         item.classList.remove('active');
     });
@@ -1251,26 +1156,42 @@ function switchView(viewName) {
         activeNav.classList.add('active');
     }
 
-    // Renderiza o conteúdo da aba selecionada
     if (viewName === 'dashboard') {
         renderDashboard();
     } else if (viewName === 'library') {
         renderLibrary();
     } else if (viewName === 'reviews') {
         render();
-    } else if (viewName === 'settings') {
-        syncVisualSettingsUI(getVisualSettings());
     }
 }
 
+// === 14. COMPUTAÇÃO E RENDERIZAÇÃO DO DASHBOARD ===
+
+// Calcula as métricas de uso do usuário, monta o gráfico de notas e lista destaques
 function renderDashboard() {
     const historico = getHistorico().filter(r => !r.isDraft);
 
-    // 1. Quantidade total
+    // Calcula a média das notas de faixas avaliadas para critério de desempate
+    const getMediaTracks = (r) => {
+        if (!r.tracks || r.tracks.length === 0) return 0;
+        const rated = r.tracks.filter(t => (t.nota || 0) > 0);
+        if (rated.length === 0) return 0;
+        return rated.reduce((sum, t) => sum + (t.nota || 0), 0) / rated.length;
+    };
+
+    // Ordena os álbuns pela nota geral e, em caso de empate, pela média das notas das faixas
+    const sortedAlbums = [...historico].sort((a, b) => {
+        const notaA = getEffectiveAlbumNota(a) || 0;
+        const notaB = getEffectiveAlbumNota(b) || 0;
+        if (notaA !== notaB) {
+            return notaB - notaA;
+        }
+        return getMediaTracks(b) - getMediaTracks(a);
+    });
+
     const totalAlbums = historico.length;
     document.getElementById("dash-total-reviews").textContent = totalAlbums;
 
-    // 2. Média geral de notas
     let sumNotas = 0;
     historico.forEach(r => {
         sumNotas += (getEffectiveAlbumNota(r) || 0);
@@ -1278,7 +1199,6 @@ function renderDashboard() {
     const mediaGeral = totalAlbums > 0 ? formatarNotaExibicao(sumNotas / totalAlbums).toFixed(1) : "0.0";
     document.getElementById("dash-average-score").textContent = mediaGeral;
 
-    // 3. Artista mais ouvido
     const artistCounts = {};
     historico.forEach(r => {
         if (r.artista) {
@@ -1299,12 +1219,10 @@ function renderDashboard() {
     }
     document.getElementById("dash-top-artist").textContent = topArtist !== "-" ? `${topArtist} (${maxCount}x)` : "-";
 
-    // 3.1. Músicas Avaliadas, Tempo Total, Melhor Avaliado e Lista de Favoritas
     let totalTracks = 0;
     let totalFavTracks = 0;
     let totalDurationMs = 0;
-    let bestAlbum = null;
-    let maxNota = -1;
+    let bestAlbum = sortedAlbums[0] || null;
     const favorites = [];
 
     historico.forEach(r => {
@@ -1325,14 +1243,10 @@ function renderDashboard() {
                 }
             });
         }
-        if (getEffectiveAlbumNota(r) > maxNota) {
-            maxNota = getEffectiveAlbumNota(r);
-            bestAlbum = r;
-        }
     });
 
     document.getElementById("dash-total-tracks").textContent = totalTracks;
-    
+
     const durationEl = document.getElementById("dash-total-duration");
     if (durationEl) {
         durationEl.textContent = formatarTempoTotalDashboard(totalDurationMs);
@@ -1345,8 +1259,7 @@ function renderDashboard() {
     const bestAlbumEl = document.getElementById("dash-best-album");
     if (bestAlbumEl) {
         if (bestAlbum) {
-            const scale = getRatingScale();
-            const maxScore = scale === "5" ? "/5" : "/9";
+            const maxScore = getMaxScoreLabel();
             const displayStr = `${bestAlbum.album} (${formatarNotaExibicao(getEffectiveAlbumNota(bestAlbum))}${maxScore})`;
             bestAlbumEl.textContent = displayStr;
             bestAlbumEl.title = displayStr;
@@ -1356,19 +1269,16 @@ function renderDashboard() {
         }
     }
 
-    // 4. Distribuição de Notas (Gráfico de Barras Vertical com Eixo Y e Grid Lines)
     const scale = getRatingScale();
     const maxStars = scale === "5" ? 5 : 9;
     const isBase5 = (scale === "5");
 
-    // Gerar lista de valores possíveis dependendo da escala ativa
     const ratingValues = [];
     const stepVal = isBase5 ? 0.5 : 1;
     for (let val = stepVal; val <= maxStars; val += stepVal) {
         ratingValues.push(val);
     }
 
-    // Inicializa a contagem para cada valor possível
     const counts = {};
     ratingValues.forEach(val => {
         counts[val] = 0;
@@ -1383,9 +1293,6 @@ function renderDashboard() {
     });
 
     const maxRatingCountRaw = Math.max(...Object.values(counts), 1);
-
-    // Escolhe o melhor tamanho de passo (1, 2, 5, 10, 20, 50, etc.)
-    // para que a quantidade de divisões/ticks no eixo Y fique entre 2 e 5.
     const steps = [1, 2, 5, 10, 20, 50, 100, 250, 500, 1000];
     let step = 1;
     for (const s of steps) {
@@ -1395,10 +1302,7 @@ function renderDashboard() {
         }
     }
 
-    // O valor máximo do gráfico será o próximo múltiplo do passo escolhido
     const chartMaxVal = Math.ceil(maxRatingCountRaw / step) * step;
-
-    // Gerar ticks do Eixo Y e Linhas de Grade dinamicamente
     const yAxisContainer = document.getElementById("chart-y-axis");
     const gridLinesContainer = document.getElementById("chart-grid-lines");
 
@@ -1406,7 +1310,6 @@ function renderDashboard() {
         yAxisContainer.innerHTML = "";
         gridLinesContainer.innerHTML = "";
 
-        // Gerar os ticks de 0 até chartMaxVal de step em step
         const ticks = [];
         for (let val = 0; val <= chartMaxVal; val += step) {
             ticks.push(val);
@@ -1415,14 +1318,12 @@ function renderDashboard() {
         ticks.forEach(val => {
             const pct = (val / chartMaxVal) * 100;
 
-            // Marcação no Eixo Y
             const tick = document.createElement("span");
             tick.className = "chart-y-axis-tick";
             tick.style.bottom = `${pct}%`;
             tick.textContent = val;
             yAxisContainer.appendChild(tick);
 
-            // Linha de grade horizontal
             const line = document.createElement("div");
             line.className = "grid-line";
             line.style.bottom = `${pct}%`;
@@ -1445,7 +1346,7 @@ function renderDashboard() {
 
         const bar = document.createElement("div");
         bar.className = "chart-bar";
-        bar.style.height = `0%`; // Inicia em 0% para animação
+        bar.style.height = `0%`;
 
         const label = document.createElement("span");
         label.className = "chart-label";
@@ -1455,16 +1356,12 @@ function renderDashboard() {
         col.append(barWrapper, label);
         chartContainer.appendChild(col);
 
-        // Trigger de animação de entrada com pequeno delay
         setTimeout(() => {
             bar.style.height = `${pct}%`;
         }, 50);
     });
 
-    // 5. Top 10 Álbuns
-    const topAlbums = [...historico]
-        .sort((a, b) => (getEffectiveAlbumNota(b) || 0) - (getEffectiveAlbumNota(a) || 0))
-        .slice(0, 10);
+    const topAlbums = sortedAlbums.slice(0, 10);
 
     const topContainer = document.getElementById("dash-top-albums");
     topContainer.innerHTML = "";
@@ -1495,27 +1392,37 @@ function renderDashboard() {
 
             const score = document.createElement("span");
             score.className = "dash-top-album-score";
-            const maxScore = getRatingScale() === "5" ? "/5" : "/9";
+            const maxScore = getMaxScoreLabel();
             score.textContent = `${formatarNotaExibicao(getEffectiveAlbumNota(rev))}${maxScore}`;
 
             item.append(img, info, score);
 
             item.onclick = () => {
-                estado = rev;
-                switchView('reviews');
-                isFirstLoad = true;
-                render();
+                navegarParaReview(rev);
             };
 
             topContainer.appendChild(item);
         });
     }
 
-    // 6. Painel de Músicas Favoritas
     const favListEl = document.getElementById("dash-favorites-list");
     if (favListEl) {
         favListEl.innerHTML = "";
-        favorites.sort((a, b) => (b.nota || 0) - (a.nota || 0));
+        favorites.sort((a, b) => {
+            const trackNotaA = a.nota || 0;
+            const trackNotaB = b.nota || 0;
+            if (trackNotaA !== trackNotaB) {
+                return trackNotaB - trackNotaA;
+            }
+
+            const albumNotaA = getEffectiveAlbumNota(a.review) || 0;
+            const albumNotaB = getEffectiveAlbumNota(b.review) || 0;
+            if (albumNotaA !== albumNotaB) {
+                return albumNotaB - albumNotaA;
+            }
+
+            return getMediaTracks(b.review) - getMediaTracks(a.review);
+        });
         const latestFavorites = favorites.slice(0, 5);
         if (latestFavorites.length === 0) {
             favListEl.innerHTML = `<p class="empty-list-msg">nenhuma música favorita marcada ainda!!!</p>`;
@@ -1552,10 +1459,7 @@ function renderDashboard() {
                 item.append(img, info, crown);
 
                 item.onclick = () => {
-                    estado = fav.review;
-                    switchView('reviews');
-                    isFirstLoad = true;
-                    render();
+                    navegarParaReview(fav.review);
                 };
 
                 favListEl.appendChild(item);
@@ -1565,6 +1469,9 @@ function renderDashboard() {
     adjustCardTextSizes();
 }
 
+// === 15. RENDERIZAÇÃO DA BIBLIOTECA DE REVIEWS ===
+
+// Inverte a direção de ordenação da biblioteca (ascendente ou decrescente)
 function toggleLibrarySortOrder() {
     librarySortDesc = !librarySortDesc;
 
@@ -1576,14 +1483,14 @@ function toggleLibrarySortOrder() {
             icon.innerHTML = `<path d="M12 19V5M5 12l7-7 7 7"/>`;
         }
     }
-
     renderLibrary();
 }
 
-
+// Filtra, ordena e desenha os cards de reviews salvos no painel da biblioteca
 function renderLibrary() {
     applyLibraryLayout();
     const libraryGrid = document.getElementById("library-grid");
+    if (!libraryGrid) return;
     libraryGrid.innerHTML = "";
 
     const historico = getHistorico().filter(r => !r.isDraft);
@@ -1597,8 +1504,8 @@ function renderLibrary() {
 
     let filteredHistorico = [...historico];
     if (busca) {
-        filteredHistorico = filteredHistorico.filter(r => 
-            (r.album && r.album.toLowerCase().includes(busca)) || 
+        filteredHistorico = filteredHistorico.filter(r =>
+            (r.album && r.album.toLowerCase().includes(busca)) ||
             (r.artista && r.artista.toLowerCase().includes(busca))
         );
     }
@@ -1608,7 +1515,6 @@ function renderLibrary() {
         return;
     }
 
-    // ORDENAÇÃO
     const sortBy = document.getElementById("library-sort-by").value;
     filteredHistorico.sort((a, b) => {
         let valA = 0;
@@ -1663,7 +1569,7 @@ function renderLibrary() {
 
         const score = document.createElement("span");
         score.className = "library-card-score";
-        const maxScore = getRatingScale() === "5" ? "/5" : "/9";
+        const maxScore = getMaxScoreLabel();
         score.innerHTML = `<span class="score-star">★</span> ${formatarNotaExibicao(getEffectiveAlbumNota(rev))}${maxScore}`;
 
         const date = document.createElement("span");
@@ -1692,7 +1598,6 @@ function renderLibrary() {
         info.append(title, artist, durationText, metaRow, notes);
         card.append(coverWrapper, info);
 
-        // Botão de deletar no canto superior direito
         const deleteBtn = document.createElement("button");
         deleteBtn.className = "library-card-delete-btn";
         deleteBtn.title = "Excluir review";
@@ -1700,34 +1605,21 @@ function renderLibrary() {
         deleteBtn.onclick = (e) => {
             e.stopPropagation();
             if (confirm(`deseja realmente apagar a review de "${rev.album}"?`)) {
-                let origHistorico = getHistorico();
-                const origIndex = origHistorico.findIndex(r => r.id === rev.id || (r.album === rev.album && r.artista === rev.artista));
-                if (origIndex !== -1) {
-                    origHistorico.splice(origIndex, 1);
-                    salvarHistorico(origHistorico);
-                }
+                deletarReviewSemConfirmacao(rev.id, rev.album, rev.artista);
                 renderLibrary();
-
-                // Se deletou o álbum atual, limpa a tela
-                if (estado.id === rev.id) {
-                    estado = getEmptyState();
-                    render();
-                }
             }
         };
         card.appendChild(deleteBtn);
 
         card.onclick = () => {
-            estado = rev;
-            switchView('reviews');
-            isFirstLoad = true;
-            render();
+            navegarParaReview(rev);
         };
 
         libraryGrid.appendChild(card);
     });
 }
 
+// Apaga permanentemente todo o histórico LocalStorage do usuário
 function limparTudo() {
     if (confirm("ATENÇÃO: isso apagará permanentemente todas as suas reviews salvas! esta ação não pode ser desfeita. deseja continuar?")) {
         localStorage.removeItem("reviews");
@@ -1738,10 +1630,10 @@ function limparTudo() {
     }
 }
 
-// ===== CONTROLES CUSTOMIZADOS (DROPDOWN & INPUT DE DATA) =====
+// === 16. INICIALIZAÇÃO DE CONTROLES DE INTERFACE CUSTOMIZADOS ===
 
+// Configura o comportamento interativo de dropdowns de seleção e input de data com máscara
 function inicializarControlesCustomizados() {
-    // 1. DROPDOWNS CUSTOMIZADOS GERAIS
     document.querySelectorAll(".custom-select").forEach(customSel => {
         const nativeSel = customSel.previousElementSibling;
         if (!nativeSel || nativeSel.tagName !== "SELECT") return;
@@ -1751,7 +1643,6 @@ function inicializarControlesCustomizados() {
         const triggerText = trigger.querySelector("span");
         const options = customSel.querySelectorAll(".custom-option");
 
-        // Sincroniza estado inicial do trigger
         const selectedOpt = nativeSel.querySelector(`option[value="${nativeSel.value}"]`);
         if (selectedOpt && triggerText) {
             triggerText.textContent = selectedOpt.textContent;
@@ -1764,39 +1655,31 @@ function inicializarControlesCustomizados() {
             });
         }
 
-        // Clique no trigger abre/fecha
         trigger.addEventListener("click", (e) => {
             e.stopPropagation();
-            // Fecha outros dropdowns/datepickers
             document.querySelectorAll(".custom-select").forEach(cs => {
                 if (cs !== customSel) cs.classList.remove("active");
             });
             customSel.classList.toggle("active");
         });
 
-        // Clique nas opções
         options.forEach(opt => {
             opt.addEventListener("click", () => {
                 const val = opt.getAttribute("data-value");
                 nativeSel.value = val;
 
-                // Atualiza classes selecionadas
                 options.forEach(o => o.classList.remove("selected"));
                 opt.classList.add("selected");
                 if (triggerText) triggerText.textContent = opt.textContent;
 
                 customSel.classList.remove("active");
-
-                // Dispara evento de mudança no select nativo
                 nativeSel.dispatchEvent(new Event("change"));
             });
         });
     });
 
-    // 2. INPUT DE DATA MANUAL COM MÁSCARA E VALIDAÇÃO
     const dateInput = document.getElementById("review-date");
     if (dateInput) {
-        // Função auxiliar para validar se a data inserida é um dia/mês/ano válido real
         const validarData = (dataStr) => {
             if (!dataStr || dataStr.length !== 10) return false;
             const parts = dataStr.split("/");
@@ -1804,31 +1687,21 @@ function inicializarControlesCustomizados() {
             const dia = parseInt(parts[0], 10);
             const mes = parseInt(parts[1], 10);
             const ano = parseInt(parts[2], 10);
-            
+
             if (isNaN(dia) || isNaN(mes) || isNaN(ano)) return false;
             if (mes < 1 || mes > 12) return false;
             if (ano < 1000 || ano > 9999) return false;
-            
+
             const diasNoMes = new Date(ano, mes, 0).getDate();
             if (dia < 1 || dia > diasNoMes) return false;
-            
+
             return true;
         };
 
-        // Função para formatar a data de hoje
-        const obterDataHojeFormatada = () => {
-            const hoje = new Date();
-            const d = String(hoje.getDate()).padStart(2, '0');
-            const m = String(hoje.getMonth() + 1).padStart(2, '0');
-            const y = hoje.getFullYear();
-            return `${d}/${m}/${y}`;
-        };
-
-        // Evento input para máscara automática DD/MM/AAAA
         dateInput.addEventListener("input", (e) => {
             let val = e.target.value.replace(/\D/g, "");
             if (val.length > 8) val = val.substring(0, 8);
-            
+
             let formatted = "";
             if (val.length > 4) {
                 formatted = `${val.substring(0, 2)}/${val.substring(2, 4)}/${val.substring(4)}`;
@@ -1837,16 +1710,15 @@ function inicializarControlesCustomizados() {
             } else {
                 formatted = val;
             }
-            
+
             e.target.value = formatted;
             estado.data = formatted;
             autoSaveDraft();
         });
 
-        // Evento blur para validar no focus out e retornar para hoje se inválido
         dateInput.addEventListener("blur", (e) => {
             if (!validarData(e.target.value)) {
-                const hojeStr = obterDataHojeFormatada();
+                const hojeStr = getDataHoje();
                 e.target.value = hojeStr;
                 estado.data = hojeStr;
                 autoSaveDraft();
@@ -1854,7 +1726,6 @@ function inicializarControlesCustomizados() {
         });
     }
 
-    // Fechar ao clicar fora usando .contains()
     document.addEventListener("click", (e) => {
         document.querySelectorAll(".custom-select").forEach(cs => {
             if (!cs.contains(e.target)) {
@@ -1866,8 +1737,7 @@ function inicializarControlesCustomizados() {
                 w.classList.remove("active");
             }
         });
-        
-        // Fechar busca da biblioteca ao clicar fora
+
         const searchWrapper = document.getElementById("library-search-wrapper");
         const searchInput = document.getElementById("library-search");
         if (searchWrapper && searchInput && !searchWrapper.contains(e.target)) {
@@ -1883,6 +1753,7 @@ function inicializarControlesCustomizados() {
     });
 }
 
+// Expande ou recolhe o campo de busca rápida da biblioteca
 function toggleLibrarySearch(e) {
     if (e) {
         e.stopPropagation();
@@ -1901,7 +1772,9 @@ function toggleLibrarySearch(e) {
     }
 }
 
-// ===== MENU DROPDOWN & CLIPBOARD ACTIONS =====
+// === 17. CLIPBOARD E NAVEGAÇÃO DE DROPDOWNS ===
+
+// Alterna a exibição do dropdown de ações no cabeçalho ou no editor
 function toggleDropdown(event, id) {
     if (event) {
         event.stopPropagation();
@@ -1915,7 +1788,6 @@ function toggleDropdown(event, id) {
 
     const isActive = wrapper.classList.contains("active");
 
-    // Fecha outros dropdowns, datepickers ou custom-selects
     document.querySelectorAll(".dropdown-wrapper").forEach(w => {
         if (w !== wrapper) w.classList.remove("active");
     });
@@ -1928,13 +1800,13 @@ function toggleDropdown(event, id) {
     }
 }
 
+// Cola a review a partir da área de transferência (Clipboard) e processa os dados
 async function colarReviewClipboard() {
     setLoading(true);
     try {
         const text = await navigator.clipboard.readText();
         await processarTextoReviewImportado(text);
         setLoading(false);
-        // Fechar dropdowns
         document.querySelectorAll(".dropdown-wrapper").forEach(w => w.classList.remove("active"));
     } catch (err) {
         setLoading(false);
@@ -1944,24 +1816,23 @@ async function colarReviewClipboard() {
     }
 }
 
+// Copia o template de review formatado para a área de transferência do usuário
 async function copiarReviewClipboard() {
     const texto = gerarTextoReview();
     if (!texto) return alert("nenhum album para copiar!!!");
 
     try {
         await navigator.clipboard.writeText(texto);
-        
+
         const btnCopiar = document.getElementById("btn-copiar-item");
         if (btnCopiar) {
             const originalHTML = btnCopiar.innerHTML;
-            // Exibir feedback "copiado!!!"
             btnCopiar.innerHTML = `
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="var(--color-primary-light)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
                 copiado!!!
             `;
             setTimeout(() => {
                 btnCopiar.innerHTML = originalHTML;
-                // Fechar dropdowns
                 document.querySelectorAll(".dropdown-wrapper").forEach(w => w.classList.remove("active"));
             }, 1500);
         }
@@ -1971,20 +1842,20 @@ async function copiarReviewClipboard() {
     }
 }
 
+// === 18. AJUSTE DE TAMANHO DE FONTE DINÂMICO ===
 
+// Reduz dinamicamente o tamanho do texto no dashboard para evitar quebras de colunas
 function adjustCardTextSizes() {
     const topArtistEl = document.getElementById("dash-top-artist");
     const bestAlbumEl = document.getElementById("dash-best-album");
     const elements = [topArtistEl, bestAlbumEl].filter(Boolean);
 
-    // Phase 1: Clear inline style to allow CSS clamp (container query units) to compute default size
     elements.forEach(el => {
         el.style.fontSize = "";
     });
 
-    // Phase 2: Scale down font size step-by-step if it overflows
     elements.forEach(el => {
-        if (el.clientHeight === 0) return; // If hidden, skip
+        if (el.clientHeight === 0) return;
 
         const computedStyle = window.getComputedStyle(el);
         const rootFontSize = parseFloat(window.getComputedStyle(document.documentElement).fontSize) || 16;
@@ -1992,7 +1863,6 @@ function adjustCardTextSizes() {
         if (!currentFontSizePx) return;
 
         let currentSizeRem = currentFontSizePx / rootFontSize;
-        // Cap max size at 1.6rem
         if (currentSizeRem > 1.6) {
             currentSizeRem = 1.6;
         }
@@ -2003,7 +1873,6 @@ function adjustCardTextSizes() {
         const step = 0.03;
         let maxIterations = 20;
 
-        // Shrink font size while scrollHeight > clientHeight (clamped to 2 lines)
         while (el.scrollHeight > el.clientHeight && currentSizeRem > minSizeRem && maxIterations > 0) {
             currentSizeRem = Math.max(minSizeRem, currentSizeRem - step);
             el.style.fontSize = `${currentSizeRem}rem`;
@@ -2012,7 +1881,8 @@ function adjustCardTextSizes() {
     });
 }
 
-// Adjust font sizes when window resizes and dashboard is active
+// === 19. INICIALIZAÇÃO DE EVENTOS E INICIALIZAÇÃO DA PÁGINA ===
+
 window.addEventListener('resize', () => {
     const dashboardView = document.getElementById("view-dashboard");
     if (dashboardView && dashboardView.style.display !== 'none') {
@@ -2020,4 +1890,19 @@ window.addEventListener('resize', () => {
     }
 });
 
+document.addEventListener("DOMContentLoaded", () => {
+    const selectScale = document.getElementById("settings-rating-scale");
+    if (selectScale) {
+        selectScale.value = getRatingScale();
+    }
+    const selectAuto = document.getElementById("settings-auto-calculate");
+    if (selectAuto) {
+        selectAuto.value = getAutoCalculateMode();
+    }
 
+    applyLibraryLayout();
+    carregarHistorico();
+    inicializarControlesCustomizados();
+    switchView('library');
+    repararTudoNoBackground();
+});
