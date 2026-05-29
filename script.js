@@ -1042,7 +1042,7 @@ function getEffectiveAlbumNota(rev) {
             return rev.albumNotaCalculada;
         }
         if (rev.tracks && rev.tracks.length > 0) {
-            const ratedTracks = rev.tracks.filter(t => (t.nota || 0) > 0);
+            const ratedTracks = rev.tracks.filter(t => aEscala(t.nota, false) > 0.5);
             if (ratedTracks.length > 0) {
                 const sum = ratedTracks.reduce((sum, t) => sum + (t.nota || 0), 0);
                 const media = sum / ratedTracks.length;
@@ -1061,7 +1061,7 @@ function recalcularNotaAlbum() {
     const calcMode = getAutoCalculateMode();
     if (calcMode !== "simples") return;
 
-    const ratedTracks = estado.tracks.filter(t => (t.nota || 0) > 0);
+    const ratedTracks = estado.tracks.filter(t => aEscala(t.nota, false) > 0.5);
     if (ratedTracks.length === 0) {
         estado.albumNotaCalculada = 0;
         return;
@@ -1174,7 +1174,7 @@ function renderDashboard() {
     // Calcula a média das notas de faixas avaliadas para critério de desempate
     const getMediaTracks = (r) => {
         if (!r.tracks || r.tracks.length === 0) return 0;
-        const rated = r.tracks.filter(t => (t.nota || 0) > 0);
+        const rated = r.tracks.filter(t => aEscala(t.nota, false) > 0.5);
         if (rated.length === 0) return 0;
         return rated.reduce((sum, t) => sum + (t.nota || 0), 0) / rated.length;
     };
