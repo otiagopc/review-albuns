@@ -1495,7 +1495,7 @@ function renderLibrary() {
     if (!libraryGrid) return;
     libraryGrid.innerHTML = "";
 
-    const historico = getHistorico().filter(r => !r.isDraft);
+    const historico = getHistorico();
     if (historico.length === 0) {
         libraryGrid.innerHTML = `<p class="empty-library-msg">sua biblioteca está vazia. crie uma review na aba "reviews" para começar!</p>`;
         return;
@@ -1544,7 +1544,7 @@ function renderLibrary() {
 
     filteredHistorico.forEach(rev => {
         const card = document.createElement("div");
-        card.className = "library-card animate-card";
+        card.className = `library-card animate-card${rev.isDraft ? " is-draft" : ""}`;
 
         const coverWrapper = document.createElement("div");
         coverWrapper.className = "library-card-cover-wrapper";
@@ -1572,11 +1572,15 @@ function renderLibrary() {
         const score = document.createElement("span");
         score.className = "library-card-score";
         const maxScore = getMaxScoreLabel();
-        score.innerHTML = `<span class="score-star">★</span> ${formatarNotaExibicao(getEffectiveAlbumNota(rev))}${maxScore}`;
+        if (rev.isDraft) {
+            score.innerHTML = `<span class="draft-badge-label">rascunho</span>`;
+        } else {
+            score.innerHTML = `<span class="score-star">★</span> ${formatarNotaExibicao(getEffectiveAlbumNota(rev))}${maxScore}`;
+        }
 
         const date = document.createElement("span");
         date.className = "library-card-date";
-        date.textContent = rev.data || "-";
+        date.textContent = rev.isDraft ? "" : (rev.data || "-");
 
         metaRow.append(score, date);
 

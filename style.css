@@ -2154,24 +2154,26 @@ button svg {
     transform: translateY(-4px) scale(0.9);
 }
 
-.library-card:hover .library-card-delete-btn {
-    opacity: 1;
-    pointer-events: auto;
-    transform: none;
-}
+@media (hover: hover) {
+    .library-card:hover .library-card-delete-btn {
+        opacity: 1;
+        pointer-events: auto;
+        transform: none;
+    }
 
-.library-card-delete-btn:hover {
-    color: #ffffff;
-    background: var(--color-danger);
-    border-color: var(--color-danger);
-    transform: scale(1.1) !important;
-}
+    .library-card-delete-btn:hover {
+        color: #ffffff;
+        background: var(--color-danger);
+        border-color: var(--color-danger);
+        transform: scale(1.1) !important;
+    }
 
-.library-card:hover {
-    background: var(--panel-bg-hover);
-    border-color: var(--border-color-hover);
-    transform: translateY(-6px);
-    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.4), 0 0 20px rgba(var(--color-primary-rgb), var(--glow-alpha-low));
+    .library-card:hover {
+        background: var(--panel-bg-hover);
+        border-color: var(--border-color-hover);
+        transform: translateY(-6px);
+        box-shadow: 0 24px 48px rgba(0, 0, 0, 0.4), 0 0 20px rgba(var(--color-primary-rgb), var(--glow-alpha-low));
+    }
 }
 
 .library-card-cover-wrapper {
@@ -2188,8 +2190,10 @@ button svg {
     transition: transform var(--transition-normal);
 }
 
-.library-card:hover .library-card-cover {
-    transform: scale(1.05);
+@media (hover: hover) {
+    .library-card:hover .library-card-cover {
+        transform: scale(1.05);
+    }
 }
 
 .library-card-info {
@@ -2253,6 +2257,24 @@ button svg {
     font-size: 0.75rem;
     color: var(--text-muted);
     font-weight: 600;
+}
+
+.draft-badge-label {
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: var(--color-primary-light);
+    text-transform: uppercase;
+    background: rgba(var(--color-primary-rgb), 0.1);
+    border: 1px solid rgba(var(--color-primary-rgb), 0.25);
+    padding: 2px 6px;
+    border-radius: 4px;
+    letter-spacing: 0.05em;
+    font-family: sans-serif;
+}
+
+.library-card.is-draft {
+    border-style: dashed;
+    border-color: var(--border-color);
 }
 
 .library-card-notes {
@@ -2418,6 +2440,12 @@ button svg {
 
 /* Responsividade da Lista para Telas Menores */
 @media (max-width: 980px) {
+    .library-card-delete-btn {
+        opacity: 1;
+        pointer-events: auto;
+        transform: none;
+    }
+
     .library-grid.list-view .library-card-notes {
         display: none;
     }
