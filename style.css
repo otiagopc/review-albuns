@@ -70,6 +70,10 @@
       - O dashboard passa a se comportar em coluna única (telas <= 580px).
    ========================================================================== */
 
+html {
+    background-color: #07090e;
+}
+
 body {
     font-family: "Manrope", -apple-system, BlinkMacSystemFont, sans-serif;
     color: var(--text-color);
