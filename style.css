@@ -346,6 +346,10 @@ body.bg-active-2::after {
         margin: var(--spacing);
         gap: var(--spacing);
     }
+
+    .main-content {
+        gap: 0;
+    }
 }
 
 .nav-icon {
