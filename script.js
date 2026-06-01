@@ -574,6 +574,8 @@ function getHistorico() {
 // Salva a lista de reviews no LocalStorage
 function salvarHistorico(historico) {
     localStorage.setItem("reviews", JSON.stringify(historico));
+    const rascunhosCount = historico.filter(r => r.isDraft).length;
+    atualizarNotificacaoApp(rascunhosCount);
 }
 
 // Converte a string de data (DD/MM/AAAA) em um número inteiro comparável (AAAAMMDD)
@@ -1626,6 +1628,7 @@ function limparTudo() {
         estado = getEmptyState();
         render();
         switchView('dashboard');
+        atualizarNotificacaoApp(0);
         alert("todos os dados foram apagados com sucesso!");
     }
 }
@@ -1905,4 +1908,47 @@ document.addEventListener("DOMContentLoaded", () => {
     inicializarControlesCustomizados();
     switchView('library');
     repararTudoNoBackground();
+    atualizarNotificacaoApp(obterContadorRascunhos());
 });
+
+// === PWA & APP BADGE FUNCTIONS ===
+
+// Conta os rascunhos salvos localmente
+function obterContadorRascunhos() {
+    const historico = getHistorico();
+    return historico.filter(r => r.isDraft).length;
+}
+
+// Atualiza a bolinha de notificação (badge) no ícone do aplicativo
+function atualizarNotificacaoApp(contador) {
+    if ('setAppBadge' in navigator) {
+        if (contador > 0) {
+            navigator.setAppBadge(contador)
+                .catch(err => console.error("Erro ao aplicar badge:", err));
+        } else {
+            navigator.clearAppBadge()
+                .catch(err => console.error("Erro ao limpar badge:", err));
+        }
+    }
+}
+
+// Dispara a solicitação de permissão de notificação para iOS em um gesto do usuário
+document.addEventListener('click', () => {
+    if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission().then(permission => {
+            if (permission === 'granted') {
+                console.log("Permissão de notificações concedida!");
+                atualizarNotificacaoApp(obterContadorRascunhos());
+            }
+        });
+    }
+}, { once: true });
+
+// Registro do Service Worker
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+            .then(reg => console.log('Service Worker registrado com sucesso:', reg.scope))
+            .catch(err => console.error('Erro ao registrar Service Worker:', err));
+    });
+}
