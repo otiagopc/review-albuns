@@ -1,7 +1,3 @@
-// Limpeza automática de configurações visuais obsoletas do LocalStorage
-if (localStorage.getItem("visual-settings")) {
-    localStorage.removeItem("visual-settings");
-}
 
 // === 1. VARIÁVEIS DE ESTADO E VALORES GLOBAIS ===
 
@@ -495,7 +491,7 @@ function render() {
 
     const scoreVal = document.getElementById("album-score-value");
     if (scoreVal) {
-        const notaExibida = formatarNotaExibicao(getEffectiveAlbumNota(estado));
+        const notaExibida = aEscala(getEffectiveAlbumNota(estado));
         scoreVal.innerHTML = `<span class="current-score">${notaExibida}</span><span class="max-score">${maxScoreLabel}</span>`;
     }
 
@@ -683,7 +679,7 @@ function gerarTextoReview() {
     const maxLabel = getMaxScoreLabel();
 
     estado.tracks.forEach((t, i) => {
-        texto += `${i + 1}. ${t.nome} - ${formatarNotaExibicao(t.nota)}${maxLabel} ${t.fav ? "👑" : ""}\n`;
+        texto += `${i + 1}. ${t.nome} - ${aEscala(t.nota)}${maxLabel} ${t.fav ? "👑" : ""}\n`;
     });
 
     const maxStars = ratingScale === "5" ? 5 : 9;
@@ -942,16 +938,6 @@ function aEscala(nota, isAlbum = false) {
     return Math.round(nota * 2) / 2;
 }
 
-// Converte a nota interna proporcionalmente para a escala configurada (sem arredondamento)
-function aEscalaProporcional(nota) {
-    if (nota === undefined || nota === null) return 0;
-    const scale = getRatingScale();
-    if (scale === "5") {
-        return (nota * 5) / 9;
-    }
-    return nota;
-}
-
 // Converte a nota inserida na escala visual para a base interna do banco de dados (Base 9)
 function deEscala(notaVal) {
     if (notaVal === undefined || notaVal === null) return 0;
@@ -961,14 +947,6 @@ function deEscala(notaVal) {
         return Math.round(nota9 * 2) / 2;
     }
     return notaVal;
-}
-
-// Retorna o valor formatado para a nota exibida numericamente na tela
-function formatarNotaExibicao(nota) {
-    if (nota === undefined || nota === null) return 0;
-    const scale = getRatingScale();
-    const val = scale === "5" ? (nota * 5) / 9 : nota;
-    return Math.round(val * 2) / 2;
 }
 
 // Retorna a nota efetiva do álbum (nota manual ou média calculada das faixas)
@@ -1134,7 +1112,7 @@ function renderDashboard() {
     historico.forEach(r => {
         sumNotas += (getEffectiveAlbumNota(r) || 0);
     });
-    const mediaGeral = totalAlbums > 0 ? formatarNotaExibicao(sumNotas / totalAlbums).toFixed(1) : "0.0";
+    const mediaGeral = totalAlbums > 0 ? aEscala(sumNotas / totalAlbums).toFixed(1) : "0.0";
     document.getElementById("dash-average-score").textContent = mediaGeral;
 
     const artistCounts = {};
@@ -1198,7 +1176,7 @@ function renderDashboard() {
     if (bestAlbumEl) {
         if (bestAlbum) {
             const maxScore = getMaxScoreLabel();
-            const displayStr = `${bestAlbum.album} (${formatarNotaExibicao(getEffectiveAlbumNota(bestAlbum))}${maxScore})`;
+            const displayStr = `${bestAlbum.album} (${aEscala(getEffectiveAlbumNota(bestAlbum))}${maxScore})`;
             bestAlbumEl.textContent = displayStr;
             bestAlbumEl.title = displayStr;
         } else {
@@ -1223,7 +1201,8 @@ function renderDashboard() {
     });
 
     historico.forEach(r => {
-        const rawNote = aEscalaProporcional(getEffectiveAlbumNota(r));
+        const nota = getEffectiveAlbumNota(r);
+        const rawNote = getRatingScale() === "5" ? (nota * 5) / 9 : nota;
         const note = isBase5 ? (Math.round(rawNote * 2) / 2) : Math.round(rawNote);
         if (counts[note] !== undefined) {
             counts[note]++;
@@ -1331,7 +1310,7 @@ function renderDashboard() {
             const score = document.createElement("span");
             score.className = "dash-top-album-score";
             const maxScore = getMaxScoreLabel();
-            score.textContent = `${formatarNotaExibicao(getEffectiveAlbumNota(rev))}${maxScore}`;
+            score.textContent = `${aEscala(getEffectiveAlbumNota(rev))}${maxScore}`;
 
             item.append(img, info, score);
 
@@ -1508,7 +1487,7 @@ function renderLibrary() {
         if (rev.isDraft) {
             score.innerHTML = `<span class="draft-badge-label">rascunho</span>`;
         } else {
-            score.innerHTML = `<span class="score-star">★</span> ${formatarNotaExibicao(getEffectiveAlbumNota(rev))}${maxScore}`;
+            score.innerHTML = `<span class="score-star">★</span> ${aEscala(getEffectiveAlbumNota(rev))}${maxScore}`;
         }
 
         const date = document.createElement("span");
