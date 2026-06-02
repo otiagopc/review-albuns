@@ -533,9 +533,7 @@ function render() {
         crown.className = `crown-btn ${track.fav ? "active" : ""}`;
         crown.setAttribute("title", track.fav ? "Faixa favorita" : "Marcar como favorita");
         crown.innerHTML = `
-            <svg class="crown-icon" viewBox="0 0 24 24" width="16" height="16">
-              <path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7z"/>
-            </svg>
+            <svg class="crown-icon" width="16" height="16"><use href="icons/sprite.svg#icon-crown"></use></svg>
         `;
         crown.onclick = () => {
             if (track.fav) track.fav = false;
@@ -655,7 +653,7 @@ function carregarHistorico() {
         };
 
         const del = document.createElement("span");
-        del.innerHTML = `<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
+        del.innerHTML = `<svg class="close-icon" viewBox="0 0 24 24" width="12" height="12"><use href="icons/sprite.svg#icon-close"></use></svg>`;
         del.className = "delete-btn";
         del.onclick = (e) => {
             e.stopPropagation();
@@ -907,70 +905,8 @@ async function importarHistoricoCompleto(event) {
     event.target.value = "";
 }
 
-// === 10. REPARAÇÃO AUTOMÁTICA DE DADOS OBRIGATÓRIOS ===
 
-// Preenche dados incompletos de uma review antiga, como durações de faixas, buscando na API
-async function repararReview(rev) {
-    const temDuracao = rev.tracks && rev.tracks.length > 0 && rev.tracks[0].duration_ms !== undefined;
-    if (temDuracao) return rev;
-
-    try {
-        const url = rev.link;
-        if (!url) return rev;
-
-        const res = await fetch(`/api/album?url=${encodeURIComponent(url)}`);
-        if (!res.ok) return rev;
-        const data = await res.json();
-
-        if (data.error) {
-            console.warn(`[Reparo] Não foi possível reparar o álbum "${rev.album}":`, data.error.message);
-            return rev;
-        }
-
-        if (rev.tracks && Array.isArray(rev.tracks) && data.tracks && data.tracks.items) {
-            rev.tracks.forEach((track) => {
-                const matchingTrack = data.tracks.items.find(t => t.name === track.nome);
-                if (matchingTrack) {
-                    track.duration_ms = matchingTrack.duration_ms || 0;
-                }
-            });
-        }
-
-        if (!rev.id) {
-            rev.id = data.id;
-        }
-
-        return rev;
-    } catch (e) {
-        console.error("Erro ao auto-reparar review:", e);
-        return rev;
-    }
-}
-
-// Varre todas as reviews do histórico aplicando auto-reparação nas que precisarem
-async function repararTudoNoBackground() {
-    let historico = getHistorico();
-    let mudou = false;
-
-    for (let i = 0; i < historico.length; i++) {
-        const rev = historico[i];
-        const temDuracao = rev.tracks && rev.tracks.length > 0 && rev.tracks[0].duration_ms !== undefined;
-
-        if (!temDuracao) {
-            const revReparada = await repararReview(rev);
-            historico[i] = revReparada;
-            mudou = true;
-            salvarHistorico(historico);
-        }
-    }
-
-    if (mudou) {
-        renderLibrary();
-        carregarHistorico();
-    }
-}
-
-// === 11. SISTEMA DE CONFIGURAÇÃO DE ESCALAS DE NOTAS ===
+// === 10. SISTEMA DE CONFIGURAÇÃO DE ESCALAS DE NOTAS ===
 
 // Obtém a escala de nota ativa do LocalStorage (padrão é "9")
 function getRatingScale() {
@@ -1098,7 +1034,7 @@ function updateAutoCalculateSettings() {
     }
 }
 
-// === 12. CONTROLES DE LAYOUT DA BIBLIOTECA ===
+// === 11. CONTROLES DE LAYOUT DA BIBLIOTECA ===
 
 // Obtém o layout da biblioteca ativo (padrão é "grid")
 function getLibraryLayout() {
@@ -1137,7 +1073,7 @@ function applyLibraryLayout() {
     }
 }
 
-// === 13. NAVEGAÇÃO ENTRE ABAS SPA (SPA ROUTING) ===
+// === 12. NAVEGAÇÃO ENTRE ABAS SPA (SPA ROUTING) ===
 
 // Alterna a exibição das seções (views) e atualiza os botões ativos do menu
 function switchView(viewName) {
@@ -1167,7 +1103,7 @@ function switchView(viewName) {
     }
 }
 
-// === 14. COMPUTAÇÃO E RENDERIZAÇÃO DO DASHBOARD ===
+// === 13. COMPUTAÇÃO E RENDERIZAÇÃO DO DASHBOARD ===
 
 // Calcula as métricas de uso do usuário, monta o gráfico de notas e lista destaques
 function renderDashboard() {
@@ -1453,9 +1389,7 @@ function renderDashboard() {
                 const crown = document.createElement("span");
                 crown.className = "dash-fav-crown";
                 crown.innerHTML = `
-                    <svg class="crown-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-                        <path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7z"/>
-                    </svg>
+                    <svg class="crown-icon" width="16" height="16"><use href="icons/sprite.svg#icon-crown"></use></svg>
                 `;
 
                 item.append(img, info, crown);
@@ -1468,10 +1402,9 @@ function renderDashboard() {
             });
         }
     }
-    adjustCardTextSizes();
 }
 
-// === 15. RENDERIZAÇÃO DA BIBLIOTECA DE REVIEWS ===
+// === 14. RENDERIZAÇÃO DA BIBLIOTECA DE REVIEWS ===
 
 // Inverte a direção de ordenação da biblioteca (ascendente ou decrescente)
 function toggleLibrarySortOrder() {
@@ -1544,7 +1477,7 @@ function renderLibrary() {
 
     filteredHistorico.forEach(rev => {
         const card = document.createElement("div");
-        card.className = `library-card animate-card${rev.isDraft ? " is-draft" : ""}`;
+        card.className = `library-card${rev.isDraft ? " is-draft" : ""}`;
 
         const coverWrapper = document.createElement("div");
         coverWrapper.className = "library-card-cover-wrapper";
@@ -1607,7 +1540,7 @@ function renderLibrary() {
         const deleteBtn = document.createElement("button");
         deleteBtn.className = "library-card-delete-btn";
         deleteBtn.title = "Excluir review";
-        deleteBtn.innerHTML = `<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
+        deleteBtn.innerHTML = `<svg class="close-icon" viewBox="0 0 24 24" width="12" height="12"><use href="icons/sprite.svg#icon-close"></use></svg>`;
         deleteBtn.onclick = (e) => {
             e.stopPropagation();
             if (confirm(`deseja realmente apagar a review de "${rev.album}"?`)) {
@@ -1637,7 +1570,7 @@ function limparTudo() {
     }
 }
 
-// === 16. INICIALIZAÇÃO DE CONTROLES DE INTERFACE CUSTOMIZADOS ===
+// === 15. INICIALIZAÇÃO DE CONTROLES DE INTERFACE CUSTOMIZADOS ===
 
 // Configura o comportamento interativo de dropdowns de seleção e input de data com máscara
 function inicializarControlesCustomizados() {
@@ -1779,7 +1712,7 @@ function toggleLibrarySearch(e) {
     }
 }
 
-// === 17. CLIPBOARD E NAVEGAÇÃO DE DROPDOWNS ===
+// === 16. CLIPBOARD E NAVEGAÇÃO DE DROPDOWNS ===
 
 // Alterna a exibição do dropdown de ações no cabeçalho ou no editor
 function toggleDropdown(event, id) {
@@ -1835,7 +1768,7 @@ async function copiarReviewClipboard() {
         if (btnCopiar) {
             const originalHTML = btnCopiar.innerHTML;
             btnCopiar.innerHTML = `
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="var(--color-primary-light)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                <svg viewBox="0 0 24 24" width="14" height="14" style="margin-right: 8px; color: var(--color-primary-light);"><use href="icons/sprite.svg#icon-checkmark"></use></svg>
                 copiado!!!
             `;
             setTimeout(() => {
@@ -1849,53 +1782,7 @@ async function copiarReviewClipboard() {
     }
 }
 
-// === 18. AJUSTE DE TAMANHO DE FONTE DINÂMICO ===
-
-// Reduz dinamicamente o tamanho do texto no dashboard para evitar quebras de colunas
-function adjustCardTextSizes() {
-    const topArtistEl = document.getElementById("dash-top-artist");
-    const bestAlbumEl = document.getElementById("dash-best-album");
-    const elements = [topArtistEl, bestAlbumEl].filter(Boolean);
-
-    elements.forEach(el => {
-        el.style.fontSize = "";
-    });
-
-    elements.forEach(el => {
-        if (el.clientHeight === 0) return;
-
-        const computedStyle = window.getComputedStyle(el);
-        const rootFontSize = parseFloat(window.getComputedStyle(document.documentElement).fontSize) || 16;
-        const currentFontSizePx = parseFloat(computedStyle.fontSize);
-        if (!currentFontSizePx) return;
-
-        let currentSizeRem = currentFontSizePx / rootFontSize;
-        if (currentSizeRem > 1.6) {
-            currentSizeRem = 1.6;
-        }
-
-        el.style.fontSize = `${currentSizeRem}rem`;
-
-        const minSizeRem = 1.15;
-        const step = 0.03;
-        let maxIterations = 20;
-
-        while (el.scrollHeight > el.clientHeight && currentSizeRem > minSizeRem && maxIterations > 0) {
-            currentSizeRem = Math.max(minSizeRem, currentSizeRem - step);
-            el.style.fontSize = `${currentSizeRem}rem`;
-            maxIterations--;
-        }
-    });
-}
-
-// === 19. INICIALIZAÇÃO DE EVENTOS E INICIALIZAÇÃO DA PÁGINA ===
-
-window.addEventListener('resize', () => {
-    const dashboardView = document.getElementById("view-dashboard");
-    if (dashboardView && dashboardView.style.display !== 'none') {
-        adjustCardTextSizes();
-    }
-});
+// === 18. INICIALIZAÇÃO DE EVENTOS E INICIALIZAÇÃO DA PÁGINA ===
 
 document.addEventListener("DOMContentLoaded", () => {
     const selectScale = document.getElementById("settings-rating-scale");
@@ -1911,7 +1798,6 @@ document.addEventListener("DOMContentLoaded", () => {
     carregarHistorico();
     inicializarControlesCustomizados();
     switchView('library');
-    repararTudoNoBackground();
     atualizarNotificacaoApp(obterContadorRascunhos());
 });
 
