@@ -330,6 +330,32 @@ body.bg-active-2::after {
         height: 3px;
         border-radius: 0 0 3px 3px;
     }
+
+    .main-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    .search-input {
+        width: 100%;
+        min-width: 0;
+        flex: none;
+        height: 46px !important;
+        min-height: 46px !important;
+    }
+
+    .header-buttons {
+        width: 100%;
+        display: flex;
+        gap: 8px;
+    }
+
+    .header-buttons button,
+    .header-buttons .btn-secondary {
+        flex: 1 1 0px !important;
+        justify-content: center;
+    }
 }
 
 /* Responsividade para Celular (max-width: 650px) */
@@ -501,7 +527,8 @@ body.bg-active-2::after {
 .search-input {
     flex: 1;
     min-width: min(290px, 100%);
-    height: 46px;
+    height: 46px !important;
+    min-height: 46px !important;
     padding: 0 18px;
     background: rgba(0, 0, 0, 0.2);
     border: 2px solid var(--border-color);
@@ -575,7 +602,7 @@ body.bg-active-2::after {
 
     .header-buttons button,
     .header-buttons .btn-secondary {
-        flex: 1 1 130px;
+        flex: 1 1 130px !important;
         justify-content: center;
     }
 }
@@ -2755,5 +2782,39 @@ button svg {
         margin-left: 0 !important;
         margin-top: 0 !important;
         flex-shrink: 0 !important;
+    }
+}
+
+/* Responsividade Extra para Botões de Ação em Telas Muito Pequenas (max-width: 450px) */
+@media (max-width: 450px) {
+    .header-buttons {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 8px !important;
+    }
+    
+    .header-buttons button {
+        flex: 1 1 calc(50% - 4px) !important;
+    }
+    
+    .header-buttons button:first-child {
+        flex: 1 1 100% !important;
+        width: 100% !important;
+    }
+
+    .album-actions {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 8px !important;
+    }
+    
+    .album-actions .btn-action {
+        width: auto !important;
+        flex: 1 1 calc(50% - 4px) !important;
+    }
+    
+    .album-actions .btn-action:first-child {
+        flex: 1 1 100% !important;
+        width: 100% !important;
     }
 }
