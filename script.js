@@ -451,12 +451,8 @@ function render() {
         }
     }
 
-    const dateInput = document.getElementById("review-date");
-    if (dateInput) {
-        if (!estado.data) {
-            estado.data = getDataHoje();
-        }
-        dateInput.value = estado.data;
+    if (!estado.data) {
+        estado.data = getDataHoje();
     }
 
     const capa = document.getElementById("capa");
@@ -989,27 +985,21 @@ function recalcularNotaAlbum() {
 }
 
 // Executa a troca da escala de notas das reviews e re-renderiza o app
-function updateRatingScaleSettings() {
-    const select = document.getElementById("settings-rating-scale");
-    if (select) {
-        setRatingScale(select.value);
-        render();
-        renderLibrary();
-        renderDashboard();
-    }
+function updateRatingScaleSettings(value) {
+    setRatingScale(value);
+    render();
+    renderLibrary();
+    renderDashboard();
 }
 
 // Executa a troca do modo de cálculo da nota do álbum e atualiza o estado
-function updateAutoCalculateSettings() {
-    const select = document.getElementById("settings-auto-calculate");
-    if (select) {
-        setAutoCalculateMode(select.value);
-        if (select.value !== "desativado" && estado.id) {
-            recalcularNotaAlbum();
-        }
-        render();
-        renderLibrary();
+function updateAutoCalculateSettings(value) {
+    setAutoCalculateMode(value);
+    if (value !== "desativado" && estado.id) {
+        recalcularNotaAlbum();
     }
+    render();
+    renderLibrary();
 }
 
 // === 11. CONTROLES DE LAYOUT DA BIBLIOTECA ===
@@ -1549,128 +1539,64 @@ function limparTudo() {
     }
 }
 
-// === 15. INICIALIZAÇÃO DE CONTROLES DE INTERFACE CUSTOMIZADOS ===
+// === 15. FECHAMENTO DE CONTROLES DE INTERFACE AO CLICAR FORA ===
 
-// Configura o comportamento interativo de dropdowns de seleção e input de data com máscara
-function inicializarControlesCustomizados() {
-    document.querySelectorAll(".custom-select").forEach(customSel => {
-        const nativeSel = customSel.previousElementSibling;
-        if (!nativeSel || nativeSel.tagName !== "SELECT") return;
-
-        const trigger = customSel.querySelector(".custom-select-trigger");
-        if (!trigger) return;
-        const triggerText = trigger.querySelector("span");
-        const options = customSel.querySelectorAll(".custom-option");
-
-        const selectedOpt = nativeSel.querySelector(`option[value="${nativeSel.value}"]`);
-        if (selectedOpt && triggerText) {
-            triggerText.textContent = selectedOpt.textContent;
-            options.forEach(opt => {
-                if (opt.getAttribute("data-value") === nativeSel.value) {
-                    opt.classList.add("selected");
-                } else {
-                    opt.classList.remove("selected");
-                }
-            });
+document.addEventListener("click", (e) => {
+    const searchWrapper = document.getElementById("library-search-wrapper");
+    const searchInput = document.getElementById("library-search");
+    if (searchWrapper && searchInput && !searchWrapper.contains(e.target)) {
+        if (searchWrapper.classList.contains("expanded")) {
+            const hadValue = searchInput.value !== "";
+            searchInput.value = "";
+            searchWrapper.classList.remove("expanded");
+            if (hadValue) {
+                renderLibrary();
+            }
         }
+    }
+});
 
-        trigger.addEventListener("click", (e) => {
-            e.stopPropagation();
-            document.querySelectorAll(".custom-select").forEach(cs => {
-                if (cs !== customSel) cs.classList.remove("active");
-            });
-            customSel.classList.toggle("active");
-        });
-
-        options.forEach(opt => {
-            opt.addEventListener("click", () => {
-                const val = opt.getAttribute("data-value");
-                nativeSel.value = val;
-
-                options.forEach(o => o.classList.remove("selected"));
-                opt.classList.add("selected");
-                if (triggerText) triggerText.textContent = opt.textContent;
-
-                customSel.classList.remove("active");
-                nativeSel.dispatchEvent(new Event("change"));
-            });
-        });
-    });
-
-    const dateInput = document.getElementById("review-date");
-    if (dateInput) {
-        const validarData = (dataStr) => {
-            if (!dataStr || dataStr.length !== 10) return false;
-            const parts = dataStr.split("/");
-            if (parts.length !== 3) return false;
-            const dia = parseInt(parts[0], 10);
-            const mes = parseInt(parts[1], 10);
-            const ano = parseInt(parts[2], 10);
-
-            if (isNaN(dia) || isNaN(mes) || isNaN(ano)) return false;
-            if (mes < 1 || mes > 12) return false;
-            if (ano < 1000 || ano > 9999) return false;
-
-            const diasNoMes = new Date(ano, mes, 0).getDate();
-            if (dia < 1 || dia > diasNoMes) return false;
-
-            return true;
-        };
-
-        dateInput.addEventListener("input", (e) => {
-            let val = e.target.value.replace(/\D/g, "");
-            if (val.length > 8) val = val.substring(0, 8);
-
-            let formatted = "";
-            if (val.length > 4) {
-                formatted = `${val.substring(0, 2)}/${val.substring(2, 4)}/${val.substring(4)}`;
-            } else if (val.length > 2) {
-                formatted = `${val.substring(0, 2)}/${val.substring(2)}`;
+// Inicializa os controles segmentados nas configurações
+function inicializarControlesSegmentados() {
+    // Escala de notas
+    const scaleVal = getRatingScale();
+    const scaleControl = document.getElementById("segmented-rating-scale");
+    if (scaleControl) {
+        scaleControl.querySelectorAll(".segmented-btn").forEach(btn => {
+            if (btn.getAttribute("data-value") === scaleVal) {
+                btn.classList.add("active");
             } else {
-                formatted = val;
+                btn.classList.remove("active");
             }
-
-            e.target.value = formatted;
-            estado.data = formatted;
-            autoSaveDraft();
-        });
-
-        dateInput.addEventListener("blur", (e) => {
-            if (!validarData(e.target.value)) {
-                const hojeStr = getDataHoje();
-                e.target.value = hojeStr;
-                estado.data = hojeStr;
-                autoSaveDraft();
-            }
+            btn.addEventListener("click", () => {
+                const val = btn.getAttribute("data-value");
+                updateRatingScaleSettings(val);
+                scaleControl.querySelectorAll(".segmented-btn").forEach(b => b.classList.remove("active"));
+                btn.classList.add("active");
+            });
         });
     }
 
-    document.addEventListener("click", (e) => {
-        document.querySelectorAll(".custom-select").forEach(cs => {
-            if (!cs.contains(e.target)) {
-                cs.classList.remove("active");
+    // Cálculo da nota
+    const autoVal = getAutoCalculateMode();
+    const autoControl = document.getElementById("segmented-auto-calculate");
+    if (autoControl) {
+        autoControl.querySelectorAll(".segmented-btn").forEach(btn => {
+            if (btn.getAttribute("data-value") === autoVal) {
+                btn.classList.add("active");
+            } else {
+                btn.classList.remove("active");
             }
+            btn.addEventListener("click", () => {
+                const val = btn.getAttribute("data-value");
+                updateAutoCalculateSettings(val);
+                autoControl.querySelectorAll(".segmented-btn").forEach(b => b.classList.remove("active"));
+                btn.classList.add("active");
+            });
         });
-        document.querySelectorAll(".dropdown-wrapper").forEach(w => {
-            if (!w.contains(e.target)) {
-                w.classList.remove("active");
-            }
-        });
-
-        const searchWrapper = document.getElementById("library-search-wrapper");
-        const searchInput = document.getElementById("library-search");
-        if (searchWrapper && searchInput && !searchWrapper.contains(e.target)) {
-            if (searchWrapper.classList.contains("expanded")) {
-                const hadValue = searchInput.value !== "";
-                searchInput.value = "";
-                searchWrapper.classList.remove("expanded");
-                if (hadValue) {
-                    renderLibrary();
-                }
-            }
-        }
-    });
+    }
 }
+
 
 // Expande ou recolhe o campo de busca rápida da biblioteca
 function toggleLibrarySearch(e) {
@@ -1694,30 +1620,7 @@ function toggleLibrarySearch(e) {
 // === 16. CLIPBOARD E NAVEGAÇÃO DE DROPDOWNS ===
 
 // Alterna a exibição do dropdown de ações no cabeçalho ou no editor
-function toggleDropdown(event, id) {
-    if (event) {
-        event.stopPropagation();
-        event.preventDefault();
-    }
-    const dropdownMenu = document.getElementById(id);
-    if (!dropdownMenu) return;
 
-    const wrapper = dropdownMenu.closest(".dropdown-wrapper");
-    if (!wrapper) return;
-
-    const isActive = wrapper.classList.contains("active");
-
-    document.querySelectorAll(".dropdown-wrapper").forEach(w => {
-        if (w !== wrapper) w.classList.remove("active");
-    });
-    document.querySelectorAll(".custom-select").forEach(cs => cs.classList.remove("active"));
-
-    if (isActive) {
-        wrapper.classList.remove("active");
-    } else {
-        wrapper.classList.add("active");
-    }
-}
 
 // Cola a review a partir da área de transferência (Clipboard) e processa os dados
 async function colarReviewClipboard() {
@@ -1726,7 +1629,6 @@ async function colarReviewClipboard() {
         const text = await navigator.clipboard.readText();
         await processarTextoReviewImportado(text);
         setLoading(false);
-        document.querySelectorAll(".dropdown-wrapper").forEach(w => w.classList.remove("active"));
     } catch (err) {
         setLoading(false);
         render();
@@ -1752,7 +1654,6 @@ async function copiarReviewClipboard() {
             `;
             setTimeout(() => {
                 btnCopiar.innerHTML = originalHTML;
-                document.querySelectorAll(".dropdown-wrapper").forEach(w => w.classList.remove("active"));
             }, 1500);
         }
     } catch (err) {
@@ -1764,18 +1665,9 @@ async function copiarReviewClipboard() {
 // === 18. INICIALIZAÇÃO DE EVENTOS E INICIALIZAÇÃO DA PÁGINA ===
 
 document.addEventListener("DOMContentLoaded", () => {
-    const selectScale = document.getElementById("settings-rating-scale");
-    if (selectScale) {
-        selectScale.value = getRatingScale();
-    }
-    const selectAuto = document.getElementById("settings-auto-calculate");
-    if (selectAuto) {
-        selectAuto.value = getAutoCalculateMode();
-    }
-
     applyLibraryLayout();
     carregarHistorico();
-    inicializarControlesCustomizados();
+    inicializarControlesSegmentados();
     switchView('library');
     atualizarNotificacaoApp(obterContadorRascunhos());
 });

@@ -9,7 +9,7 @@
   <link rel="apple-touch-icon" href="icons/logo-bg.svg">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#06080c">
-  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -20,7 +20,7 @@
 
 <body>
   <div class="app-container">
-    <!-- Barra lateral de navegação principal (SPA) -->
+    <!-- Barra lateral de navegação principal -->
     <aside class="nav-sidebar">
       <div class="logo-area">
         <h1><span>loopd</span></h1>
@@ -54,22 +54,14 @@
 
         <div class="header-buttons">
           <button onclick="gerar()" class="btn-primary">carregar album</button>
-          <div class="dropdown-wrapper">
-            <button class="btn-secondary dropdown-trigger" onclick="toggleDropdown(event, 'import-dropdown')">
-              <span>importar review</span>
-              <svg class="chevron-icon" width="14" height="14" style="margin-left: 8px; flex-shrink: 0;"><use href="icons/sprite.svg#icon-chevron-down"></use></svg>
-            </button>
-            <div class="dropdown-menu" id="import-dropdown">
-              <button class="dropdown-item" onclick="document.getElementById('import-file').click()">
-                <svg width="14" height="14" style="margin-right: 8px;"><use href="icons/sprite.svg#icon-import-txt"></use></svg>
-                importar .txt
-              </button>
-              <button class="dropdown-item" onclick="colarReviewClipboard()">
-                <svg width="14" height="14" style="margin-right: 8px;"><use href="icons/sprite.svg#icon-clipboard-paste"></use></svg>
-                colar review
-              </button>
-            </div>
-          </div>
+          <button class="btn-secondary" onclick="colarReviewClipboard()" title="Colar review da área de transferência">
+            <svg width="14" height="14" style="margin-right: 8px;"><use href="icons/sprite.svg#icon-clipboard-paste"></use></svg>
+            <span>colar review</span>
+          </button>
+          <button class="btn-secondary" onclick="document.getElementById('import-file').click()" title="Importar review de arquivo .txt">
+            <svg width="14" height="14" style="margin-right: 8px;"><use href="icons/sprite.svg#icon-import-txt"></use></svg>
+            <span>importar .txt</span>
+          </button>
           <input type="file" id="import-file" accept=".txt" style="display: none;" onchange="importarTXT(event)">
         </div>
       </header>
@@ -192,10 +184,6 @@
                     <span id="album-score-value" class="album-score-value"><span class="current-score">0</span><span class="max-score">/9</span></span>
                     <div id="album-stars" class="estrelas"></div>
                   </div>
-                  <div class="date-input-container">
-                    <input type="text" id="review-date" class="date-input" placeholder="dd/mm/aaaa" maxlength="10">
-                    <svg class="calendar-icon" width="16" height="16"><use href="icons/sprite.svg#icon-calendar"></use></svg>
-                  </div>
                 </div>
               </div>
 
@@ -207,23 +195,14 @@
 
               <div id="album-actions" class="album-actions" style="display: none;">
                 <button id="btn-salvar" class="btn-action btn-save" onclick="salvarReview()">salvar review</button>
-                <div class="dropdown-wrapper">
-                  <button id="btn-exportar" class="btn-action btn-export dropdown-trigger"
-                    onclick="toggleDropdown(event, 'export-dropdown')" style="width: 100%;">
-                    <span>exportar review</span>
-                    <svg class="chevron-icon" width="14" height="14" style="margin-left: 8px; flex-shrink: 0;"><use href="icons/sprite.svg#icon-chevron-up"></use></svg>
-                  </button>
-                  <div class="dropdown-menu" id="export-dropdown">
-                    <button class="dropdown-item" onclick="exportarTXT()">
-                      <svg width="14" height="14" style="margin-right: 8px;"><use href="icons/sprite.svg#icon-export-txt"></use></svg>
-                      exportar .txt
-                    </button>
-                    <button id="btn-copiar-item" class="dropdown-item" onclick="copiarReviewClipboard()">
-                      <svg width="14" height="14" style="margin-right: 8px;"><use href="icons/sprite.svg#icon-copy"></use></svg>
-                      copiar review
-                    </button>
-                  </div>
-                </div>
+                <button id="btn-copiar-item" class="btn-action btn-secondary" onclick="copiarReviewClipboard()">
+                  <svg width="14" height="14" style="margin-right: 8px;"><use href="icons/sprite.svg#icon-copy"></use></svg>
+                  <span>copiar review</span>
+                </button>
+                <button class="btn-action btn-secondary" onclick="exportarTXT()">
+                  <svg width="14" height="14" style="margin-right: 8px;"><use href="icons/sprite.svg#icon-export-txt"></use></svg>
+                  <span>exportar .txt</span>
+                </button>
               </div>
             </div>
           </div>
@@ -250,26 +229,15 @@
 
             <!-- Controles de ordenação -->
             <div class="control-group">
-              <label for="library-sort-by">ordenar por:</label>
-              <div class="custom-select-wrapper">
-                <select id="library-sort-by" onchange="renderLibrary()" style="display: none;">
+              <span class="control-label">ordenar por:</span>
+              <div class="select-container">
+                <select id="library-sort-by" onchange="renderLibrary()" class="native-select">
                   <option value="date">data da review</option>
                   <option value="score">nota do álbum</option>
                   <option value="tracks_count">quantidade de faixas</option>
                   <option value="duration">duração total</option>
                 </select>
-                <div class="custom-select" id="custom-sort-select">
-                  <div class="custom-select-trigger">
-                    <span>data da review</span>
-                    <svg class="chevron-icon" width="14" height="14"><use href="icons/sprite.svg#icon-chevron-down"></use></svg>
-                  </div>
-                  <div class="custom-options">
-                    <div class="custom-option selected" data-value="date">data da review</div>
-                    <div class="custom-option" data-value="score">nota do álbum</div>
-                    <div class="custom-option" data-value="tracks_count">quantidade de faixas</div>
-                    <div class="custom-option" data-value="duration">duração total</div>
-                  </div>
-                </div>
+                <svg class="select-chevron" width="12" height="12"><use href="icons/sprite.svg#icon-chevron-down"></use></svg>
               </div>
               <button id="library-sort-order" class="btn-icon-toggle" onclick="toggleLibrarySortOrder()"
                 title="inverter ordem">
@@ -309,21 +277,9 @@
                 <h4>escala de notas</h4>
                 <p>selecione o sistema de avaliação padrão das suas reviews.</p>
                 <div class="settings-control">
-                  <div class="custom-select-wrapper">
-                    <select id="settings-rating-scale" onchange="updateRatingScaleSettings()" style="display: none;">
-                      <option value="9">0 a 9 (padrão)</option>
-                      <option value="5">0 a 5 estrelas</option>
-                    </select>
-                    <div class="custom-select" id="custom-rating-scale-select">
-                      <div class="custom-select-trigger">
-                        <span>0 a 9 (padrão)</span>
-                        <svg class="chevron-icon" width="14" height="14"><use href="icons/sprite.svg#icon-chevron-down"></use></svg>
-                      </div>
-                      <div class="custom-options">
-                        <div class="custom-option selected" data-value="9">0 a 9 (padrão)</div>
-                        <div class="custom-option" data-value="5">0 a 5 estrelas</div>
-                      </div>
-                    </div>
+                  <div class="segmented-control" id="segmented-rating-scale">
+                    <button type="button" class="segmented-btn" data-value="9">0 a 9 estrelas</button>
+                    <button type="button" class="segmented-btn" data-value="5">0 a 5 estrelas</button>
                   </div>
                 </div>
               </div>
@@ -332,22 +288,9 @@
                 <h4>cálculo da nota do álbum</h4>
                 <p>escolha se a nota geral do álbum deve ser calculada a partir das faixas.</p>
                 <div class="settings-control">
-                  <div class="custom-select-wrapper">
-                    <select id="settings-auto-calculate" onchange="updateAutoCalculateSettings()"
-                      style="display: none;">
-                      <option value="desativado">desativado (manual)</option>
-                      <option value="simples">média simples</option>
-                    </select>
-                    <div class="custom-select" id="custom-auto-calculate-select">
-                      <div class="custom-select-trigger">
-                        <span>desativado (manual)</span>
-                        <svg class="chevron-icon" width="14" height="14"><use href="icons/sprite.svg#icon-chevron-down"></use></svg>
-                      </div>
-                      <div class="custom-options">
-                        <div class="custom-option selected" data-value="desativado">desativado (manual)</div>
-                        <div class="custom-option" data-value="simples">média simples</div>
-                      </div>
-                    </div>
+                  <div class="segmented-control" id="segmented-auto-calculate">
+                    <button type="button" class="segmented-btn" data-value="desativado">média manual</button>
+                    <button type="button" class="segmented-btn" data-value="simples">média simples</button>
                   </div>
                 </div>
               </div>
