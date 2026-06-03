@@ -26,5 +26,4 @@ um app simples para registrar, avaliar e organizar suas reviews de álbuns music
 - api do spotify (busca as informações dos álbuns)
 - vercel (deploy da pagina)
 
-
-*inspirado no spotify, letterboxd e last.fm*
+### *inspirado no spotify, letterboxd e last.fm*
