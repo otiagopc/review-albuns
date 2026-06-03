@@ -2,9 +2,7 @@
 
 um app simples para registrar, avaliar e organizar suas reviews de álbuns musicais. funciona como um diário e dashboard de música pessoal.
 
----
-
-### ✦ o que faz
+## ✦ o que faz
 
 - **importação via spotify**
   cole o link de um álbum para carregar as faixas e a capa oficial automaticamente.
@@ -21,15 +19,11 @@ um app simples para registrar, avaliar e organizar suas reviews de álbuns music
 - **backup e exportação**
   salve suas reviews copiando o texto formatado ou exportando em `.txt`. você também pode fazer backup completo em `.json`.
 
----
-
-### ✦ tecnologias
+## ✦ tecnologias
 
 - html5 & css
 - javascript (puro)
 - api do spotify (busca as informações dos álbuns)
 - vercel (deploy da pagina)
 
----
-
-*inspirado no spotify, letterboxd e last.fm*
+### *inspirado no spotify, letterboxd e last.fm*
