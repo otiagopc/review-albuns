@@ -1,5 +1,5 @@
 
-// === 1. VARIÁVEIS DE ESTADO E VALORES GLOBAIS ===
+// variaveis de estado e globais
 
 let estado = {
     id: "",
@@ -18,7 +18,7 @@ let currentCapa = "";
 let librarySortDesc = true;
 let isFirstLoad = false;
 
-// Retorna um objeto de estado vazio para redefinir o editor de reviews
+// estado vazio para resetar o editor
 function getEmptyState() {
     return {
         id: "",
@@ -34,9 +34,9 @@ function getEmptyState() {
     };
 }
 
-// === 2. FUNÇÕES AUXILIARES E UTILITÁRIOS ===
+// funcoes auxiliares
 
-// Retorna a data de hoje formatada como DD/MM/AAAA
+// data de hoje formatada
 function getDataHoje() {
     const hoje = new Date();
     const d = String(hoje.getDate()).padStart(2, "0");
@@ -45,12 +45,12 @@ function getDataHoje() {
     return `${d}/${m}/${y}`;
 }
 
-// Retorna o sufixo correspondente à escala ativa (/5 ou /9)
+// sufixo da escala ativa
 function getMaxScoreLabel() {
     return getRatingScale() === "5" ? "/5" : "/9";
 }
 
-// Salva automaticamente o rascunho da review caso esteja em modo de rascunho
+// salva rascunho automaticamente
 function autoSaveDraft() {
     if (!estado.id) return;
     if (estado.isDraft) {
@@ -63,7 +63,7 @@ function autoSaveDraft() {
     }
 }
 
-// Redireciona a visualização para o Editor de Reviews carregando o álbum fornecido
+// vai para o editor com o album
 function navegarParaReview(rev, clonar = false) {
     estado = clonar ? { ...rev } : rev;
     switchView("reviews");
@@ -71,7 +71,7 @@ function navegarParaReview(rev, clonar = false) {
     render();
 }
 
-// Deleta uma review do histórico pelo ID ou nome sem exibir mensagem de confirmação
+// deleta review sem confirmar
 function deletarReviewSemConfirmacao(revId, revAlbum, revArtista) {
     const origHistorico = getHistorico();
     const origIndex = origHistorico.findIndex(r => r.id === revId || (r.album === revAlbum && r.artista === revArtista));
@@ -85,9 +85,9 @@ function deletarReviewSemConfirmacao(revId, revAlbum, revArtista) {
     }
 }
 
-// === 3. UTILITÁRIOS DE CONVERSÃO DE TEMPO E DURAÇÃO ===
+// converte tempo e duracao
 
-// Converte milissegundos em uma string formatada (MM:SS)
+// ms para MM:SS
 function formatarTempo(ms) {
     if (!ms) return "";
     const totalSegundos = Math.floor(ms / 1000);
@@ -96,7 +96,7 @@ function formatarTempo(ms) {
     return `${minutos}:${segundos.toString().padStart(2, "0")}`;
 }
 
-// Converte milissegundos na duração total exibida no editor (ex: 1h 20min ou 45 min)
+// ms para duracao no editor
 function formatarTempoTotal(ms) {
     if (!ms) return "";
     const totalSegundos = Math.floor(ms / 1000);
@@ -110,7 +110,7 @@ function formatarTempoTotal(ms) {
     return `${minutos} min`;
 }
 
-// Converte milissegundos na duração total exibida no dashboard (ex: 2d 5h, 3h 15m ou 40 min)
+// ms para duracao no dashboard
 function formatarTempoTotalDashboard(ms) {
     if (!ms) return "0 min";
     const totalSegundos = Math.floor(ms / 1000);
@@ -132,15 +132,15 @@ function formatarTempoTotalDashboard(ms) {
     return `${minutos} min`;
 }
 
-// Retorna a soma da duração de todas as músicas em milissegundos
+// duracao total em ms
 function calcularDuracaoTotal(tracks) {
     if (!tracks || !Array.isArray(tracks)) return 0;
     return tracks.reduce((sum, t) => sum + (t.duration_ms || 0), 0);
 }
 
-// === 4. COMPONENTES VISUAIS DA INTERFACE ===
+// componentes visuais
 
-// Ativa ou desativa a tela de carregamento (spinner) e exibe os contêineres apropriados
+// controla tela de carregamento
 function setLoading(isLoading) {
     const loading = document.getElementById("loading");
     const placeholder = document.getElementById("placeholder");
@@ -161,7 +161,7 @@ function setLoading(isLoading) {
     }
 }
 
-// Utiliza a imagem de capa do álbum para aplicar de fundo da página com efeito de transição suave
+// atualiza fundo com a capa
 function atualizarFundo(novaCapa) {
     if (novaCapa === currentCapa) return;
 
@@ -185,9 +185,9 @@ function atualizarFundo(novaCapa) {
     currentCapa = novaCapa;
 }
 
-// === 5. WIDGET INTERATIVO DE AVALIAÇÃO COM ESTRELAS ===
+// estrelas interativas
 
-// Cria e gerencia a barra de estrelas interativa com suporte a toque e arraste do mouse
+// barra de estrelas com toque e arraste
 function criarEstrelas(container, valorAtual, onClick, isAlbum = false) {
     container.innerHTML = "";
     const stars = [];
@@ -326,9 +326,9 @@ function criarEstrelas(container, valorAtual, onClick, isAlbum = false) {
     };
 }
 
-// === 6. INTEGRAÇÃO COM A API E CRIAÇÃO DE REVIEWS ===
+// integracao com a api
 
-// Busca os dados do álbum na API do Spotify através do link do usuário
+// busca album no spotify
 async function gerar() {
     const url = document.getElementById("url").value.trim();
     if (!url) return alert("por favor cole um link valido do spotify!!!");
@@ -383,9 +383,9 @@ async function gerar() {
     }
 }
 
-// === 7. RENDERIZAÇÃO DO EDITOR DE REVIEW ===
+// renderiza o editor
 
-// Atualiza e desenha toda a interface do editor com base no estado atual do álbum
+// desenha a tela do editor
 function render() {
     const header = document.getElementById("header");
     const tracksDiv = document.getElementById("tracks");
@@ -554,21 +554,21 @@ function render() {
     carregarHistorico();
 }
 
-// === 8. PERSISTÊNCIA DAS REVIEWS E HISTÓRICO ===
+// salvar reviews e historico
 
-// Recupera a lista completa de reviews salvas no LocalStorage
+// pega historico do localstorage
 function getHistorico() {
     return JSON.parse(localStorage.getItem("reviews")) || [];
 }
 
-// Salva a lista de reviews no LocalStorage
+// salva historico no localstorage
 function salvarHistorico(historico) {
     localStorage.setItem("reviews", JSON.stringify(historico));
     const rascunhosCount = historico.filter(r => r.isDraft).length;
     atualizarNotificacaoApp(rascunhosCount);
 }
 
-// Converte a string de data (DD/MM/AAAA) em um número inteiro comparável (AAAAMMDD)
+// converte data para comparar
 function getSortableDate(dateStr) {
     if (!dateStr) return 0;
     const parts = dateStr.split('/');
@@ -577,7 +577,7 @@ function getSortableDate(dateStr) {
     return parseInt(`${y}${parts[1]}${parts[0]}`, 10);
 }
 
-// Salva a review atual de forma definitiva no LocalStorage (remover status de rascunho)
+// salva review definitiva
 function salvarReview() {
     if (!estado.id) return alert("nenhum album para salvar!!!");
 
@@ -613,7 +613,7 @@ function salvarReview() {
     }
 }
 
-// Renderiza a lista de histórico de reviews na barra lateral esquerda do editor
+// desenha historico lateral
 function carregarHistorico() {
     const container = document.getElementById("historico");
     if (!container) return;
@@ -659,9 +659,9 @@ function carregarHistorico() {
     });
 }
 
-// === 9. EXPORTAÇÃO E IMPORTAÇÃO EM TEXTO OU BACKUP ===
+// exportar e importar
 
-// Gera uma representação textual formatada da review atual para copiar ou exportar
+// gera texto da review
 function gerarTextoReview() {
     if (!estado.id) return "";
 
@@ -691,7 +691,7 @@ function gerarTextoReview() {
     return texto;
 }
 
-// Baixa um arquivo de texto (.txt) contendo o template formatado da review atual
+// exporta para txt
 function exportarTXT() {
     const texto = gerarTextoReview();
     if (!texto) return alert("nenhum album para exportar!!!");
@@ -713,7 +713,7 @@ function exportarTXT() {
     }
 }
 
-// Processa o conteúdo de texto formatado importado (.txt ou clipboard) para montar a review
+// processa texto importado
 async function processarTextoReviewImportado(text) {
     if (!text || text.trim() === "") {
         throw new Error("o texto da review está vazio!!!");
@@ -827,7 +827,7 @@ async function processarTextoReviewImportado(text) {
     navegarParaReview(estado);
 }
 
-// Trata o evento de carregamento de arquivo de texto (.txt) importado
+// importa de arquivo txt
 async function importarTXT(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -847,7 +847,7 @@ async function importarTXT(event) {
     }
 }
 
-// Exporta todo o histórico de reviews em formato de arquivo JSON para backup
+// exporta backup completo
 function exportarHistoricoCompleto() {
     const historico = getHistorico();
     if (historico.length === 0) return alert("historico vazio!!!");
@@ -866,7 +866,7 @@ function exportarHistoricoCompleto() {
     URL.revokeObjectURL(url);
 }
 
-// Importa um backup completo de reviews de um arquivo JSON anteriormente exportado
+// importa backup completo
 async function importarHistoricoCompleto(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -898,29 +898,29 @@ async function importarHistoricoCompleto(event) {
 }
 
 
-// === 10. SISTEMA DE CONFIGURAÇÃO DE ESCALAS DE NOTAS ===
+// configuracao de escalas de notas
 
-// Obtém a escala de nota ativa do LocalStorage (padrão é "9")
+// pega escala de nota ativa
 function getRatingScale() {
     return localStorage.getItem("rating-scale") || "9";
 }
 
-// Salva a preferência de escala de notas no LocalStorage
+// salva preferenca de escala
 function setRatingScale(scale) {
     localStorage.setItem("rating-scale", scale);
 }
 
-// Obtém a preferência ativa do modo de cálculo de média das faixas
+// pega modo de calculo da media
 function getAutoCalculateMode() {
     return localStorage.getItem("auto-calculate-rating") || "desativado";
 }
 
-// Salva a preferência do modo de cálculo de média no LocalStorage
+// salva modo de calculo da media
 function setAutoCalculateMode(mode) {
     localStorage.setItem("auto-calculate-rating", mode);
 }
 
-// Converte a nota de base interna (Base 9) para a escala selecionada para exibição/estrelas
+// converte nota para a escala visual
 function aEscala(nota, isAlbum = false) {
     if (nota === undefined || nota === null) return 0;
     const scale = getRatingScale();
@@ -934,7 +934,7 @@ function aEscala(nota, isAlbum = false) {
     return Math.round(nota * 2) / 2;
 }
 
-// Converte a nota inserida na escala visual para a base interna do banco de dados (Base 9)
+// converte nota para a base interna
 function deEscala(notaVal) {
     if (notaVal === undefined || notaVal === null) return 0;
     const scale = getRatingScale();
@@ -945,7 +945,7 @@ function deEscala(notaVal) {
     return notaVal;
 }
 
-// Retorna a nota efetiva do álbum (nota manual ou média calculada das faixas)
+// pega nota efetiva do album
 function getEffectiveAlbumNota(rev) {
     if (!rev) return 0;
     const calcMode = getAutoCalculateMode();
@@ -966,7 +966,7 @@ function getEffectiveAlbumNota(rev) {
     return rev.albumNota || 0;
 }
 
-// Recalcula a nota do álbum a partir da média simples das notas das faixas avaliadas
+// recalcula nota pela media das faixas
 function recalcularNotaAlbum() {
     if (!estado.tracks || estado.tracks.length === 0) return;
 
@@ -1002,20 +1002,20 @@ function updateAutoCalculateSettings(value) {
     renderLibrary();
 }
 
-// === 11. CONTROLES DE LAYOUT DA BIBLIOTECA ===
+// layout da biblioteca
 
-// Obtém o layout da biblioteca ativo (padrão é "grid")
+// pega layout ativo da biblioteca
 function getLibraryLayout() {
     return localStorage.getItem("library-layout") || "grid";
 }
 
-// Salva a preferência de layout da biblioteca e atualiza a exibição
+// salva layout da biblioteca
 function setLibraryLayout(layout) {
     localStorage.setItem("library-layout", layout);
     applyLibraryLayout();
 }
 
-// Aplica as classes CSS necessárias para refletir a escolha de layout (grade ou lista)
+// aplica classes de layout
 function applyLibraryLayout() {
     const layout = getLibraryLayout();
     const grid = document.getElementById("library-grid");
@@ -1041,9 +1041,9 @@ function applyLibraryLayout() {
     }
 }
 
-// === 12. NAVEGAÇÃO ENTRE ABAS SPA (SPA ROUTING) ===
+// navegacao spa
 
-// Alterna a exibição das seções (views) e atualiza os botões ativos do menu
+// troca de aba
 function switchView(viewName) {
     document.querySelectorAll('.app-view').forEach(view => {
         view.style.display = 'none';
@@ -1071,13 +1071,13 @@ function switchView(viewName) {
     }
 }
 
-// === 13. COMPUTAÇÃO E RENDERIZAÇÃO DO DASHBOARD ===
+// dashboard
 
-// Calcula as métricas de uso do usuário, monta o gráfico de notas e lista destaques
+// calcula metricas e desenha dashboard
 function renderDashboard() {
     const historico = getHistorico().filter(r => !r.isDraft);
 
-    // Calcula a média das notas de faixas avaliadas para critério de desempate
+    // media das faixas para desempate
     const getMediaTracks = (r) => {
         if (!r.tracks || r.tracks.length === 0) return 0;
         const rated = r.tracks.filter(t => aEscala(t.nota, false) > 0.5);
@@ -1085,7 +1085,7 @@ function renderDashboard() {
         return rated.reduce((sum, t) => sum + (t.nota || 0), 0) / rated.length;
     };
 
-    // Ordena os álbuns pela nota geral e, em caso de empate, pela média das notas das faixas
+    // ordena albuns por nota e desempata
     const sortedAlbums = [...historico].sort((a, b) => {
         const notaA = getEffectiveAlbumNota(a) || 0;
         const notaB = getEffectiveAlbumNota(b) || 0;
@@ -1373,9 +1373,9 @@ function renderDashboard() {
     }
 }
 
-// === 14. RENDERIZAÇÃO DA BIBLIOTECA DE REVIEWS ===
+// biblioteca
 
-// Inverte a direção de ordenação da biblioteca (ascendente ou decrescente)
+// inverte direcao de ordenacao
 function toggleLibrarySortOrder() {
     librarySortDesc = !librarySortDesc;
 
@@ -1390,7 +1390,7 @@ function toggleLibrarySortOrder() {
     renderLibrary();
 }
 
-// Filtra, ordena e desenha os cards de reviews salvos no painel da biblioteca
+// filtra e desenha biblioteca
 function renderLibrary() {
     applyLibraryLayout();
     const libraryGrid = document.getElementById("library-grid");
@@ -1527,7 +1527,7 @@ function renderLibrary() {
     });
 }
 
-// Apaga permanentemente todo o histórico LocalStorage do usuário
+// apaga historico do localstorage
 function limparTudo() {
     if (confirm("ATENÇÃO: isso apagará permanentemente todas as suas reviews salvas! esta ação não pode ser desfeita. deseja continuar?")) {
         localStorage.removeItem("reviews");
@@ -1539,7 +1539,7 @@ function limparTudo() {
     }
 }
 
-// === 15. FECHAMENTO DE CONTROLES DE INTERFACE AO CLICAR FORA ===
+// fecha busca se clicar fora
 
 document.addEventListener("click", (e) => {
     const searchWrapper = document.getElementById("library-search-wrapper");
@@ -1556,9 +1556,9 @@ document.addEventListener("click", (e) => {
     }
 });
 
-// Inicializa os controles segmentados nas configurações
+// inicia controles segmentados
 function inicializarControlesSegmentados() {
-    // Escala de notas
+    // escala de notas
     const scaleVal = getRatingScale();
     const scaleControl = document.getElementById("segmented-rating-scale");
     if (scaleControl) {
@@ -1577,7 +1577,7 @@ function inicializarControlesSegmentados() {
         });
     }
 
-    // Cálculo da nota
+    // calculo da nota
     const autoVal = getAutoCalculateMode();
     const autoControl = document.getElementById("segmented-auto-calculate");
     if (autoControl) {
@@ -1598,7 +1598,7 @@ function inicializarControlesSegmentados() {
 }
 
 
-// Expande ou recolhe o campo de busca rápida da biblioteca
+// abre ou fecha busca
 function toggleLibrarySearch(e) {
     if (e) {
         e.stopPropagation();
@@ -1617,12 +1617,12 @@ function toggleLibrarySearch(e) {
     }
 }
 
-// === 16. CLIPBOARD E NAVEGAÇÃO DE DROPDOWNS ===
+// clipboard
 
-// Alterna a exibição do dropdown de ações no cabeçalho ou no editor
+// controla dropdown
 
 
-// Cola a review a partir da área de transferência (Clipboard) e processa os dados
+// cola review da area de transferencia
 async function colarReviewClipboard() {
     setLoading(true);
     try {
@@ -1637,7 +1637,7 @@ async function colarReviewClipboard() {
     }
 }
 
-// Copia o template de review formatado para a área de transferência do usuário
+// copia review para a area de transferencia
 async function copiarReviewClipboard() {
     const texto = gerarTextoReview();
     if (!texto) return alert("nenhum album para copiar!!!");
@@ -1662,7 +1662,7 @@ async function copiarReviewClipboard() {
     }
 }
 
-// === 18. INICIALIZAÇÃO DE EVENTOS E INICIALIZAÇÃO DA PÁGINA ===
+// inicializacao
 
 document.addEventListener("DOMContentLoaded", () => {
     applyLibraryLayout();
@@ -1672,15 +1672,15 @@ document.addEventListener("DOMContentLoaded", () => {
     atualizarNotificacaoApp(obterContadorRascunhos());
 });
 
-// === PWA & APP BADGE FUNCTIONS ===
+// pwa e badges
 
-// Conta os rascunhos salvos localmente
+// conta rascunhos
 function obterContadorRascunhos() {
     const historico = getHistorico();
     return historico.filter(r => r.isDraft).length;
 }
 
-// Atualiza a bolinha de notificação (badge) no ícone do aplicativo
+// atualiza bolinha de notificacao
 function atualizarNotificacaoApp(contador) {
     if ('setAppBadge' in navigator) {
         if (contador > 0) {
@@ -1693,7 +1693,7 @@ function atualizarNotificacaoApp(contador) {
     }
 }
 
-// Dispara a solicitação de permissão de notificação para iOS em um gesto do usuário
+// pede permissao de notificacao no ios
 document.addEventListener('click', () => {
     if ('Notification' in window && Notification.permission === 'default') {
         Notification.requestPermission().then(permission => {
@@ -1705,7 +1705,7 @@ document.addEventListener('click', () => {
     }
 }, { once: true });
 
-// Registro do Service Worker
+// registra service worker
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js')

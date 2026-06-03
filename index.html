@@ -20,7 +20,7 @@
 
 <body>
   <div class="app-container">
-    <!-- Barra lateral de navegação principal -->
+    <!-- barra lateral -->
     <aside class="nav-sidebar">
       <div class="logo-area">
         <h1><span>loopd</span></h1>
@@ -46,9 +46,9 @@
       </nav>
     </aside>
 
-    <!-- Conteúdo principal da aplicação -->
+    <!-- conteudo principal -->
     <main class="main-content">
-      <!-- Cabeçalho superior com barra de busca e importador -->
+      <!-- cabecalho com busca e importar -->
       <header class="main-header">
         <input type="text" id="url" class="search-input" placeholder="cole o link do album do spotify aqui">
 
@@ -66,7 +66,7 @@
         </div>
       </header>
 
-      <!-- Aba do Dashboard -->
+      <!-- aba do dashboard -->
       <div id="view-dashboard" class="app-view">
         <div class="dashboard-grid">
           <div class="stat-card">
@@ -108,9 +108,9 @@
         </div>
 
         <div class="dashboard-row">
-          <!-- Coluna esquerda: gráfico e músicas favoritas -->
+          <!-- coluna esquerda com grafico e favoritas -->
           <div class="dashboard-col-left">
-            <!-- Gráfico de distribuição de notas -->
+            <!-- grafico de distribuicao de notas -->
             <div class="chart-panel">
               <h3 class="chart-title">distribuição de notas</h3>
               <div class="chart-stats-summary-row">
@@ -122,35 +122,35 @@
                 <div class="chart-main-area">
                   <div id="chart-grid-lines" class="chart-grid-lines"></div>
                   <div id="rating-distribution-chart" class="bar-chart">
-                    <!-- Gerado dinamicamente via script.js -->
+                    <!-- gerado pelo script.js -->
                   </div>
                 </div>
               </div>
             </div>
 
-            <!-- Painel de músicas favoritas -->
+            <!-- painel de musicas favoritas -->
             <div class="favorites-panel">
               <h3>músicas favoritas</h3>
               <div id="dash-favorites-list" class="favorites-list">
-                <!-- Gerado dinamicamente via script.js -->
+                <!-- gerado pelo script.js -->
               </div>
             </div>
           </div>
 
-          <!-- Coluna direita: Top 10 álbuns -->
+          <!-- coluna direita com top 10 albuns -->
           <div class="top-albums-panel">
             <h3>seu top 10 álbuns</h3>
             <div id="dash-top-albums" class="top-albums-list">
-              <!-- Gerado dinamicamente via script.js -->
+              <!-- gerado pelo script.js -->
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Aba do Editor de Reviews -->
+      <!-- editor de reviews -->
       <div id="view-reviews" class="app-view" style="display: none;">
         <div class="editor-layout has-placeholder">
-          <!-- Barra lateral com histórico de reviews -->
+          <!-- historico de reviews -->
           <aside class="editor-sidebar" id="editor-sidebar">
             <div class="history-header">
               <h2>histórico de reviews</h2>
@@ -158,7 +158,7 @@
             <div id="historico"></div>
           </aside>
 
-          <!-- Painel principal do editor de review -->
+          <!-- painel principal do editor -->
           <div class="editor-main">
             <p id="placeholder" class="empty-state">cole o link de um álbum do spotify no cabeçalho ou selecione um do histórico para começar a sua avaliação!</p>
 
@@ -166,7 +166,7 @@
               <div class="spinner"></div>
             </div>
 
-            <!-- Formulários e controles do editor de review ativo -->
+            <!-- formulario e controles da review -->
             <div class="review-workspace">
               <div id="header" class="album-header" style="display: none;">
                 <div class="capa-wrapper">
@@ -209,15 +209,15 @@
         </div>
       </div>
 
-      <!-- Aba de Biblioteca de Reviews -->
+      <!-- biblioteca -->
       <div id="view-library" class="app-view" style="display: none;">
         <h2 class="library-title">sua biblioteca de reviews</h2>
         <div class="library-header-row">
           <p class="section-description">todos os álbuns salvos por você</p>
 
-          <!-- Filtros, busca e controles de visualização -->
+          <!-- filtros e busca -->
           <div class="library-controls">
-            <!-- Barra de busca rápida -->
+            <!-- busca rapida -->
             <div class="library-search-wrapper" id="library-search-wrapper">
               <button id="library-search-btn" class="btn-icon-toggle library-search-btn"
                 onclick="toggleLibrarySearch(event)" title="buscar">
@@ -227,7 +227,7 @@
                 placeholder="buscar álbum ou artista..." oninput="renderLibrary()">
             </div>
 
-            <!-- Controles de ordenação -->
+            <!-- ordenacao -->
             <div class="control-group">
               <span class="control-label">ordenar por:</span>
               <div class="select-container">
@@ -245,7 +245,7 @@
               </button>
             </div>
 
-            <!-- Alternar layout (grade ou lista) -->
+            <!-- layout grade ou lista -->
             <div class="layout-toggle-group">
               <button id="layout-grid-btn" class="btn-layout-toggle active" onclick="setLibraryLayout('grid')"
                 title="visualização em grade">
@@ -259,11 +259,11 @@
           </div>
         </div>
         <div id="library-grid" class="library-grid">
-          <!-- Cards de reviews gerados dinamicamente via script.js -->
+          <!-- cards gerados pelo script.js -->
         </div>
       </div>
 
-      <!-- Aba de Opções/Configurações -->
+      <!-- opcoes -->
       <div id="view-settings" class="app-view" style="display: none;">
         <div class="settings-container">
           <h2>configurações e dados</h2>

@@ -9,7 +9,7 @@ const ASSETS = [
   './icons/logo-bg.svg'
 ];
 
-// Evento de Instalação: Armazena em cache todos os ativos estáticos iniciais
+// salva no cache os arquivos iniciais
 self.addEventListener('install', (e) => {
   e.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
@@ -18,7 +18,7 @@ self.addEventListener('install', (e) => {
   );
 });
 
-// Evento de Ativação: Limpa caches antigos quando há alteração na versão (CACHE_NAME)
+// limpa caches antigos se mudar a versao
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys().then((keys) => {
@@ -33,16 +33,16 @@ self.addEventListener('activate', (e) => {
   );
 });
 
-// Evento de Requisição (Fetch): Tenta buscar na rede e atualiza o cache, caindo para o cache em caso de falha (off-line)
+// busca da rede, atualiza o cache e usa o cache se falhar
 self.addEventListener('fetch', (e) => {
-  // Ignora requisições não-GET e chamadas de API do próprio backend
+  // ignora chamadas que nao sao get ou sao da api
   if (e.request.method !== 'GET' || e.request.url.includes('/api/')) {
     return;
   }
 
   e.respondWith(
     fetch(e.request).then((res) => {
-      // Ignora respostas que não sejam de sucesso (status 200) para evitar cache corrompido
+      // ignora erros para nao salvar cache quebrado
       if (!res || res.status !== 200 || res.type !== 'basic') {
         return res;
       }
