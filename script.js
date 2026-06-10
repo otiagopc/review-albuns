@@ -527,7 +527,12 @@ function render() {
         crown.innerHTML = `
             <svg class="crown-icon" width="16" height="16"><use href="icons/sprite.svg#icon-crown"></use></svg>
         `;
-        crown.onclick = () => {
+        crown.onpointerdown = (e) => e.stopPropagation();
+        crown.onpointerup = (e) => e.stopPropagation();
+        crown.ontouchstart = (e) => e.stopPropagation();
+        crown.ontouchend = (e) => e.stopPropagation();
+        crown.onclick = (e) => {
+            e.stopPropagation();
             if (track.fav) track.fav = false;
             else {
                 estado.tracks.forEach((t) => (t.fav = false));
@@ -1670,6 +1675,16 @@ document.addEventListener("DOMContentLoaded", () => {
     inicializarControlesSegmentados();
     switchView('library');
     atualizarNotificacaoApp(obterContadorRascunhos());
+
+    // Limpa o campo de busca quando clicado se contiver texto/link
+    const urlInput = document.getElementById("url");
+    if (urlInput) {
+        urlInput.addEventListener("click", () => {
+            if (urlInput.value.trim() !== "") {
+                urlInput.value = "";
+            }
+        });
+    }
 });
 
 // pwa e badges

@@ -244,10 +244,6 @@ body.bg-active-2::after {
 
 /* tablet */
 @media (max-width: 980px) {
-    :root {
-        --spacing: 16px;
-    }
-
     .app-container {
         grid-template-columns: 1fr;
         grid-template-rows: auto 1fr;
@@ -338,16 +334,35 @@ body.bg-active-2::after {
 /* celular */
 @media (max-width: 650px) {
     :root {
-        --spacing: 8px;
+        --spacing: 12px;
     }
 
     .app-container {
-        margin: var(--spacing);
-        gap: var(--spacing);
+        margin: 0;
+        gap: 0;
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .nav-sidebar {
+        border-radius: 0 !important;
+        border-left: none !important;
+        border-right: none !important;
+        border-top: none !important;
+        padding: 12px !important;
     }
 
     .main-content {
-        gap: 0;
+        border-radius: 0 !important;
+        border-left: none !important;
+        border-right: none !important;
+        border-bottom: none !important;
+        padding: 12px !important;
+        gap: 12px;
+    }
+
+    .nav-item.active::before {
+        top: -12px !important;
     }
 }
 
@@ -371,6 +386,7 @@ body.bg-active-2::after {
     justify-content: center;
     align-items: center;
     padding-bottom: 4px;
+    padding-right: 14px;
 }
 
 .history-header h2 {
@@ -410,7 +426,6 @@ body.bg-active-2::after {
     gap: 8px;
     overflow-y: auto;
     flex-grow: 1;
-    padding-right: 4px;
     min-width: 0;
 }
 
@@ -420,6 +435,7 @@ body.bg-active-2::after {
     max-width: 100%;
     box-sizing: border-box;
     min-width: 0;
+    padding-right: 8px;
 }
 
 .review-item {
@@ -1341,7 +1357,7 @@ button svg {
     background: var(--panel-bg);
     border: 2px solid var(--border-color);
     border-radius: var(--radius-lg);
-    padding: 16px 10px 16px 14px;
+    padding: 16px 0 16px 14px;
     display: flex;
     flex-direction: column;
     gap: 14px;
@@ -1655,6 +1671,7 @@ button svg {
     border: 2px solid transparent;
     cursor: pointer;
     transition: var(--transition-fast);
+    min-width: 0;
 }
 
 .dash-top-album-item:hover {
@@ -1679,6 +1696,7 @@ button svg {
 }
 
 .dash-top-album-title {
+    display: block;
     font-size: 0.9rem;
     font-weight: 700;
     white-space: nowrap;
@@ -1687,6 +1705,7 @@ button svg {
 }
 
 .dash-top-album-artist {
+    display: block;
     font-size: 0.75rem;
     color: var(--text-muted);
     white-space: nowrap;
@@ -1810,8 +1829,8 @@ button svg {
     transition: color var(--transition-fast);
 }
 
-.native-select:hover ~ .select-chevron,
-.native-select:focus ~ .select-chevron {
+.native-select:hover~.select-chevron,
+.native-select:focus~.select-chevron {
     color: var(--color-primary-light);
 }
 
@@ -2492,6 +2511,7 @@ button svg {
     border: 2px solid transparent;
     cursor: pointer;
     transition: var(--transition-fast);
+    min-width: 0;
 }
 
 .dash-fav-track-item:hover {
@@ -2517,6 +2537,7 @@ button svg {
 }
 
 .dash-fav-track-title {
+    display: block;
     font-size: 0.88rem;
     font-weight: 700;
     white-space: nowrap;
@@ -2526,6 +2547,7 @@ button svg {
 }
 
 .dash-fav-track-artist {
+    display: block;
     font-size: 0.75rem;
     color: var(--text-muted);
     white-space: nowrap;
@@ -2591,6 +2613,28 @@ button svg {
 
     .dashboard-grid {
         grid-template-columns: 1fr;
+    }
+
+    .dashboard-row {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        min-width: 0;
+    }
+
+    .dashboard-col-left {
+        max-width: 100%;
+        flex-direction: column;
+        gap: 20px;
+        min-width: 0;
+    }
+
+    .chart-panel,
+    .favorites-panel,
+    .top-albums-panel {
+        flex: 1 1 auto;
+        min-width: 0 !important;
+        max-width: 100%;
     }
 }
 
@@ -2672,7 +2716,8 @@ button svg {
     background-color: transparent !important;
     border-color: transparent !important;
     box-shadow: none !important;
-    pointer-events: none; /* busca estatica */
+    pointer-events: none;
+    /* busca estatica */
     transform: none !important;
 }
 
@@ -2687,8 +2732,8 @@ button svg {
     color: #ffffff;
 }
 
-.library-search-wrapper.expanded .library-search-input:focus ~ .library-search-btn .library-search-icon,
-.library-search-wrapper.expanded .library-search-input:hover ~ .library-search-btn .library-search-icon {
+.library-search-wrapper.expanded .library-search-input:focus~.library-search-btn .library-search-icon,
+.library-search-wrapper.expanded .library-search-input:hover~.library-search-btn .library-search-icon {
     color: var(--color-primary-light);
 }
 
@@ -2768,11 +2813,11 @@ button svg {
         flex-wrap: wrap !important;
         gap: 8px !important;
     }
-    
+
     .header-buttons button {
         flex: 1 1 calc(50% - 4px) !important;
     }
-    
+
     .header-buttons button:first-child {
         flex: 1 1 100% !important;
         width: 100% !important;
@@ -2783,12 +2828,12 @@ button svg {
         flex-wrap: wrap !important;
         gap: 8px !important;
     }
-    
+
     .album-actions .btn-action {
         width: auto !important;
         flex: 1 1 calc(50% - 4px) !important;
     }
-    
+
     .album-actions .btn-action:first-child {
         flex: 1 1 100% !important;
         width: 100% !important;
