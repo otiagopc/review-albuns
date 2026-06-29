@@ -752,9 +752,12 @@ async function processarTextoReviewImportado(text) {
     if (!res.ok || data.error) throw new Error(data.error?.message || "Erro ao buscar dados do Spotify");
 
     let dataImportada = "";
-    const dataMatch = lines[0].match(/-\s+(\d{2}\/\d{2}\/\d{2,4})/);
-    if (dataMatch) {
-        dataImportada = dataMatch[1];
+    for (let i = 0; i < Math.min(lines.length, 5); i++) {
+        const dataMatch = lines[i].match(/(\d{2}\/\d{2}\/\d{2,4})/);
+        if (dataMatch) {
+            dataImportada = dataMatch[1];
+            break;
+        }
     }
 
     let anotacoesImportadas = "";
