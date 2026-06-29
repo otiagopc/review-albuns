@@ -1,13 +1,17 @@
 
 // variaveis de estado e globais
 
+function getDefaultNota() {
+    return (localStorage.getItem("rating-scale") || "9") === "5" ? 0 : 1;
+}
+
 let estado = {
     id: "",
     album: "",
     artista: "",
     capa: "",
     link: "",
-    albumNota: 0,
+    albumNota: getDefaultNota(),
     albumNotaCalculada: 0,
     tracks: [],
     data: "",
@@ -26,7 +30,7 @@ function getEmptyState() {
         artista: "",
         capa: "",
         link: "",
-        albumNota: 0,
+        albumNota: getDefaultNota(),
         albumNotaCalculada: 0,
         tracks: [],
         data: "",
@@ -193,6 +197,7 @@ function criarEstrelas(container, valorAtual, onClick, isAlbum = false) {
     const stars = [];
     const scale = getRatingScale();
     const maxStars = scale === "5" ? 5 : 9;
+    const minStars = scale === "5" ? 0 : 1;
     const permiteMeia = (scale === "5") || !isAlbum;
 
     for (let i = 1; i <= maxStars; i++) {
@@ -219,21 +224,21 @@ function criarEstrelas(container, valorAtual, onClick, isAlbum = false) {
     pintar(valorAtual, false);
 
     function calcularValor(clientX) {
-        if (stars.length === 0) return 0;
+        if (stars.length === 0) return minStars;
         const firstRect = stars[0].getBoundingClientRect();
         const lastRect = stars[stars.length - 1].getBoundingClientRect();
 
-        if (clientX < firstRect.left) return 0;
+        if (clientX < firstRect.left) return minStars;
         if (clientX > lastRect.right) return maxStars;
 
         for (let idx = 0; idx < stars.length; idx++) {
             const rect = stars[idx].getBoundingClientRect();
             if (clientX >= rect.left && clientX <= rect.right) {
                 if (!permiteMeia) {
-                    return idx + 1;
+                    return Math.max(minStars, idx + 1);
                 } else {
                     const relativeX = clientX - rect.left;
-                    return relativeX < rect.width / 2 ? idx + 0.5 : idx + 1;
+                    return Math.max(minStars, relativeX < rect.width / 2 ? idx + 0.5 : idx + 1);
                 }
             }
         }
@@ -251,11 +256,11 @@ function criarEstrelas(container, valorAtual, onClick, isAlbum = false) {
         }
 
         if (!permiteMeia) {
-            return closestIdx + 1;
+            return Math.max(minStars, closestIdx + 1);
         } else {
             const rect = stars[closestIdx].getBoundingClientRect();
             const relativeX = clientX - rect.left;
-            return relativeX < rect.width / 2 ? closestIdx + 0.5 : closestIdx + 1;
+            return Math.max(minStars, relativeX < rect.width / 2 ? closestIdx + 0.5 : closestIdx + 1);
         }
     }
 
@@ -356,11 +361,11 @@ async function gerar() {
                 artista: artistNames,
                 capa: data.images[0].url,
                 link: data.external_urls.spotify,
-                albumNota: 0,
+                albumNota: getDefaultNota(),
                 albumNotaCalculada: 0,
                 tracks: data.tracks.items.map((t) => ({
                     nome: t.name,
-                    nota: 0,
+                    nota: getDefaultNota(),
                     fav: false,
                     duration_ms: t.duration_ms || 0,
                 })),
@@ -511,7 +516,9 @@ function render() {
         const notaExibida = aEscala(track.nota, false);
         criarEstrelas(estrelas, notaExibida, (val) => {
             if (notaExibida === val) {
-                track.nota = 0;
+                const scale = getRatingScale();
+                const minVal = scale === "5" ? 0 : 1;
+                track.nota = deEscala(minVal);
             } else {
                 track.nota = deEscala(val);
             }
@@ -770,11 +777,11 @@ async function processarTextoReviewImportado(text) {
         artista: artistNames,
         capa: data.images[0].url,
         link: data.external_urls.spotify,
-        albumNota: 0,
+        albumNota: getDefaultNota(),
         albumNotaCalculada: 0,
         tracks: data.tracks.items.map((t) => ({
             nome: t.name,
-            nota: 0,
+            nota: getDefaultNota(),
             fav: false,
             duration_ms: t.duration_ms || 0,
         })),
@@ -785,10 +792,10 @@ async function processarTextoReviewImportado(text) {
     };
 
     lines.forEach(line => {
-        const match = line.match(/^\d+\.\s+(.+?)\s+-\s+([\d.]+)\/(9|5)\s*(👑)?/);
+        const match = line.match(/^(?:\d+[\.\s-]+)?(.*?)\s+[-–—]\s+([\d.,]+)\/(9|5)\s*(👑)?/);
         if (match) {
-            const trackName = match[1];
-            let nota = parseFloat(match[2]);
+            const trackName = match[1].trim();
+            let nota = parseFloat(match[2].replace(',', '.'));
             const max = parseInt(match[3], 10);
             const fav = !!match[4];
 
@@ -796,7 +803,27 @@ async function processarTextoReviewImportado(text) {
                 nota = deEscala(nota);
             }
 
-            const trackIndex = estado.tracks.findIndex(t => t.nome === trackName);
+            const normalize = (str) => {
+                return str
+                    .toLowerCase()
+                    .normalize("NFD")
+                    .replace(/[\u0300-\u036f]/g, "")
+                    .replace(/[^a-z0-9]/g, "");
+            };
+
+            const cleanImported = normalize(trackName);
+
+            let trackIndex = estado.tracks.findIndex(t => t.nome.toLowerCase() === trackName.toLowerCase());
+            if (trackIndex === -1) {
+                trackIndex = estado.tracks.findIndex(t => normalize(t.nome) === cleanImported);
+            }
+            if (trackIndex === -1 && cleanImported.length > 2) {
+                trackIndex = estado.tracks.findIndex(t => {
+                    const cleanSpotify = normalize(t.nome);
+                    return cleanSpotify.includes(cleanImported) || cleanImported.includes(cleanSpotify);
+                });
+            }
+
             if (trackIndex !== -1) {
                 estado.tracks[trackIndex].nota = nota;
                 estado.tracks[trackIndex].fav = fav;
@@ -927,27 +954,28 @@ function setAutoCalculateMode(mode) {
 
 // converte nota para a escala visual
 function aEscala(nota, isAlbum = false) {
-    if (nota === undefined || nota === null) return 0;
+    if (nota === undefined || nota === null) return getRatingScale() === "5" ? 0 : 1;
     const scale = getRatingScale();
     if (scale === "5") {
         const nota5 = (nota * 5) / 9;
-        return Math.round(nota5 * 2) / 2;
+        return Math.max(0, Math.round(nota5 * 2) / 2);
     }
     if (isAlbum) {
-        return Math.round(nota);
+        return Math.max(1, Math.round(nota));
     }
-    return Math.round(nota * 2) / 2;
+    return Math.max(1, Math.round(nota * 2) / 2);
 }
 
 // converte nota para a base interna
 function deEscala(notaVal) {
-    if (notaVal === undefined || notaVal === null) return 0;
+    if (notaVal === undefined || notaVal === null) return getRatingScale() === "5" ? 0 : 1;
     const scale = getRatingScale();
     if (scale === "5") {
+        if (notaVal === 0) return 0;
         const nota9 = (notaVal * 9) / 5;
-        return Math.round(nota9 * 2) / 2;
+        return Math.max(1, Math.round(nota9 * 2) / 2);
     }
-    return notaVal;
+    return Math.max(1, notaVal);
 }
 
 // pega nota efetiva do album
@@ -959,7 +987,7 @@ function getEffectiveAlbumNota(rev) {
             return rev.albumNotaCalculada;
         }
         if (rev.tracks && rev.tracks.length > 0) {
-            const ratedTracks = rev.tracks.filter(t => aEscala(t.nota, false) > 0.5);
+            const ratedTracks = rev.tracks.filter(t => t.nota > 0);
             if (ratedTracks.length > 0) {
                 const sum = ratedTracks.reduce((sum, t) => sum + (t.nota || 0), 0);
                 const media = sum / ratedTracks.length;
@@ -978,7 +1006,7 @@ function recalcularNotaAlbum() {
     const calcMode = getAutoCalculateMode();
     if (calcMode !== "simples") return;
 
-    const ratedTracks = estado.tracks.filter(t => aEscala(t.nota, false) > 0.5);
+    const ratedTracks = estado.tracks.filter(t => t.nota > 0);
     if (ratedTracks.length === 0) {
         estado.albumNotaCalculada = 0;
         return;
@@ -1085,7 +1113,7 @@ function renderDashboard() {
     // media das faixas para desempate
     const getMediaTracks = (r) => {
         if (!r.tracks || r.tracks.length === 0) return 0;
-        const rated = r.tracks.filter(t => aEscala(t.nota, false) > 0.5);
+        const rated = r.tracks.filter(t => t.nota > 0);
         if (rated.length === 0) return 0;
         return rated.reduce((sum, t) => sum + (t.nota || 0), 0) / rated.length;
     };
