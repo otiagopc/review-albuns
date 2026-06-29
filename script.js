@@ -794,44 +794,77 @@ async function processarTextoReviewImportado(text) {
         createdAt: index !== -1 ? (historico[index].createdAt || Date.now()) : Date.now()
     };
 
-    lines.forEach(line => {
-        const match = line.match(/^(?:\d+[\.\s-]+)?(.*?)\s+[-–—]\s+([\d.,]+)\/(9|5)\s*(👑)?/);
-        if (match) {
-            const trackName = match[1].trim();
-            let nota = parseFloat(match[2].replace(',', '.'));
-            const max = parseInt(match[3], 10);
-            const fav = !!match[4];
+    const normalize = (str) => {
+        return str
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/[^a-z0-9]/g, "");
+    };
 
-            if (max === 5) {
-                nota = deEscala(nota);
+    const processarFaixaImportada = (trackName, nota, max, fav) => {
+        if (max === 5) {
+            if (nota === 0) {
+                nota = 0;
+            } else {
+                const nota9 = (nota * 9) / 5;
+                nota = Math.max(1, Math.round(nota9 * 2) / 2);
             }
-
-            const normalize = (str) => {
-                return str
-                    .toLowerCase()
-                    .normalize("NFD")
-                    .replace(/[\u0300-\u036f]/g, "")
-                    .replace(/[^a-z0-9]/g, "");
-            };
-
-            const cleanImported = normalize(trackName);
-
-            let trackIndex = estado.tracks.findIndex(t => t.nome.toLowerCase() === trackName.toLowerCase());
-            if (trackIndex === -1) {
-                trackIndex = estado.tracks.findIndex(t => normalize(t.nome) === cleanImported);
-            }
-            if (trackIndex === -1 && cleanImported.length > 2) {
-                trackIndex = estado.tracks.findIndex(t => {
-                    const cleanSpotify = normalize(t.nome);
-                    return cleanSpotify.includes(cleanImported) || cleanImported.includes(cleanSpotify);
-                });
-            }
-
-            if (trackIndex !== -1) {
-                estado.tracks[trackIndex].nota = nota;
-                estado.tracks[trackIndex].fav = fav;
-            }
+        } else {
+            nota = Math.max(1, nota);
         }
+
+        const cleanImported = normalize(trackName);
+
+        let trackIndex = estado.tracks.findIndex(t => t.nome.toLowerCase() === trackName.toLowerCase());
+        if (trackIndex === -1) {
+            trackIndex = estado.tracks.findIndex(t => normalize(t.nome) === cleanImported);
+        }
+        if (trackIndex === -1 && cleanImported.length > 2) {
+            trackIndex = estado.tracks.findIndex(t => {
+                const cleanSpotify = normalize(t.nome);
+                return cleanSpotify.includes(cleanImported) || cleanImported.includes(cleanSpotify);
+            });
+        }
+
+        if (trackIndex !== -1) {
+            estado.tracks[trackIndex].nota = nota;
+            estado.tracks[trackIndex].fav = fav;
+        }
+    };
+
+    let lastNonEmptyLine = "";
+    lines.forEach(line => {
+        const trimmed = line.trim();
+        if (!trimmed) return;
+
+        // Formato A: música e nota na mesma linha
+        const matchFormatA = trimmed.match(/^(?:\d+[\.\s-]+)?(.*?)\s+[-–—]\s+([\d.,]+)\/(9|5)\s*(👑)?/);
+        if (matchFormatA) {
+            const trackName = matchFormatA[1].trim();
+            const nota = parseFloat(matchFormatA[2].replace(',', '.'));
+            const max = parseInt(matchFormatA[3], 10);
+            const fav = !!matchFormatA[4];
+
+            processarFaixaImportada(trackName, nota, max, fav);
+            lastNonEmptyLine = "";
+            return;
+        }
+
+        // Formato B: apenas a nota na linha, música na linha anterior
+        const matchFormatB = trimmed.match(/^([\d.,]+)\/(9|5)\s*(👑)?$/);
+        if (matchFormatB && lastNonEmptyLine) {
+            const trackName = lastNonEmptyLine;
+            const nota = parseFloat(matchFormatB[1].replace(',', '.'));
+            const max = parseInt(matchFormatB[2], 10);
+            const fav = !!matchFormatB[3];
+
+            processarFaixaImportada(trackName, nota, max, fav);
+            lastNonEmptyLine = "";
+            return;
+        }
+
+        lastNonEmptyLine = trimmed;
     });
 
     const estrelasLine = lines.find(l => l.includes("★") || l.includes("☆"));
