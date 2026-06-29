@@ -839,7 +839,7 @@ async function processarTextoReviewImportado(text) {
         if (!trimmed) return;
 
         // Formato A: música e nota na mesma linha
-        const matchFormatA = trimmed.match(/^(?:\d+[\.\s-]+)?(.*?)\s+[-–—]\s+([\d.,]+)\/(9|5)\s*(👑)?/);
+        const matchFormatA = trimmed.match(/^(?:\d+[\.\s-]+)?(.*?)\s+[-–—]+\s+([\d.,]+)\/(9|5)\s*(👑)?/);
         if (matchFormatA) {
             const trackName = matchFormatA[1].trim();
             const nota = parseFloat(matchFormatA[2].replace(',', '.'));
