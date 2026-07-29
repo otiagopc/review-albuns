@@ -1019,7 +1019,7 @@ function getEffectiveAlbumNota(rev) {
     if (!rev) return 0;
     const calcMode = getAutoCalculateMode();
     if (calcMode === "simples") {
-        if (rev.albumNotaCalculada !== undefined) {
+        if (rev.albumNotaCalculada !== undefined && rev.albumNotaCalculada > 0) {
             return rev.albumNotaCalculada;
         }
         if (rev.tracks && rev.tracks.length > 0) {
