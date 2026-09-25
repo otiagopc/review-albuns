@@ -578,6 +578,7 @@ function salvarHistorico(historico) {
     localStorage.setItem("reviews", JSON.stringify(historico));
     const rascunhosCount = historico.filter(r => r.isDraft).length;
     atualizarNotificacaoApp(rascunhosCount);
+    window.loopdCloud?.scheduleSync();
 }
 
 // converte data para comparar
@@ -976,6 +977,7 @@ function getRatingScale() {
 // salva preferenca de escala
 function setRatingScale(scale) {
     localStorage.setItem("rating-scale", scale);
+    window.loopdCloud?.scheduleSync();
 }
 
 // pega modo de calculo da media
@@ -986,6 +988,7 @@ function getAutoCalculateMode() {
 // salva modo de calculo da media
 function setAutoCalculateMode(mode) {
     localStorage.setItem("auto-calculate-rating", mode);
+    window.loopdCloud?.scheduleSync();
 }
 
 // converte nota para a escala visual
@@ -1082,6 +1085,7 @@ function getLibraryLayout() {
 function setLibraryLayout(layout) {
     localStorage.setItem("library-layout", layout);
     applyLibraryLayout();
+    window.loopdCloud?.scheduleSync();
 }
 
 // aplica classes de layout
@@ -1600,6 +1604,7 @@ function renderLibrary() {
 function limparTudo() {
     if (confirm("ATENÇÃO: isso apagará permanentemente todas as suas reviews salvas! esta ação não pode ser desfeita. deseja continuar?")) {
         localStorage.removeItem("reviews");
+        window.loopdCloud?.scheduleSync(0);
         estado = getEmptyState();
         render();
         switchView('dashboard');

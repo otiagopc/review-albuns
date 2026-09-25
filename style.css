@@ -2839,3 +2839,68 @@ button svg {
         width: 100% !important;
     }
 }
+
+/* conta e sincronização em nuvem */
+.auth-area {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 150px;
+    justify-content: flex-end;
+}
+
+.auth-copy {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 3px;
+    min-width: 0;
+}
+
+.auth-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid var(--border-color);
+}
+
+.btn-auth {
+    appearance: none;
+    border: 1px solid var(--border-color);
+    background: var(--panel-bg);
+    color: var(--text-primary);
+    border-radius: var(--radius-md);
+    padding: 8px 11px;
+    font: inherit;
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+    max-width: 190px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.btn-auth:hover:not(:disabled) {
+    border-color: var(--color-primary-light);
+}
+
+.btn-auth:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.auth-status {
+    color: var(--text-muted);
+    font-size: 0.62rem;
+    white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+    .auth-area {
+        width: 100%;
+        justify-content: flex-end;
+    }
+}

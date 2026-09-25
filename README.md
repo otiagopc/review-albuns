@@ -27,3 +27,16 @@ um app simples para registrar, avaliar e organizar suas reviews de álbuns music
 - vercel (deploy da pagina)
 
 ### *inspirado no spotify, letterboxd e last.fm*
+
+## ☁ sincronização com Supabase + Google
+
+O projeto inclui integração opcional de conta Google e backup/sincronização em nuvem.
+
+1. Crie um projeto no Supabase.
+2. Execute `supabase-schema.sql` no SQL Editor.
+3. Ative o provider Google em Authentication > Providers.
+4. Configure Google OAuth e as Redirect URLs do Loopd.
+5. Preencha `supabase-config.js` com a Project URL e a publishable key (ou anon key de projeto legado).
+6. Faça deploy e use **entrar com Google** no cabeçalho.
+
+O `localStorage` continua sendo o cache local. Quando autenticado, `cloud.js` sincroniza reviews e configurações com a tabela `loopd_user_data`.

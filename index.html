@@ -64,6 +64,14 @@
           </button>
           <input type="file" id="import-file" accept=".txt" style="display: none;" onchange="importarTXT(event)">
         </div>
+
+        <div class="auth-area">
+          <img id="auth-avatar" class="auth-avatar" alt="" style="display: none;">
+          <div class="auth-copy">
+            <button id="auth-button" class="btn-auth" type="button" onclick="window.loopdCloud?.toggleAuth()">entrar com Google</button>
+            <span id="auth-status" class="auth-status">dados salvos neste dispositivo</span>
+          </div>
+        </div>
       </header>
 
       <!-- aba do dashboard -->
@@ -329,7 +337,10 @@
     </main>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
   <script src="script.js"></script>
+  <script src="cloud.js"></script>
 </body>
 
 </html>
