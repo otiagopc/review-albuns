@@ -272,7 +272,7 @@
 
     const { data: { session } } = await state.client.auth.getSession();
     state.user = session?.user || null;
-    setAuthUi(state.user ? "conectado" : "dados salvos neste dispositivo");
+    setAuthUi(state.user ? "conectado" : "");
 
     if (state.user) {
       try {
@@ -286,7 +286,7 @@
     state.client.auth.onAuthStateChange(async (event, sessionNow) => {
       const previousUserId = state.user?.id;
       state.user = sessionNow?.user || null;
-      setAuthUi(state.user ? "conectado" : "dados salvos neste dispositivo");
+      setAuthUi(state.user ? "conectado" : "");
 
       if (state.user && state.user.id !== previousUserId && event === "SIGNED_IN") {
         try {
