@@ -1141,6 +1141,10 @@ function switchView(viewName) {
         renderLibrary();
     } else if (viewName === 'reviews') {
         render();
+    } else if (viewName === 'account') {
+        if (window.loopdCloud?.refreshUi) {
+            window.loopdCloud.refreshUi();
+        }
     }
 }
 

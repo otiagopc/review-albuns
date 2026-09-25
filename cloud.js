@@ -82,37 +82,109 @@
   }
 
   function setAuthUi(message) {
+    const loggedOutSection = document.getElementById("account-logged-out");
+    const loggedInSection = document.getElementById("account-logged-in");
+    const accountName = document.getElementById("account-user-name");
+    const accountEmail = document.getElementById("account-user-email");
+    const accountAvatar = document.getElementById("account-user-avatar");
+    const accountStatus = document.getElementById("account-sync-status");
+    const navAvatar = document.getElementById("nav-account-avatar");
+    const navIcon = document.getElementById("nav-account-icon");
+    const lastSyncEl = document.getElementById("account-last-sync");
+
     const button = document.getElementById("auth-button");
     const status = document.getElementById("auth-status");
     const avatar = document.getElementById("auth-avatar");
 
     if (status) status.textContent = message || "";
-    if (!button) return;
+    if (accountStatus) {
+      accountStatus.textContent = message || (state.user ? "conectado à nuvem" : "");
+    }
+
+    if (lastSyncEl) {
+      const lastSync = localStorage.getItem(STORAGE.lastSync);
+      if (lastSync) {
+        try {
+          const d = new Date(lastSync);
+          lastSyncEl.textContent = `última sincronização: ${d.toLocaleDateString("pt-BR")} às ${d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`;
+        } catch (_) {
+          lastSyncEl.textContent = "";
+        }
+      } else {
+        lastSyncEl.textContent = "";
+      }
+    }
 
     if (!isConfigured) {
-      button.textContent = "configurar nuvem";
-      button.disabled = true;
-      button.title = "Preencha supabase-config.js primeiro";
+      if (loggedOutSection) loggedOutSection.style.display = "block";
+      if (loggedInSection) loggedInSection.style.display = "none";
+      if (button) {
+        button.textContent = "configurar nuvem";
+        button.disabled = true;
+        button.title = "Preencha supabase-config.js primeiro";
+      }
       if (avatar) avatar.style.display = "none";
+      if (navAvatar && navIcon) {
+        navAvatar.style.display = "none";
+        navIcon.style.display = "block";
+      }
       return;
     }
 
     if (state.user) {
-      const name = state.user.user_metadata?.full_name || state.user.user_metadata?.name || state.user.email || "conta";
-      button.textContent = name;
-      button.title = `${state.user.email || "conta conectada"} — clique para sair`;
+      if (loggedOutSection) loggedOutSection.style.display = "none";
+      if (loggedInSection) loggedInSection.style.display = "block";
 
+      const name = state.user.user_metadata?.full_name || state.user.user_metadata?.name || state.user.email || "Usuário";
+      const email = state.user.email || "";
       const avatarUrl = state.user.user_metadata?.avatar_url;
+
+      if (accountName) accountName.textContent = name;
+      if (accountEmail) accountEmail.textContent = email;
+
+      if (accountAvatar) {
+        if (avatarUrl) {
+          accountAvatar.src = avatarUrl;
+          accountAvatar.style.display = "block";
+        } else {
+          accountAvatar.style.display = "none";
+        }
+      }
+
+      if (navAvatar && navIcon) {
+        if (avatarUrl) {
+          navAvatar.src = avatarUrl;
+          navAvatar.style.display = "block";
+          navIcon.style.display = "none";
+        } else {
+          navAvatar.style.display = "none";
+          navIcon.style.display = "block";
+        }
+      }
+
+      if (button) {
+        button.textContent = name;
+        button.title = `${email} — clique para sair`;
+      }
       if (avatar && avatarUrl) {
         avatar.src = avatarUrl;
-        avatar.alt = "foto da conta";
         avatar.style.display = "block";
       } else if (avatar) {
         avatar.style.display = "none";
       }
     } else {
-      button.textContent = "entrar com Google";
-      button.title = "Sincronizar suas reviews entre dispositivos";
+      if (loggedOutSection) loggedOutSection.style.display = "block";
+      if (loggedInSection) loggedInSection.style.display = "none";
+
+      if (navAvatar && navIcon) {
+        navAvatar.style.display = "none";
+        navIcon.style.display = "block";
+      }
+
+      if (button) {
+        button.disabled = false;
+        button.title = "Sincronizar suas reviews entre dispositivos";
+      }
       if (avatar) avatar.style.display = "none";
     }
   }
@@ -272,7 +344,7 @@
 
     const { data: { session } } = await state.client.auth.getSession();
     state.user = session?.user || null;
-    setAuthUi(state.user ? "conectado" : "");
+    setAuthUi("");
 
     if (state.user) {
       try {
@@ -286,7 +358,7 @@
     state.client.auth.onAuthStateChange(async (event, sessionNow) => {
       const previousUserId = state.user?.id;
       state.user = sessionNow?.user || null;
-      setAuthUi(state.user ? "conectado" : "");
+      setAuthUi("");
 
       if (state.user && state.user.id !== previousUserId && event === "SIGNED_IN") {
         try {
@@ -304,6 +376,7 @@
     toggleAuth,
     scheduleSync,
     uploadNow,
+    refreshUi: () => setAuthUi(""),
     getUser: () => state.user,
   };
 
