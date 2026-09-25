@@ -2,7 +2,7 @@
 // variaveis de estado e globais
 
 function getDefaultNota() {
-    return (localStorage.getItem("rating-scale") || "9") === "5" ? 0 : 1;
+    return getRatingScale() === "5" ? 0 : 1;
 }
 
 let estado = {
@@ -971,8 +971,24 @@ async function importarHistoricoCompleto(event) {
 
 // pega escala de nota ativa
 function getRatingScale() {
-    return localStorage.getItem("rating-scale") || "9";
+    const saved = localStorage.getItem("rating-scale");
+    if (saved) return saved;
+
+    // Se o usuário já possui reviews salvas mas não tinha a preferência explícita,
+    // mantém a escala pré-existente (1 a 9 estrelas) para não alterar dados de usuários antigos.
+    try {
+        const historico = JSON.parse(localStorage.getItem("reviews")) || [];
+        if (Array.isArray(historico) && historico.length > 0) {
+            localStorage.setItem("rating-scale", "9");
+            return "9";
+        }
+    } catch (_) {}
+
+    // Para novos usuários, o padrão a partir de agora é de 0 a 5 estrelas ("5").
+    localStorage.setItem("rating-scale", "5");
+    return "5";
 }
+window.getRatingScale = getRatingScale;
 
 // salva preferenca de escala
 function setRatingScale(scale) {

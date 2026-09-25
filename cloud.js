@@ -30,7 +30,7 @@
 
   function getLocalSettings() {
     return {
-      ratingScale: localStorage.getItem("rating-scale") || "9",
+      ratingScale: window.getRatingScale ? window.getRatingScale() : (localStorage.getItem("rating-scale") || "5"),
       autoCalculateRating: localStorage.getItem("auto-calculate-rating") || "desativado",
       libraryLayout: localStorage.getItem("library-layout") || "grid",
     };
