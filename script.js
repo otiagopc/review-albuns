@@ -83,9 +83,22 @@ function deletarReviewSemConfirmacao(revId, revAlbum, revArtista) {
         origHistorico.splice(origIndex, 1);
         salvarHistorico(origHistorico);
     }
-    if (estado.id === revId) {
+    if (estado.id === revId || (revAlbum && estado.album === revAlbum && revArtista && estado.artista === revArtista)) {
         estado = getEmptyState();
         render();
+    }
+}
+
+// deleta a review atualmente aberta no editor com confirmacao
+function deletarReviewAberta() {
+    if (!estado.album && !estado.id) return;
+    const nome = estado.album || "esta review";
+    if (confirm(`deseja realmente excluir a review de "${nome}"?`)) {
+        deletarReviewSemConfirmacao(estado.id, estado.album, estado.artista);
+        carregarHistorico();
+        if (typeof recalcularDimensoesEditorSidebar === "function") {
+            recalcularDimensoesEditorSidebar();
+        }
     }
 }
 
@@ -802,19 +815,7 @@ function carregarHistorico() {
             esconderHistoryTooltip();
         };
 
-        const del = document.createElement("span");
-        del.innerHTML = `<svg class="close-icon" viewBox="0 0 24 24" width="10" height="10"><use href="icons/sprite.svg#icon-close"></use></svg>`;
-        del.className = "history-delete-btn";
-        del.setAttribute("aria-label", "excluir review");
-        del.onclick = (e) => {
-            e.stopPropagation();
-            esconderHistoryTooltip();
-            deletarReviewSemConfirmacao(rev.id, rev.album, rev.artista);
-            carregarHistorico();
-        };
-
         item.appendChild(img);
-        item.appendChild(del);
         container.appendChild(item);
     });
 }

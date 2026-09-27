@@ -441,7 +441,7 @@ body.bg-active-2::after {
     flex-shrink: 0;
 }
 
-.history-item:hover {
+.history-item:not(.active-review):hover {
     transform: translateY(-3px) scale(1.04);
     border-color: var(--color-primary-light);
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4), 0 0 14px rgba(var(--color-primary-rgb), var(--glow-soft));
@@ -473,7 +473,7 @@ body.bg-active-2::after {
     transition: filter var(--transition-fast);
 }
 
-.history-item:hover .history-cover {
+.history-item:not(.active-review):hover .history-cover {
     filter: brightness(1.08);
 }
 
@@ -1305,6 +1305,21 @@ button svg {
     background: linear-gradient(90deg, hsl(var(--hue-primary), 80%, 58%) 0%, hsl(var(--hue-primary), 78%, 46%) 100%);
     border-color: hsl(var(--hue-primary), 80%, 60%);
     box-shadow: 0 8px 24px rgba(var(--color-primary-rgb), var(--glow-soft));
+    transform: translateY(-2px);
+}
+
+.btn-action.btn-danger {
+    background: linear-gradient(90deg, #ff6b6b 0%, var(--color-danger) 100%);
+    border: 2px solid #ff6b6b;
+    color: #fff;
+    box-shadow: 0 6px 20px rgba(var(--color-danger-rgb), var(--glow-soft));
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.btn-action.btn-danger:hover {
+    background: linear-gradient(90deg, #ff8585 0%, #ff5249 100%);
+    border-color: #ff8585;
+    box-shadow: 0 8px 24px rgba(var(--color-danger-rgb), var(--glow-soft));
     transform: translateY(-2px);
 }
 

@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=4">
+  <link rel="stylesheet" href="style.css?v=7">
 </head>
 
 <body>
@@ -204,6 +204,10 @@
                 <button class="btn-action btn-secondary" onclick="exportarTXT()">
                   <svg width="14" height="14" style="margin-right: 8px;"><use href="icons/sprite.svg#icon-export-txt"></use></svg>
                   <span>exportar .txt</span>
+                </button>
+                <button id="btn-deletar-review" class="btn-action btn-danger" onclick="deletarReviewAberta()" title="Excluir review">
+                  <svg width="14" height="14" style="margin-right: 8px;"><use href="icons/sprite.svg#icon-trash"></use></svg>
+                  <span>excluir review</span>
                 </button>
               </div>
             </div>
@@ -451,7 +455,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
-  <script src="script.js?v=3"></script>
+  <script src="script.js?v=5"></script>
   <script src="cloud.js"></script>
 </body>
 
