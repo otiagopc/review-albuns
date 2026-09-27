@@ -33,6 +33,8 @@
       ratingScale: window.getRatingScale ? window.getRatingScale() : (localStorage.getItem("rating-scale") || "5"),
       autoCalculateRating: localStorage.getItem("auto-calculate-rating") || "desativado",
       libraryLayout: localStorage.getItem("library-layout") || "grid",
+      bgBlur: localStorage.getItem("loopd-bg-blur") || "32",
+      bgBrightness: localStorage.getItem("loopd-bg-brightness") || "50",
     };
   }
 
@@ -40,6 +42,8 @@
     if (settings.ratingScale) localStorage.setItem("rating-scale", settings.ratingScale);
     if (settings.autoCalculateRating) localStorage.setItem("auto-calculate-rating", settings.autoCalculateRating);
     if (settings.libraryLayout) localStorage.setItem("library-layout", settings.libraryLayout);
+    if (settings.bgBlur) localStorage.setItem("loopd-bg-blur", settings.bgBlur);
+    if (settings.bgBrightness) localStorage.setItem("loopd-bg-brightness", settings.bgBrightness);
   }
 
   function reviewKey(review) {
@@ -73,6 +77,7 @@
       if (typeof renderLibrary === "function") renderLibrary();
       if (typeof renderDashboard === "function") renderDashboard();
       if (typeof inicializarControlesSegmentados === "function") inicializarControlesSegmentados();
+      if (typeof inicializarCustomizacaoVisual === "function") inicializarCustomizacaoVisual();
       if (typeof atualizarNotificacaoApp === "function" && typeof obterContadorRascunhos === "function") {
         atualizarNotificacaoApp(obterContadorRascunhos());
       }

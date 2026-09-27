@@ -1756,12 +1756,99 @@ async function copiarReviewClipboard() {
     }
 }
 
+// customizacao do fundo dinamico (blur e brightness)
+const DEFAULT_BG_BLUR = 32;
+const DEFAULT_BG_BRIGHTNESS = 50;
+
+function getBgBlur() {
+    const val = localStorage.getItem("loopd-bg-blur");
+    if (val === null || isNaN(Number(val))) return DEFAULT_BG_BLUR;
+    return Math.min(64, Math.max(0, Math.round(Number(val))));
+}
+
+function getBgBrightness() {
+    const val = localStorage.getItem("loopd-bg-brightness");
+    if (val === null || isNaN(Number(val))) return DEFAULT_BG_BRIGHTNESS;
+    const num = Number(val);
+    // Suporte a compatibilidade caso exista valor decimal antigo salvo (ex: 0.6 ou 0.5)
+    if (num > 0 && num <= 1) return Math.round(num * 100);
+    return Math.min(100, Math.max(0, Math.round(num)));
+}
+
+function aplicarEstilosFundo(blurVal, brightnessVal) {
+    const blur = blurVal !== undefined ? blurVal : getBgBlur();
+    const brightness = brightnessVal !== undefined ? brightnessVal : getBgBrightness();
+    document.documentElement.style.setProperty("--bg-blur", `${blur}px`);
+    document.documentElement.style.setProperty("--bg-brightness", (brightness / 100).toFixed(2));
+}
+
+function atualizarBgBlur(val) {
+    let num = Math.min(64, Math.max(0, Math.round(Number(val))));
+    num = Math.round(num / 2) * 2;
+    localStorage.setItem("loopd-bg-blur", num);
+    aplicarEstilosFundo(num, undefined);
+    const badge = document.getElementById("slider-blur-val");
+    if (badge) badge.textContent = `${num}px`;
+    const input = document.getElementById("setting-bg-blur");
+    if (input && Number(input.value) !== num) input.value = num;
+    window.loopdCloud?.scheduleSync?.(1200);
+}
+
+function atualizarBgBrightness(val) {
+    let num = Math.min(100, Math.max(0, Math.round(Number(val))));
+    num = Math.round(num / 5) * 5;
+    localStorage.setItem("loopd-bg-brightness", num);
+    aplicarEstilosFundo(undefined, num);
+    const badge = document.getElementById("slider-brightness-val");
+    if (badge) badge.textContent = `${num}%`;
+    const input = document.getElementById("setting-bg-brightness");
+    if (input && Number(input.value) !== num) input.value = num;
+    window.loopdCloud?.scheduleSync?.(1200);
+}
+
+function resetarBgBlur() {
+    atualizarBgBlur(DEFAULT_BG_BLUR);
+}
+
+function resetarBgBrightness() {
+    atualizarBgBrightness(DEFAULT_BG_BRIGHTNESS);
+}
+
+function inicializarCustomizacaoVisual() {
+    const blur = getBgBlur();
+    const brightness = getBgBrightness();
+    aplicarEstilosFundo(blur, brightness);
+
+    const blurInput = document.getElementById("setting-bg-blur");
+    const blurBadge = document.getElementById("slider-blur-val");
+    if (blurInput) blurInput.value = blur;
+    if (blurBadge) blurBadge.textContent = `${blur}px`;
+
+    const brightnessInput = document.getElementById("setting-bg-brightness");
+    const brightnessBadge = document.getElementById("slider-brightness-val");
+    if (brightnessInput) brightnessInput.value = brightness;
+    if (brightnessBadge) brightnessBadge.textContent = `${brightness}%`;
+}
+
+// aplica estilos logo ao carregar para evitar qualquer flash
+aplicarEstilosFundo();
+
+window.getBgBlur = getBgBlur;
+window.getBgBrightness = getBgBrightness;
+window.aplicarEstilosFundo = aplicarEstilosFundo;
+window.atualizarBgBlur = atualizarBgBlur;
+window.atualizarBgBrightness = atualizarBgBrightness;
+window.resetarBgBlur = resetarBgBlur;
+window.resetarBgBrightness = resetarBgBrightness;
+window.inicializarCustomizacaoVisual = inicializarCustomizacaoVisual;
+
 // inicializacao
 
 document.addEventListener("DOMContentLoaded", () => {
     applyLibraryLayout();
     carregarHistorico();
     inicializarControlesSegmentados();
+    inicializarCustomizacaoVisual();
     switchView('library');
     atualizarNotificacaoApp(obterContadorRascunhos());
 

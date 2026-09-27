@@ -303,6 +303,51 @@
           </div>
 
           <div class="settings-section">
+            <h3>customização</h3>
+            <p class="section-description">personalize o desfoque e a iluminação do fundo dinâmico.</p>
+
+            <div class="settings-cards">
+              <div class="settings-card">
+                <div class="slider-header-row">
+                  <h4>desfoque do fundo</h4>
+                  <span id="slider-blur-val" class="slider-badge">32px</span>
+                </div>
+                <p>ajuste a intensidade do efeito de desfoque (blur) aplicado à capa do álbum no fundo.</p>
+                <div class="slider-control-container">
+                  <div class="slider-track-container">
+                    <input type="range" id="setting-bg-blur" class="range-slider" min="0" max="64" step="2" value="32"
+                      oninput="atualizarBgBlur(this.value)">
+                    <div class="slider-default-marker" title="padrão: 32px"></div>
+                  </div>
+                  <div class="slider-labels">
+                    <span>0px (nítido)</span>
+                    <span>64px (máx)</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="settings-card">
+                <div class="slider-header-row">
+                  <h4>brilho do fundo</h4>
+                  <span id="slider-brightness-val" class="slider-badge">50%</span>
+                </div>
+                <p>controle a iluminação e visibilidade da imagem da capa no fundo.</p>
+                <div class="slider-control-container">
+                  <div class="slider-track-container">
+                    <input type="range" id="setting-bg-brightness" class="range-slider" min="0" max="100" step="5" value="50"
+                      oninput="atualizarBgBrightness(this.value)">
+                    <div class="slider-default-marker" title="padrão: 50%"></div>
+                  </div>
+                  <div class="slider-labels">
+                    <span>0% (escuro)</span>
+                    <span>100% (claro)</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-section">
             <h3>gerenciamento de dados</h3>
             <p class="section-description">gerencie suas reviews salvas localmente no navegador (LocalStorage).</p>
 
