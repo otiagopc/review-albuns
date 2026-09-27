@@ -90,6 +90,11 @@
     <path d="M12 5v14M19 12l-7 7-7-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
   </symbol>
 
+  <!-- 17b. icon-sort-asc -->
+  <symbol id="icon-sort-asc" viewBox="0 0 24 24">
+    <path d="M12 19V5M5 12l7-7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+  </symbol>
+
   <!-- 18. icon-layout-grid -->
   <symbol id="icon-layout-grid" viewBox="0 0 24 24">
     <rect x="3" y="3" width="7" height="7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />

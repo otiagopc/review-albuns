@@ -564,6 +564,7 @@ function render() {
     isFirstLoad = false;
     autoSaveDraft();
     carregarHistorico();
+    recalcularDimensoesEditorSidebar();
 }
 
 // salvar reviews e historico
@@ -626,13 +627,143 @@ function salvarReview() {
     }
 }
 
+// tooltip do historico
+function posicionarHistoryTooltip(targetEl, album, artista, isDraft, data) {
+    let tooltip = document.getElementById("history-tooltip");
+    if (!tooltip) {
+        tooltip = document.createElement("div");
+        tooltip.id = "history-tooltip";
+        tooltip.className = "history-tooltip";
+        tooltip.innerHTML = `
+            <div class="history-tooltip-title" id="history-tooltip-title"></div>
+            <div class="history-tooltip-artist" id="history-tooltip-artist"></div>
+            <div class="history-tooltip-badge" id="history-tooltip-badge" style="display: none;"></div>
+        `;
+        document.body.appendChild(tooltip);
+    }
+
+    const titleEl = document.getElementById("history-tooltip-title");
+    const artistEl = document.getElementById("history-tooltip-artist");
+    const badgeEl = document.getElementById("history-tooltip-badge");
+
+    if (titleEl) titleEl.textContent = album || "sem título";
+    if (artistEl) artistEl.textContent = artista || "artista desconhecido";
+    if (badgeEl) {
+        if (isDraft) {
+            badgeEl.textContent = "rascunho";
+            badgeEl.style.display = "block";
+        } else if (data) {
+            badgeEl.textContent = data;
+            badgeEl.style.display = "block";
+        } else {
+            badgeEl.style.display = "none";
+        }
+    }
+
+    tooltip.classList.add("visible");
+
+    const rect = targetEl.getBoundingClientRect();
+    const tooltipWidth = tooltip.offsetWidth || 180;
+    const tooltipHeight = tooltip.offsetHeight || 50;
+
+    // Posiciona sempre à direita do álbum, nunca em cima dele
+    let left = rect.right + 12;
+    let top = rect.top + (rect.height / 2) - (tooltipHeight / 2);
+
+    // Ajusta limites verticais dentro da viewport
+    if (top < 10) top = 10;
+    if (top + tooltipHeight > window.innerHeight - 10) {
+        top = window.innerHeight - tooltipHeight - 10;
+    }
+
+    // Ajusta limite horizontal se necessário, mas mantendo sempre à direita da capa
+    if (left + tooltipWidth > window.innerWidth - 10) {
+        left = Math.max(rect.right + 6, window.innerWidth - tooltipWidth - 10);
+    }
+
+    tooltip.style.top = `${top}px`;
+    tooltip.style.left = `${left}px`;
+}
+
+function esconderHistoryTooltip() {
+    const tooltip = document.getElementById("history-tooltip");
+    if (tooltip) {
+        tooltip.classList.remove("visible");
+    }
+}
+
+const supportsScrollTimeline = typeof CSS !== "undefined" && CSS.supports && CSS.supports("animation-timeline", "scroll()");
+
+// variaveis cacheadas para atualizacao instantanea sem layout thrashing
+let cachedSidebarVisibleHeight = 0;
+let cachedSidebarHeaderTotalHeight = 0;
+
+function recalcularDimensoesEditorSidebar() {
+    cachedSidebarVisibleHeight = 0;
+    cachedSidebarHeaderTotalHeight = 0;
+    atualizarAlturaEditorSidebar();
+}
+
+// atualiza altura dinamica do sidebar do historico conforme o scroll do main-content
+function atualizarAlturaEditorSidebar() {
+    const sidebar = document.getElementById("editor-sidebar");
+    if (!sidebar) return;
+
+    if (window.innerWidth <= 980 || supportsScrollTimeline) {
+        sidebar.style.height = "";
+        sidebar.style.maxHeight = "";
+        return;
+    }
+
+    const mainContent = document.querySelector(".main-content");
+    const header = document.querySelector(".main-header");
+    if (!mainContent || !header) return;
+
+    if (!cachedSidebarVisibleHeight || !cachedSidebarHeaderTotalHeight) {
+        const style = window.getComputedStyle(mainContent);
+        const padTop = parseFloat(style.paddingTop) || 24;
+        const padBottom = parseFloat(style.paddingBottom) || 24;
+        const gap = parseFloat(style.gap) || 20;
+
+        cachedSidebarVisibleHeight = mainContent.clientHeight - padTop - padBottom;
+        cachedSidebarHeaderTotalHeight = header.offsetHeight + gap;
+    }
+
+    if (cachedSidebarVisibleHeight <= 0) return;
+
+    const scrollTop = mainContent.scrollTop;
+    const offset = Math.max(0, cachedSidebarHeaderTotalHeight - scrollTop);
+
+    const exactHeight = `${Math.round(cachedSidebarVisibleHeight - offset)}px`;
+    if (sidebar.style.height !== exactHeight) {
+        sidebar.style.height = exactHeight;
+        sidebar.style.maxHeight = exactHeight;
+    }
+}
+
 // desenha historico lateral
 function carregarHistorico() {
     const container = document.getElementById("historico");
     if (!container) return;
     container.innerHTML = "";
 
+    // adiciona listener para esconder tooltip ao rolar historico
+    const sidebar = document.getElementById("editor-sidebar");
+    if (sidebar && !sidebar._hasScrollListener) {
+        sidebar.addEventListener("scroll", esconderHistoryTooltip, { passive: true });
+        sidebar._hasScrollListener = true;
+    }
+    if (!container._hasScrollListener) {
+        container.addEventListener("scroll", esconderHistoryTooltip, { passive: true });
+        container._hasScrollListener = true;
+    }
+
     const historico = getHistorico();
+
+    if (historico.length === 0) {
+        container.innerHTML = `<p class="empty-list-msg" style="grid-column: 1 / -1; font-size: 0.8rem; padding: 24px 8px;">nenhuma review ainda</p>`;
+        return;
+    }
 
     historico.sort((a, b) => {
         const diff = getSortableDate(b.data) - getSortableDate(a.data);
@@ -640,16 +771,21 @@ function carregarHistorico() {
     });
 
     historico.forEach((rev) => {
-        const wrapper = document.createElement("div");
-        wrapper.className = "review-wrapper";
+        const item = document.createElement("div");
+        item.className = `history-item ${estado.id === rev.id ? "active-review" : ""} ${rev.isDraft ? "draft-review" : ""}`;
+        item.setAttribute("aria-label", `${rev.album} — ${rev.artista}`);
 
-        const div = document.createElement("div");
-        div.className = `review-item ${estado.id === rev.id ? "active-review" : ""} ${rev.isDraft ? "draft-review" : ""}`;
+        const img = document.createElement("img");
+        img.className = "history-cover";
+        img.src = rev.capa || "icons/logo.svg";
+        img.alt = rev.album || "capa";
+        img.loading = "lazy";
+        img.onerror = () => {
+            img.src = "icons/logo.svg";
+        };
 
-        const texto = document.createElement("span");
-        texto.textContent = rev.isDraft ? `${rev.album} (rascunho)` : `${rev.album} (${rev.data})`;
-
-        div.onclick = () => {
+        item.onclick = () => {
+            esconderHistoryTooltip();
             if (estado.id === rev.id) {
                 navegarParaReview(getEmptyState());
             } else {
@@ -657,18 +793,29 @@ function carregarHistorico() {
             }
         };
 
+        item.onmouseenter = () => {
+            const dataReview = rev.data || (rev.createdAt ? new Date(rev.createdAt).toLocaleDateString("pt-BR") : "");
+            posicionarHistoryTooltip(item, rev.album, rev.artista, rev.isDraft, dataReview);
+        };
+
+        item.onmouseleave = () => {
+            esconderHistoryTooltip();
+        };
+
         const del = document.createElement("span");
-        del.innerHTML = `<svg class="close-icon" viewBox="0 0 24 24" width="12" height="12"><use href="icons/sprite.svg#icon-close"></use></svg>`;
-        del.className = "delete-btn";
+        del.innerHTML = `<svg class="close-icon" viewBox="0 0 24 24" width="10" height="10"><use href="icons/sprite.svg#icon-close"></use></svg>`;
+        del.className = "history-delete-btn";
+        del.setAttribute("aria-label", "excluir review");
         del.onclick = (e) => {
             e.stopPropagation();
+            esconderHistoryTooltip();
             deletarReviewSemConfirmacao(rev.id, rev.album, rev.artista);
             carregarHistorico();
         };
 
-        div.append(texto, del);
-        wrapper.appendChild(div);
-        container.appendChild(wrapper);
+        item.appendChild(img);
+        item.appendChild(del);
+        container.appendChild(item);
     });
 }
 
@@ -1134,6 +1281,7 @@ function applyLibraryLayout() {
 
 // troca de aba
 function switchView(viewName) {
+    if (typeof esconderHistoryTooltip === "function") esconderHistoryTooltip();
     document.querySelectorAll('.app-view').forEach(view => {
         view.style.display = 'none';
     });
@@ -1157,6 +1305,7 @@ function switchView(viewName) {
         renderLibrary();
     } else if (viewName === 'reviews') {
         render();
+        atualizarAlturaEditorSidebar();
     } else if (viewName === 'account') {
         if (window.loopdCloud?.refreshUi) {
             window.loopdCloud.refreshUi();
@@ -1474,11 +1623,8 @@ function toggleLibrarySortOrder() {
 
     const icon = document.getElementById("sort-order-icon");
     if (icon) {
-        if (librarySortDesc) {
-            icon.innerHTML = `<path d="M12 5v14M19 12l-7 7-7-7"/>`;
-        } else {
-            icon.innerHTML = `<path d="M12 19V5M5 12l7-7 7 7"/>`;
-        }
+        const spriteId = librarySortDesc ? "icon-sort-order" : "icon-sort-asc";
+        icon.innerHTML = `<use href="icons/sprite.svg#${spriteId}"></use>`;
     }
     renderLibrary();
 }
@@ -1861,6 +2007,14 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
     }
+
+    // Monitora scroll do main-content e resize da janela para ajustar a altura dinamica do historico
+    const mainContent = document.querySelector(".main-content");
+    if (mainContent) {
+        mainContent.addEventListener("scroll", atualizarAlturaEditorSidebar, { passive: true });
+    }
+    window.addEventListener("resize", recalcularDimensoesEditorSidebar, { passive: true });
+    recalcularDimensoesEditorSidebar();
 });
 
 // pwa e badges

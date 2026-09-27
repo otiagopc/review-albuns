@@ -112,11 +112,17 @@ body.bg-active-2::after {
     background: rgba(255, 255, 255, 0.18);
 }
 
+::-webkit-scrollbar-thumb:active {
+    background: var(--color-primary-light);
+}
+
 /* margem da scrollbar */
+.editor-sidebar::-webkit-scrollbar-track,
+.editor-main::-webkit-scrollbar-track,
 .nav-sidebar::-webkit-scrollbar-track,
 .main-content::-webkit-scrollbar-track {
-    margin-top: 24px;
-    margin-bottom: 24px;
+    margin-top: 20px;
+    margin-bottom: 20px;
 }
 
 .review-notes::-webkit-scrollbar-track {
@@ -168,6 +174,7 @@ body.bg-active-2::after {
     flex-direction: column;
     gap: 20px;
     min-width: 320px;
+    scroll-timeline: --content-scroll block;
 }
 
 .logo-area {
@@ -381,22 +388,7 @@ body.bg-active-2::after {
     transform: scale(1.1);
 }
 
-.history-header {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding-bottom: 4px;
-    padding-right: 14px;
-}
 
-.history-header h2 {
-    font-size: 1.1rem;
-    font-weight: 700;
-    margin: 0;
-    color: #ffffff;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
 
 .btn-icon {
     background: rgba(255, 255, 255, 0.03);
@@ -423,84 +415,155 @@ body.bg-active-2::after {
 #historico {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    overflow-y: auto;
-    flex-grow: 1;
-    min-width: 0;
-}
-
-.review-wrapper {
-    transition: var(--transition-fast);
-    width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
-    min-width: 0;
-    padding-right: 8px;
-}
-
-.review-item {
-    display: flex;
-    justify-content: space-between;
     align-items: center;
-    padding: 12px 14px;
-    border-radius: var(--radius-md);
-    background: rgba(255, 255, 255, 0.02);
-    border: 2px solid var(--border-color);
-    cursor: pointer;
-    transition: var(--transition-fast);
+    gap: 10px;
+    width: 100%;
+}
+
+.history-item {
     position: relative;
-    min-width: 0;
-}
-
-.review-item:hover {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.12);
-    transform: translateX(4px);
-}
-
-.active-review {
-    background: rgba(var(--color-primary-rgb), 0.1) !important;
-    border-color: rgba(var(--color-primary-rgb), 0.4) !important;
-    box-shadow: 0 4px 16px rgba(var(--color-primary-rgb), 0.05);
-}
-
-.draft-review {
-    border-style: dashed !important;
-    border-color: rgba(255, 255, 255, 0.25) !important;
-}
-
-.draft-review.active-review {
-    border-style: dashed !important;
-    border-color: rgba(var(--color-primary-rgb), 0.7) !important;
-    background: rgba(var(--color-primary-rgb), 0.05) !important;
-}
-
-.review-item span {
-    font-size: 0.85rem;
-    font-weight: 600;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 80%;
-}
-
-.delete-btn {
-    color: var(--text-muted);
-    font-size: 0.7rem;
-    width: 22px;
-    height: 22px;
+    width: 72px;
+    height: 72px;
+    min-width: 72px;
+    min-height: 72px;
+    aspect-ratio: 1 / 1;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    border: 2px solid var(--border-color);
+    background: rgba(255, 255, 255, 0.03);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    transition: transform var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 50%;
-    transition: var(--transition-fast);
-    cursor: pointer;
+    overflow: hidden;
+    user-select: none;
+    flex-shrink: 0;
 }
 
-.delete-btn:hover {
+.history-item:hover {
+    transform: translateY(-3px) scale(1.04);
+    border-color: var(--color-primary-light);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4), 0 0 14px rgba(var(--color-primary-rgb), var(--glow-soft));
+    z-index: 5;
+}
+
+.history-item.active-review {
+    border-color: var(--color-primary-light) !important;
+    box-shadow: 0 0 16px rgba(var(--color-primary-rgb), var(--glow-strong)) !important;
+    transform: scale(1.02);
+}
+
+.history-item.draft-review {
+    border-style: dashed !important;
+    border-color: rgba(255, 255, 255, 0.35) !important;
+}
+
+.history-item.draft-review.active-review {
+    border-style: dashed !important;
+    border-color: var(--color-primary-light) !important;
+}
+
+.history-cover {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    border-radius: calc(var(--radius-md) - 2px);
+    transition: filter var(--transition-fast);
+}
+
+.history-item:hover .history-cover {
+    filter: brightness(1.08);
+}
+
+.history-delete-btn {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.75);
     color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--transition-fast), transform var(--transition-fast), background var(--transition-fast);
+    z-index: 10;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.history-item:hover .history-delete-btn {
+    opacity: 0.85;
+    pointer-events: auto;
+}
+
+.history-delete-btn:hover {
+    opacity: 1 !important;
     background: var(--color-danger);
-    transform: scale(1.1);
+    border-color: var(--color-danger);
+    transform: scale(1.15);
+}
+
+/* tooltip do historico de reviews */
+.history-tooltip {
+    position: fixed;
+    pointer-events: none;
+    z-index: 99999;
+    background: rgba(10, 14, 22, 0.94);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: var(--radius-sm);
+    padding: 8px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6), 0 0 12px rgba(var(--color-primary-rgb), var(--glow-soft));
+    max-width: 260px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateX(6px);
+    transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
+}
+
+.history-tooltip.visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(0);
+}
+
+.history-tooltip-title {
+    font-size: 0.85rem;
+    font-weight: 800;
+    color: #ffffff;
+    line-height: 1.25;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.history-tooltip-artist {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    line-height: 1.2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.history-tooltip-badge {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #4ade80 !important;
+    text-shadow: 0 0 8px rgba(74, 222, 128, 0.4);
+    letter-spacing: 0.4px;
+    margin-top: 2px;
+    font-family: monospace;
 }
 
 /* conteudo principal */
@@ -1314,7 +1377,7 @@ button svg {
 /* layout do editor */
 .editor-layout {
     display: grid;
-    grid-template-columns: 280px 1fr;
+    grid-template-columns: 108px 1fr;
     gap: 24px;
     align-items: start;
 }
@@ -1328,6 +1391,8 @@ button svg {
         width: 100%;
         max-width: 100%;
         box-sizing: border-box;
+        min-height: auto;
+        height: auto;
     }
 
     .editor-main {
@@ -1336,18 +1401,31 @@ button svg {
 
     .editor-sidebar {
         order: 2;
-        max-height: 280px;
-        width: 100%;
-        max-width: 100%;
+        height: auto !important;
+        max-height: 280px !important;
+        width: 100% !important;
+        max-width: 100% !important;
         box-sizing: border-box;
         min-width: 0;
         position: relative;
         top: auto;
+        overflow-y: hidden !important;
+        overflow-x: auto !important;
+        animation: none !important;
+    }
+
+    #historico {
+        flex-direction: row;
+        justify-content: flex-start;
+        align-items: center;
+        padding-bottom: 6px;
+        height: auto;
+        width: max-content;
     }
 
     .has-placeholder .editor-sidebar {
-        width: 100%;
-        max-width: 540px;
+        width: 100% !important;
+        max-width: 540px !important;
         margin-left: auto;
         margin-right: auto;
     }
@@ -1357,17 +1435,40 @@ button svg {
     background: var(--panel-bg);
     border: 2px solid var(--border-color);
     border-radius: var(--radius-lg);
-    padding: 16px 0 16px 14px;
+    padding: 16px 10px 16px 16px;
     display: flex;
     flex-direction: column;
-    gap: 14px;
-    max-height: calc(100vh - 160px);
-    overflow: hidden;
+    height: calc(100vh - 4 * var(--spacing) - 4px - var(--sidebar-header-offset, 78px));
+    max-height: calc(100vh - 4 * var(--spacing) - 4px - var(--sidebar-header-offset, 78px));
+    overflow-y: auto;
+    overflow-x: hidden;
     box-sizing: border-box;
     isolation: isolate;
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.3);
     position: sticky;
     top: 0;
+    transition: none !important;
+}
+
+@keyframes expandEditorSidebar {
+    from {
+        height: calc(100vh - 4 * var(--spacing) - 4px - 78px);
+        max-height: calc(100vh - 4 * var(--spacing) - 4px - 78px);
+    }
+    to {
+        height: calc(100vh - 4 * var(--spacing) - 4px);
+        max-height: calc(100vh - 4 * var(--spacing) - 4px);
+    }
+}
+
+@supports (animation-timeline: scroll()) {
+    .editor-sidebar {
+        animation-name: expandEditorSidebar;
+        animation-timing-function: linear;
+        animation-fill-mode: both;
+        animation-timeline: --content-scroll;
+        animation-range: 0px 78px;
+    }
 }
 
 .editor-main {
@@ -2170,6 +2271,9 @@ button svg {
 #sort-order-icon {
     width: 18px;
     height: 18px;
+    fill: none;
+    stroke: currentColor;
+    transition: transform var(--transition-fast);
 }
 
 /* Visualização em Lista Compacta na Biblioteca */
