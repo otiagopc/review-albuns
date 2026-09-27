@@ -33,7 +33,7 @@
       ratingScale: window.getRatingScale ? window.getRatingScale() : (localStorage.getItem("rating-scale") || "5"),
       autoCalculateRating: localStorage.getItem("auto-calculate-rating") || "desativado",
       libraryLayout: localStorage.getItem("library-layout") || "grid",
-      bgBlur: localStorage.getItem("loopd-bg-blur") || "32",
+      bgBlur: localStorage.getItem("loopd-bg-blur") || "16",
       bgBrightness: localStorage.getItem("loopd-bg-brightness") || "50",
     };
   }

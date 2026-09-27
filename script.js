@@ -1757,7 +1757,7 @@ async function copiarReviewClipboard() {
 }
 
 // customizacao do fundo dinamico (blur e brightness)
-const DEFAULT_BG_BLUR = 32;
+const DEFAULT_BG_BLUR = 16;
 const DEFAULT_BG_BRIGHTNESS = 50;
 
 function getBgBlur() {
