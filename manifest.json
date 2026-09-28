@@ -1,7 +1,7 @@
 {
   "name": "loopd",
   "short_name": "loopd",
-  "description": "Seu agregador de reviews e diário musical integrado com o Spotify.",
+  "description": "Seu diário e dashboard de música pessoal. Avalie faixas, organize reviews de álbuns e acompanhe suas estatísticas de audição.",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#06080c",
