@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=7">
+  <link rel="stylesheet" href="style.css?v=28">
 </head>
 
 <body>
@@ -27,13 +27,9 @@
       </div>
 
       <nav class="nav-menu">
-        <a href="#" id="nav-library" class="nav-item active" onclick="switchView('library')">
+        <a href="#" id="nav-library" class="nav-item active" onclick="handleNavLibraryClick(event)">
           <svg class="nav-icon" width="24" height="24"><use href="icons/sprite.svg#icon-library"></use></svg>
           <span>biblioteca</span>
-        </a>
-        <a href="#" id="nav-reviews" class="nav-item" onclick="switchView('reviews')">
-          <svg class="nav-icon" width="24" height="24"><use href="icons/sprite.svg#icon-reviews"></use></svg>
-          <span>reviews</span>
         </a>
         <a href="#" id="nav-dashboard" class="nav-item" onclick="switchView('dashboard')">
           <svg class="nav-icon" width="24" height="24"><use href="icons/sprite.svg#icon-dashboard"></use></svg>
@@ -52,7 +48,7 @@
     </aside>
 
     <!-- conteudo principal -->
-    <main class="main-content">
+    <main class="main-content" data-active-view="library">
       <!-- cabecalho com busca e importar -->
       <header class="main-header">
         <input type="text" id="url" class="search-input" placeholder="cole o link do album do spotify aqui">
@@ -72,7 +68,7 @@
       </header>
 
       <!-- aba do dashboard -->
-      <div id="view-dashboard" class="app-view">
+      <div id="view-dashboard" class="app-view" style="display: none;">
         <div class="dashboard-grid">
           <div class="stat-card">
             <span class="stat-icon">
@@ -112,12 +108,15 @@
           </div>
         </div>
 
-        <div class="dashboard-row">
-          <!-- coluna esquerda com grafico e favoritas -->
-          <div class="dashboard-col-left">
-            <!-- grafico de distribuicao de notas -->
-            <div class="chart-panel">
-              <h3 class="chart-title">distribuição de notas</h3>
+        <!-- grid de 3 colunas principais do dashboard -->
+        <div class="dashboard-main-columns">
+          <!-- coluna 1: distribuicao de notas & estatisticas -->
+          <div class="dash-column">
+            <!-- grafico de notas -->
+            <div class="dash-panel chart-panel">
+              <div class="dash-panel-header">
+                <h3 class="chart-title">distribuição de notas</h3>
+              </div>
               <div class="chart-stats-summary-row">
                 <span class="chart-stat-left"><strong id="dash-total-reviews">0</strong> reviews</span>
                 <span class="chart-stat-right">média: <strong id="dash-average-score">0.0</strong></span>
@@ -126,27 +125,69 @@
                 <div id="chart-y-axis" class="chart-y-axis"></div>
                 <div class="chart-main-area">
                   <div id="chart-grid-lines" class="chart-grid-lines"></div>
-                  <div id="rating-distribution-chart" class="bar-chart">
-                    <!-- gerado pelo script.js -->
-                  </div>
+                  <div id="rating-distribution-chart" class="bar-chart"></div>
                 </div>
               </div>
             </div>
 
-            <!-- painel de musicas favoritas -->
-            <div class="favorites-panel">
-              <h3>músicas favoritas</h3>
-              <div id="dash-favorites-list" class="favorites-list">
-                <!-- gerado pelo script.js -->
+            <!-- estatisticas & curiosidades -->
+            <div class="dash-panel insights-panel">
+              <div class="dash-panel-header">
+                <h3>estatísticas & curiosidades</h3>
+              </div>
+              <div id="dash-insights-list" class="dash-insights-grid">
+                <!-- gerado via JS -->
               </div>
             </div>
           </div>
 
-          <!-- coluna direita com top 10 albuns -->
-          <div class="top-albums-panel">
-            <h3>seu top 10 álbuns</h3>
-            <div id="dash-top-albums" class="top-albums-list">
-              <!-- gerado pelo script.js -->
+          <!-- coluna 2: musicas favoritas & atividade recente -->
+          <div class="dash-column">
+            <!-- musicas favoritas -->
+            <div class="dash-panel favorites-panel">
+              <div class="dash-panel-header">
+                <h3>músicas favoritas</h3>
+                <span id="dash-fav-badge" class="dash-count-badge">0</span>
+              </div>
+              <div id="dash-favorites-list" class="dash-scroll-list">
+                <!-- gerado via JS -->
+              </div>
+            </div>
+
+            <!-- atividade recente -->
+            <div class="dash-panel recent-panel">
+              <div class="dash-panel-header">
+                <h3>atividade recente</h3>
+                <span class="dash-count-badge">últimas</span>
+              </div>
+              <div id="dash-recent-list" class="dash-scroll-list">
+                <!-- gerado via JS -->
+              </div>
+            </div>
+          </div>
+
+          <!-- coluna 3: top albuns & top artistas -->
+          <div class="dash-column">
+            <!-- top albuns -->
+            <div class="dash-panel top-albums-panel">
+              <div class="dash-panel-header">
+                <h3>top 10 álbuns</h3>
+                <span class="dash-count-badge">ranking</span>
+              </div>
+              <div id="dash-top-albums" class="dash-scroll-list">
+                <!-- gerado via JS -->
+              </div>
+            </div>
+
+            <!-- top artistas -->
+            <div class="dash-panel top-artists-panel">
+              <div class="dash-panel-header">
+                <h3>top artistas</h3>
+                <span class="dash-count-badge">mais ouvidos</span>
+              </div>
+              <div id="dash-top-artists" class="dash-scroll-list">
+                <!-- gerado via JS -->
+              </div>
             </div>
           </div>
         </div>
@@ -187,31 +228,48 @@
                     <div id="album-stars" class="estrelas"></div>
                   </div>
                 </div>
+                <div class="album-header-actions">
+                  <button type="button" id="btn-voltar-album" class="btn-voltar-review" title="Desselecionar álbum e voltar" onclick="desselecionarAlbum()">
+                    <svg class="btn-voltar-icon" width="16" height="16"><use href="icons/sprite.svg#icon-arrow-left"></use></svg>
+                    <span>voltar</span>
+                  </button>
+                </div>
               </div>
 
               <div id="tracks" class="tracks-list" style="display: none;"></div>
+            </div>
+          </div>
 
-              <div id="notes-container" class="notes-container" style="display: none;">
-                <textarea id="review-notes" class="review-notes" placeholder="escreva sua resenha ou anotações sobre o álbum aqui..."></textarea>
+          <!-- painel lateral direito: anotacoes e acoes (coluna 3) -->
+          <aside id="review-aside-right" class="review-aside-right" style="display: none;">
+            <!-- anotacoes & resenha -->
+            <div id="notes-container" class="notes-container">
+              <div class="notes-header">
+                <label for="review-notes" class="notes-label">anotações & resenha</label>
+                <span id="aside-review-date" class="aside-review-date"></span>
               </div>
+              <textarea id="review-notes" class="review-notes" placeholder="escreva aqui sua resenha ou anotações sobre o álbum..."></textarea>
+            </div>
 
-              <div id="album-actions" class="album-actions" style="display: none;">
-                <button id="btn-salvar" class="btn-action btn-save" onclick="salvarReview()">salvar review</button>
-                <button id="btn-copiar-item" class="btn-action btn-secondary" onclick="copiarReviewClipboard()">
-                  <svg width="14" height="14" style="margin-right: 8px;"><use href="icons/sprite.svg#icon-copy"></use></svg>
-                  <span>copiar review</span>
+            <!-- acoes do album -->
+            <div id="album-actions" class="album-actions">
+              <button id="btn-salvar" class="btn-action btn-save" onclick="salvarReview()">salvar review</button>
+              <div class="actions-secondary-grid">
+                <button id="btn-copiar-item" class="btn-action btn-secondary" onclick="copiarReviewClipboard()" title="Copiar texto da review">
+                  <svg width="14" height="14" style="margin-right: 6px;"><use href="icons/sprite.svg#icon-copy"></use></svg>
+                  <span>copiar</span>
                 </button>
-                <button class="btn-action btn-secondary" onclick="exportarTXT()">
-                  <svg width="14" height="14" style="margin-right: 8px;"><use href="icons/sprite.svg#icon-export-txt"></use></svg>
-                  <span>exportar .txt</span>
+                <button id="btn-exportar" class="btn-action btn-secondary" onclick="exportarTXT()" title="Exportar para .txt">
+                  <svg width="14" height="14" style="margin-right: 6px;"><use href="icons/sprite.svg#icon-export-txt"></use></svg>
+                  <span>exportar</span>
                 </button>
                 <button id="btn-deletar-review" class="btn-action btn-danger" onclick="deletarReviewAberta()" title="Excluir review">
-                  <svg width="14" height="14" style="margin-right: 8px;"><use href="icons/sprite.svg#icon-trash"></use></svg>
-                  <span>excluir review</span>
+                  <svg width="14" height="14" style="margin-right: 6px;"><use href="icons/sprite.svg#icon-trash"></use></svg>
+                  <span>excluir</span>
                 </button>
               </div>
             </div>
-          </div>
+          </aside>
         </div>
       </div>
 
@@ -455,7 +513,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
-  <script src="script.js?v=5"></script>
+  <script src="script.js?v=19"></script>
   <script src="cloud.js"></script>
 </body>
 

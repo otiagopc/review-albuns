@@ -5,6 +5,14 @@ function getDefaultNota() {
     return getRatingScale() === "5" ? 0 : 1;
 }
 
+// verifica se a faixa foi realmente avaliada pelo usuario (ignora valor padrao: 0 na escala 5 estrelas e 1 na escala 9 estrelas)
+function isTrackAvaliada(track) {
+    if (!track) return false;
+    const scale = getRatingScale();
+    const defaultNota = scale === "5" ? 0 : 1;
+    return (track.nota || 0) > defaultNota;
+}
+
 let estado = {
     id: "",
     album: "",
@@ -69,10 +77,40 @@ function autoSaveDraft() {
 
 // vai para o editor com o album
 function navegarParaReview(rev, clonar = false) {
+    if (!rev || !rev.album) {
+        desselecionarAlbum();
+        return;
+    }
     estado = clonar ? { ...rev } : rev;
     switchView("reviews");
     isFirstLoad = true;
     render();
+}
+
+// desseleciona o album e volta para a biblioteca
+function desselecionarAlbum() {
+    autoSaveDraft();
+    estado = getEmptyState();
+    isFirstLoad = true;
+    render();
+    if (typeof esconderHistoryTooltip === "function") {
+        esconderHistoryTooltip();
+    }
+    switchView("library");
+}
+
+// clique no item "biblioteca" da barra lateral
+function handleNavLibraryClick(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    const reviewsView = document.getElementById('view-reviews');
+    const isReviewOpen = reviewsView && reviewsView.style.display !== 'none' && estado.album;
+    if (isReviewOpen) {
+        desselecionarAlbum();
+    } else if (estado.album) {
+        switchView('reviews');
+    } else {
+        switchView('library');
+    }
 }
 
 // deleta review sem confirmar
@@ -84,8 +122,7 @@ function deletarReviewSemConfirmacao(revId, revAlbum, revArtista) {
         salvarHistorico(origHistorico);
     }
     if (estado.id === revId || (revAlbum && estado.album === revAlbum && revArtista && estado.artista === revArtista)) {
-        estado = getEmptyState();
-        render();
+        desselecionarAlbum();
     }
 }
 
@@ -403,6 +440,18 @@ async function gerar() {
 
 // renderiza o editor
 
+// atualiza os dados dinamicos do painel lateral direito do editor (resumo, metricas e contador)
+function atualizarPainelLateralReview() {
+    const asideRight = document.getElementById("review-aside-right");
+    if (!asideRight || !estado.album) return;
+
+    // data da review
+    const dateEl = document.getElementById("aside-review-date");
+    if (dateEl) {
+        dateEl.textContent = estado.data || getDataHoje();
+    }
+}
+
 // desenha a tela do editor
 function render() {
     const header = document.getElementById("header");
@@ -410,6 +459,7 @@ function render() {
     const actionsDiv = document.getElementById("album-actions");
     const placeholder = document.getElementById("placeholder");
     const notesContainer = document.getElementById("notes-container");
+    const asideRight = document.getElementById("review-aside-right");
 
     const layout = document.querySelector(".editor-layout");
     if (layout) {
@@ -423,31 +473,24 @@ function render() {
     if (estado.album) {
         header.style.display = "flex";
         tracksDiv.style.display = "block";
-        if (notesContainer) notesContainer.style.display = "block";
-        actionsDiv.style.display = "grid";
+        if (notesContainer) notesContainer.style.display = "flex";
+        if (actionsDiv) actionsDiv.style.display = "flex";
+        if (asideRight) asideRight.style.display = "flex";
         placeholder.style.display = "none";
     } else {
         header.style.display = "none";
         tracksDiv.style.display = "none";
         if (notesContainer) notesContainer.style.display = "none";
-        actionsDiv.style.display = "none";
+        if (actionsDiv) actionsDiv.style.display = "none";
+        if (asideRight) asideRight.style.display = "none";
         placeholder.style.display = "block";
     }
 
     const reviewNotes = document.getElementById("review-notes");
     if (reviewNotes) {
         reviewNotes.value = estado.anotacoes || "";
-
-        const autoResize = () => {
-            reviewNotes.style.height = "auto";
-            reviewNotes.style.height = reviewNotes.scrollHeight + "px";
-        };
-
-        setTimeout(autoResize, 0);
-
         reviewNotes.oninput = (e) => {
             estado.anotacoes = e.target.value;
-            autoResize();
             autoSaveDraft();
         };
     }
@@ -577,6 +620,7 @@ function render() {
     isFirstLoad = false;
     autoSaveDraft();
     carregarHistorico();
+    atualizarPainelLateralReview();
     recalcularDimensoesEditorSidebar();
 }
 
@@ -705,53 +749,22 @@ function esconderHistoryTooltip() {
     }
 }
 
-const supportsScrollTimeline = typeof CSS !== "undefined" && CSS.supports && CSS.supports("animation-timeline", "scroll()");
-
 // variaveis cacheadas para atualizacao instantanea sem layout thrashing
-let cachedSidebarVisibleHeight = 0;
-let cachedSidebarHeaderTotalHeight = 0;
-
 function recalcularDimensoesEditorSidebar() {
-    cachedSidebarVisibleHeight = 0;
-    cachedSidebarHeaderTotalHeight = 0;
-    atualizarAlturaEditorSidebar();
-}
-
-// atualiza altura dinamica do sidebar do historico conforme o scroll do main-content
-function atualizarAlturaEditorSidebar() {
     const sidebar = document.getElementById("editor-sidebar");
-    if (!sidebar) return;
-
-    if (window.innerWidth <= 980 || supportsScrollTimeline) {
+    const aside = document.getElementById("review-aside-right");
+    if (sidebar && (sidebar.style.height || sidebar.style.maxHeight)) {
         sidebar.style.height = "";
         sidebar.style.maxHeight = "";
-        return;
     }
-
-    const mainContent = document.querySelector(".main-content");
-    const header = document.querySelector(".main-header");
-    if (!mainContent || !header) return;
-
-    if (!cachedSidebarVisibleHeight || !cachedSidebarHeaderTotalHeight) {
-        const style = window.getComputedStyle(mainContent);
-        const padTop = parseFloat(style.paddingTop) || 24;
-        const padBottom = parseFloat(style.paddingBottom) || 24;
-        const gap = parseFloat(style.gap) || 20;
-
-        cachedSidebarVisibleHeight = mainContent.clientHeight - padTop - padBottom;
-        cachedSidebarHeaderTotalHeight = header.offsetHeight + gap;
+    if (aside && (aside.style.height || aside.style.maxHeight)) {
+        aside.style.height = "";
+        aside.style.maxHeight = "";
     }
+}
 
-    if (cachedSidebarVisibleHeight <= 0) return;
-
-    const scrollTop = mainContent.scrollTop;
-    const offset = Math.max(0, cachedSidebarHeaderTotalHeight - scrollTop);
-
-    const exactHeight = `${Math.round(cachedSidebarVisibleHeight - offset)}px`;
-    if (sidebar.style.height !== exactHeight) {
-        sidebar.style.height = exactHeight;
-        sidebar.style.maxHeight = exactHeight;
-    }
+function atualizarAlturaEditorSidebar() {
+    recalcularDimensoesEditorSidebar();
 }
 
 // desenha historico lateral
@@ -1190,7 +1203,7 @@ function getEffectiveAlbumNota(rev) {
             return rev.albumNotaCalculada;
         }
         if (rev.tracks && rev.tracks.length > 0) {
-            const ratedTracks = rev.tracks.filter(t => t.nota > 0);
+            const ratedTracks = rev.tracks.filter(isTrackAvaliada);
             if (ratedTracks.length > 0) {
                 const sum = ratedTracks.reduce((sum, t) => sum + (t.nota || 0), 0);
                 const media = sum / ratedTracks.length;
@@ -1209,7 +1222,7 @@ function recalcularNotaAlbum() {
     const calcMode = getAutoCalculateMode();
     if (calcMode !== "simples") return;
 
-    const ratedTracks = estado.tracks.filter(t => t.nota > 0);
+    const ratedTracks = estado.tracks.filter(isTrackAvaliada);
     if (ratedTracks.length === 0) {
         estado.albumNotaCalculada = 0;
         return;
@@ -1289,13 +1302,19 @@ function switchView(viewName) {
 
     const targetView = document.getElementById(`view-${viewName}`);
     if (targetView) {
-        targetView.style.display = 'block';
+        targetView.style.display = (viewName === 'dashboard') ? 'flex' : 'block';
+    }
+
+    const mainContent = document.querySelector('.main-content');
+    if (mainContent) {
+        mainContent.setAttribute('data-active-view', viewName);
     }
 
     document.querySelectorAll('.nav-item').forEach(item => {
         item.classList.remove('active');
     });
-    const activeNav = document.getElementById(`nav-${viewName}`);
+    const navId = (viewName === 'reviews' || viewName === 'library') ? 'nav-library' : `nav-${viewName}`;
+    const activeNav = document.getElementById(navId);
     if (activeNav) {
         activeNav.classList.add('active');
     }
@@ -1323,7 +1342,7 @@ function renderDashboard() {
     // media das faixas para desempate
     const getMediaTracks = (r) => {
         if (!r.tracks || r.tracks.length === 0) return 0;
-        const rated = r.tracks.filter(t => t.nota > 0);
+        const rated = r.tracks.filter(isTrackAvaliada);
         if (rated.length === 0) return 0;
         return rated.reduce((sum, t) => sum + (t.nota || 0), 0) / rated.length;
     };
@@ -1512,50 +1531,55 @@ function renderDashboard() {
     });
 
     const topAlbums = sortedAlbums.slice(0, 10);
-
     const topContainer = document.getElementById("dash-top-albums");
-    topContainer.innerHTML = "";
+    if (topContainer) {
+        topContainer.innerHTML = "";
+        if (topAlbums.length === 0) {
+            topContainer.innerHTML = `<p class="empty-list-msg">nenhum álbum avaliado ainda</p>`;
+        } else {
+            topAlbums.forEach((rev, index) => {
+                const item = document.createElement("div");
+                item.className = "dash-top-album-item";
 
-    if (topAlbums.length === 0) {
-        topContainer.innerHTML = `<p class="empty-list-msg">nenhum álbum avaliado ainda!!!</p>`;
-    } else {
-        topAlbums.forEach((rev, index) => {
-            const item = document.createElement("div");
-            item.className = "dash-top-album-item";
+                const rank = document.createElement("span");
+                rank.className = `dash-rank-badge ${index < 3 ? 'rank-' + (index + 1) : ''}`;
+                rank.textContent = `${index + 1}`;
 
-            const img = document.createElement("img");
-            img.src = rev.capa || "";
-            img.className = "dash-top-album-cover";
+                const img = document.createElement("img");
+                img.src = rev.capa || "";
+                img.className = "dash-top-album-cover";
+                img.alt = rev.album;
 
-            const info = document.createElement("div");
-            info.className = "dash-top-album-info";
+                const info = document.createElement("div");
+                info.className = "dash-top-album-info";
 
-            const title = document.createElement("span");
-            title.className = "dash-top-album-title";
-            title.textContent = `${index + 1}. ${rev.album}`;
+                const title = document.createElement("span");
+                title.className = "dash-top-album-title";
+                title.textContent = rev.album;
 
-            const artist = document.createElement("span");
-            artist.className = "dash-top-album-artist";
-            artist.textContent = rev.artista;
+                const artist = document.createElement("span");
+                artist.className = "dash-top-album-artist";
+                artist.textContent = rev.artista;
 
-            info.append(title, artist);
+                info.append(title, artist);
 
-            const score = document.createElement("span");
-            score.className = "dash-top-album-score";
-            const maxScore = getMaxScoreLabel();
-            score.textContent = `${aEscala(getEffectiveAlbumNota(rev))}${maxScore}`;
+                const score = document.createElement("span");
+                score.className = "dash-top-album-score";
+                score.textContent = `${aEscala(getEffectiveAlbumNota(rev))}${getMaxScoreLabel()}`;
 
-            item.append(img, info, score);
-
-            item.onclick = () => {
-                navegarParaReview(rev);
-            };
-
-            topContainer.appendChild(item);
-        });
+                item.append(rank, img, info, score);
+                item.onclick = () => navegarParaReview(rev);
+                topContainer.appendChild(item);
+            });
+        }
     }
 
+    // 2. Músicas Favoritas
     const favListEl = document.getElementById("dash-favorites-list");
+    const favBadgeEl = document.getElementById("dash-fav-badge");
+    if (favBadgeEl) {
+        favBadgeEl.textContent = favorites.length;
+    }
     if (favListEl) {
         favListEl.innerHTML = "";
         favorites.sort((a, b) => {
@@ -1573,17 +1597,19 @@ function renderDashboard() {
 
             return getMediaTracks(b.review) - getMediaTracks(a.review);
         });
-        const latestFavorites = favorites.slice(0, 5);
-        if (latestFavorites.length === 0) {
-            favListEl.innerHTML = `<p class="empty-list-msg">nenhuma música favorita marcada ainda!!!</p>`;
+
+        const displayFavorites = favorites.slice(0, 10);
+        if (displayFavorites.length === 0) {
+            favListEl.innerHTML = `<p class="empty-list-msg">nenhuma música favorita marcada</p>`;
         } else {
-            latestFavorites.forEach(fav => {
+            displayFavorites.forEach(fav => {
                 const item = document.createElement("div");
                 item.className = "dash-fav-track-item";
 
                 const img = document.createElement("img");
                 img.src = fav.capa || "";
                 img.className = "dash-fav-track-cover";
+                img.alt = fav.album;
 
                 const info = document.createElement("div");
                 info.className = "dash-fav-track-info";
@@ -1599,20 +1625,193 @@ function renderDashboard() {
                 info.append(title, artist);
 
                 const crown = document.createElement("span");
-                crown.className = "dash-fav-crown";
-                crown.innerHTML = `
-                    <svg class="crown-icon" width="16" height="16"><use href="icons/sprite.svg#icon-crown"></use></svg>
-                `;
+                crown.style.display = "inline-flex";
+                crown.style.alignItems = "center";
+                crown.innerHTML = `<svg class="dash-fav-crown-svg"><use href="icons/sprite.svg#icon-crown"></use></svg>`;
 
                 item.append(img, info, crown);
-
-                item.onclick = () => {
-                    navegarParaReview(fav.review);
-                };
-
+                item.onclick = () => navegarParaReview(fav.review);
                 favListEl.appendChild(item);
             });
         }
+    }
+
+    // 3. Atividade Recente (últimos avaliados)
+    const recentListEl = document.getElementById("dash-recent-list");
+    if (recentListEl) {
+        recentListEl.innerHTML = "";
+        const recentReviews = historico.slice(0, 8);
+        if (recentReviews.length === 0) {
+            recentListEl.innerHTML = `<p class="empty-list-msg">nenhum álbum avaliado ainda</p>`;
+        } else {
+            recentReviews.forEach(rev => {
+                const item = document.createElement("div");
+                item.className = "dash-recent-item";
+
+                const img = document.createElement("img");
+                img.src = rev.capa || "";
+                img.className = "dash-recent-cover";
+                img.alt = rev.album;
+
+                const info = document.createElement("div");
+                info.className = "dash-recent-info";
+
+                const title = document.createElement("span");
+                title.className = "dash-recent-title";
+                title.textContent = rev.album;
+
+                const meta = document.createElement("span");
+                meta.className = "dash-recent-meta";
+                meta.textContent = `${rev.artista} • ${rev.data || ""}`;
+
+                info.append(title, meta);
+
+                const score = document.createElement("span");
+                score.className = "dash-recent-score";
+                score.textContent = `${aEscala(getEffectiveAlbumNota(rev))}${getMaxScoreLabel()}`;
+
+                item.append(img, info, score);
+                item.onclick = () => navegarParaReview(rev);
+                recentListEl.appendChild(item);
+            });
+        }
+    }
+
+    // 4. Top Artistas
+    const topArtistsEl = document.getElementById("dash-top-artists");
+    if (topArtistsEl) {
+        topArtistsEl.innerHTML = "";
+        const artistStats = {};
+        historico.forEach(r => {
+            if (r.artista) {
+                const artistas = r.artista.split(',').map(a => a.trim());
+                artistas.forEach(a => {
+                    if (!a) return;
+                    if (!artistStats[a]) {
+                        artistStats[a] = { count: 0, sumNotas: 0, cover: r.capa };
+                    }
+                    artistStats[a].count++;
+                    artistStats[a].sumNotas += (getEffectiveAlbumNota(r) || 0);
+                });
+            }
+        });
+
+        const sortedArtists = Object.entries(artistStats)
+            .map(([name, data]) => ({
+                name,
+                count: data.count,
+                avg: data.sumNotas / data.count,
+                cover: data.cover
+            }))
+            .sort((a, b) => {
+                if (b.count !== a.count) return b.count - a.count;
+                return b.avg - a.avg;
+            })
+            .slice(0, 8);
+
+        if (sortedArtists.length === 0) {
+            topArtistsEl.innerHTML = `<p class="empty-list-msg">nenhum artista avaliado ainda</p>`;
+        } else {
+            sortedArtists.forEach((art, index) => {
+                const item = document.createElement("div");
+                item.className = "dash-top-artist-item";
+
+                const rank = document.createElement("span");
+                rank.className = `dash-rank-badge ${index < 3 ? 'rank-' + (index + 1) : ''}`;
+                rank.textContent = `${index + 1}`;
+
+                const avatar = document.createElement("div");
+                avatar.className = "dash-artist-avatar";
+                if (art.cover) {
+                    const img = document.createElement("img");
+                    img.src = art.cover;
+                    img.style.width = "100%";
+                    img.style.height = "100%";
+                    img.style.borderRadius = "50%";
+                    img.style.objectFit = "cover";
+                    avatar.appendChild(img);
+                } else {
+                    avatar.textContent = art.name.charAt(0).toUpperCase();
+                }
+
+                const info = document.createElement("div");
+                info.className = "dash-top-artist-info";
+
+                const name = document.createElement("span");
+                name.className = "dash-top-artist-name";
+                name.textContent = art.name;
+
+                const count = document.createElement("span");
+                count.className = "dash-top-artist-count";
+                count.textContent = `${art.count} ${art.count === 1 ? 'álbum avaliado' : 'álbuns avaliados'}`;
+
+                info.append(name, count);
+
+                const avg = document.createElement("span");
+                avg.className = "dash-top-artist-avg";
+                avg.textContent = `${aEscala(art.avg).toFixed(1)}${getMaxScoreLabel()}`;
+
+                item.append(rank, avatar, info, avg);
+                item.onclick = () => {
+                    switchView('library');
+                    const searchInput = document.getElementById("library-search");
+                    if (searchInput) {
+                        searchInput.value = art.name;
+                        renderLibrary();
+                    }
+                };
+                topArtistsEl.appendChild(item);
+            });
+        }
+    }
+
+    // 5. Estatísticas & Curiosidades
+    const insightsEl = document.getElementById("dash-insights-list");
+    if (insightsEl) {
+        insightsEl.innerHTML = "";
+        const albunsCompletos = historico.filter(r => {
+            if (!r.tracks || r.tracks.length === 0) return false;
+            return r.tracks.every(isTrackAvaliada);
+        }).length;
+        const pctCompletos = totalAlbums > 0 ? Math.round((albunsCompletos / totalAlbums) * 100) : 0;
+        const avgFavs = totalAlbums > 0 ? (totalFavTracks / totalAlbums).toFixed(1) : "0";
+        const ratedTracksCount = historico.reduce((acc, r) => acc + (r.tracks ? r.tracks.filter(isTrackAvaliada).length : 0), 0);
+        const pctRatedTracks = totalTracks > 0 ? Math.round((ratedTracksCount / totalTracks) * 100) : 0;
+
+        const insights = [
+            {
+                label: "álbuns completos",
+                value: `${albunsCompletos}/${totalAlbums}`,
+                sub: `${pctCompletos}% 100% avaliados`,
+                highlight: true
+            },
+            {
+                label: "músicas favoritas",
+                value: `${totalFavTracks}`,
+                sub: `coroadas na biblioteca`
+            },
+            {
+                label: "taxa de favoritas",
+                value: `${avgFavs}`,
+                sub: `média por álbum`
+            },
+            {
+                label: "faixas avaliadas",
+                value: `${pctRatedTracks}%`,
+                sub: `${ratedTracksCount} de ${totalTracks} faixas`
+            }
+        ];
+
+        insights.forEach(ins => {
+            const card = document.createElement("div");
+            card.className = "dash-insight-card";
+            card.innerHTML = `
+                <span class="dash-insight-label">${ins.label}</span>
+                <span class="dash-insight-value ${ins.highlight ? 'highlight' : ''}">${ins.value}</span>
+                <span class="dash-insight-sub">${ins.sub}</span>
+            `;
+            insightsEl.appendChild(card);
+        });
     }
 }
 
@@ -1639,7 +1838,7 @@ function renderLibrary() {
 
     const historico = getHistorico();
     if (historico.length === 0) {
-        libraryGrid.innerHTML = `<p class="empty-library-msg">sua biblioteca está vazia. crie uma review na aba "reviews" para começar!</p>`;
+        libraryGrid.innerHTML = `<p class="empty-library-msg">sua biblioteca está vazia. cole o link de um álbum do spotify no cabeçalho para começar a sua avaliação!</p>`;
         return;
     }
 
@@ -2009,11 +2208,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Monitora scroll do main-content e resize da janela para ajustar a altura dinamica do historico
-    const mainContent = document.querySelector(".main-content");
-    if (mainContent) {
-        mainContent.addEventListener("scroll", atualizarAlturaEditorSidebar, { passive: true });
-    }
     window.addEventListener("resize", recalcularDimensoesEditorSidebar, { passive: true });
     recalcularDimensoesEditorSidebar();
 });
