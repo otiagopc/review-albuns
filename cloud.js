@@ -35,6 +35,7 @@
       libraryLayout: localStorage.getItem("library-layout") || "grid",
       bgBlur: localStorage.getItem("loopd-bg-blur") || "16",
       bgBrightness: localStorage.getItem("loopd-bg-brightness") || "50",
+      historyColumns: localStorage.getItem("loopd-history-columns") || "1",
     };
   }
 
@@ -44,6 +45,12 @@
     if (settings.libraryLayout) localStorage.setItem("library-layout", settings.libraryLayout);
     if (settings.bgBlur) localStorage.setItem("loopd-bg-blur", settings.bgBlur);
     if (settings.bgBrightness) localStorage.setItem("loopd-bg-brightness", settings.bgBrightness);
+    if (settings.historyColumns) {
+      localStorage.setItem("loopd-history-columns", settings.historyColumns);
+      if (typeof window.setHistoryColumns === "function") {
+        window.setHistoryColumns(parseInt(settings.historyColumns, 10), false);
+      }
+    }
   }
 
   function reviewKey(review) {
@@ -133,6 +140,9 @@
         navAvatar.style.display = "none";
         navIcon.style.display = "block";
       }
+      if (typeof window.atualizarHeaderPerfil === "function") {
+        window.atualizarHeaderPerfil();
+      }
       return;
     }
 
@@ -191,6 +201,10 @@
         button.title = "Sincronizar suas reviews entre dispositivos";
       }
       if (avatar) avatar.style.display = "none";
+    }
+
+    if (typeof window.atualizarHeaderPerfil === "function") {
+      window.atualizarHeaderPerfil();
     }
   }
 

@@ -17,10 +17,12 @@ let estado = {
     id: "",
     album: "",
     artista: "",
+    ano: "",
     capa: "",
     link: "",
     albumNota: getDefaultNota(),
     albumNotaCalculada: 0,
+    calcMode: "",
     tracks: [],
     data: "",
     anotacoes: "",
@@ -36,25 +38,67 @@ function getEmptyState() {
         id: "",
         album: "",
         artista: "",
+        ano: "",
         capa: "",
         link: "",
         albumNota: getDefaultNota(),
         albumNotaCalculada: 0,
+        calcMode: "",
         tracks: [],
         data: "",
+        listened_at: "",
         anotacoes: "",
     };
 }
 
 // funcoes auxiliares
 
-// data de hoje formatada
+// data de hoje formatada (DD/MM/AAAA)
 function getDataHoje() {
     const hoje = new Date();
     const d = String(hoje.getDate()).padStart(2, "0");
     const m = String(hoje.getMonth() + 1).padStart(2, "0");
     const y = hoje.getFullYear();
     return `${d}/${m}/${y}`;
+}
+
+// converte DD/MM/AAAA para YYYY-MM-DD
+function formatarParaInputDate(dataStr) {
+    if (!dataStr) return "";
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dataStr)) return dataStr;
+    const parts = dataStr.split("/");
+    if (parts.length === 3) {
+        return `${parts[2]}-${parts[1].padStart(2, "0")}-${parts[0].padStart(2, "0")}`;
+    }
+    return "";
+}
+
+// converte YYYY-MM-DD para DD/MM/AAAA
+function formatarDeInputDate(isoDateStr) {
+    if (!isoDateStr) return "";
+    const parts = isoDateStr.split("-");
+    if (parts.length === 3) {
+        return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
+    return isoDateStr;
+}
+
+// define data de audicao para a data atual
+function definirDataAudicaoHoje() {
+    const hoje = new Date();
+    const y = hoje.getFullYear();
+    const m = String(hoje.getMonth() + 1).padStart(2, "0");
+    const d = String(hoje.getDate()).padStart(2, "0");
+    const isoDate = `${y}-${m}-${d}`;
+    atualizarDataAudicao(isoDate);
+}
+
+// atualiza data de audicao no estado e salva rascunho
+function atualizarDataAudicao(isoDate) {
+    estado.listened_at = isoDate;
+    const input = document.getElementById("review-listened-date");
+    if (input) input.value = isoDate;
+    autoSaveDraft();
 }
 
 // sufixo da escala ativa
@@ -85,6 +129,9 @@ function navegarParaReview(rev, clonar = false) {
     switchView("reviews");
     isFirstLoad = true;
     render();
+    if (!estado.ano && (estado.id || estado.link)) {
+        buscarAnoAlbumSeNecessario();
+    }
 }
 
 // desseleciona o album e volta para a biblioteca
@@ -116,12 +163,12 @@ function handleNavLibraryClick(e) {
 // deleta review sem confirmar
 function deletarReviewSemConfirmacao(revId, revAlbum, revArtista) {
     const origHistorico = getHistorico();
-    const origIndex = origHistorico.findIndex(r => r.id === revId || (r.album === revAlbum && r.artista === revArtista));
+    const origIndex = origHistorico.findIndex(r => r.id === revId || (!r.id && r.album === revAlbum && r.artista === revArtista));
     if (origIndex !== -1) {
         origHistorico.splice(origIndex, 1);
         salvarHistorico(origHistorico);
     }
-    if (estado.id === revId || (revAlbum && estado.album === revAlbum && revArtista && estado.artista === revArtista)) {
+    if (estado.id === revId || (!estado.id && revAlbum && estado.album === revAlbum && revArtista && estado.artista === revArtista)) {
         desselecionarAlbum();
     }
 }
@@ -399,20 +446,35 @@ async function gerar() {
         }
 
         const artistNames = data.artists.map((a) => a.name).join(", ");
+        const releaseYear = data.release_date ? data.release_date.split("-")[0] : "";
         let historico = getHistorico();
-        const index = historico.findIndex((r) => r.id === data.id || (r.album === data.name && r.artista === artistNames));
+        const reviewsDoMesmo = getReviewsDoMesmoAlbum(historico, data.name, artistNames, data.id);
 
-        if (index !== -1) {
-            estado = { ...historico[index] };
+        if (reviewsDoMesmo.length > 0) {
+            // Carrega a review mais recente do album
+            const maisRecente = reviewsDoMesmo[reviewsDoMesmo.length - 1];
+            estado = { ...maisRecente };
+            if (!estado.ano && releaseYear) {
+                estado.ano = releaseYear;
+                const idx = historico.findIndex(r => r.id === maisRecente.id);
+                if (idx !== -1) {
+                    historico[idx].ano = releaseYear;
+                    salvarHistorico(historico);
+                }
+            }
         } else {
+            const novoId = "rev_" + Date.now() + "_" + Math.random().toString(36).substr(2, 6);
             estado = {
-                id: data.id,
+                id: novoId,
+                spotifyId: data.id,
                 album: data.name,
                 artista: artistNames,
+                ano: releaseYear,
                 capa: data.images[0].url,
                 link: data.external_urls.spotify,
                 albumNota: getDefaultNota(),
                 albumNotaCalculada: 0,
+                calcMode: getAutoCalculateMode(),
                 tracks: data.tracks.items.map((t) => ({
                     nome: t.name,
                     nota: getDefaultNota(),
@@ -420,6 +482,7 @@ async function gerar() {
                     duration_ms: t.duration_ms || 0,
                 })),
                 data: "",
+                listened_at: new Date().toISOString().split("T")[0],
                 anotacoes: "",
                 isDraft: true,
                 createdAt: Date.now()
@@ -438,17 +501,306 @@ async function gerar() {
     }
 }
 
+// reavaliacoes e historico do mesmo album
+
+// retorna todas as avaliacoes salvas para um mesmo album ordenadas por data
+function getReviewsDoMesmoAlbum(historico, album, artista, spotifyId) {
+    if (!album) return [];
+    const albLower = album.toLowerCase().trim();
+    const artLower = (artista || "").toLowerCase().trim();
+
+    return historico.filter(r => {
+        if (spotifyId && r.spotifyId && r.spotifyId === spotifyId) return true;
+        if (r.album && r.album.toLowerCase().trim() === albLower) {
+            if (!artLower || !r.artista || r.artista.toLowerCase().trim() === artLower) return true;
+        }
+        return false;
+    }).sort((a, b) => {
+        const dateA = a.listened_at || (a.data ? getSortableDate(a.data) : 0) || a.createdAt || 0;
+        const dateB = b.listened_at || (b.data ? getSortableDate(b.data) : 0) || b.createdAt || 0;
+        return dateA < dateB ? -1 : (dateA > dateB ? 1 : 0);
+    });
+}
+
+// inicia uma nova avaliacao para o mesmo album (reavaliacao)
+function iniciarReavaliacao() {
+    if (!estado.album) return;
+
+    const querDuplicarNotas = confirm(
+        `Deseja iniciar uma nova avaliação para "${estado.album}"?\n\n` +
+        `• Clique em "OK" para usar suas notas anteriores como ponto de partida.\n` +
+        `• Clique em "Cancelar" para iniciar uma avaliação limpa do zero.`
+    );
+
+    const novoId = "rev_" + Date.now() + "_" + Math.random().toString(36).substr(2, 6);
+    const hojeStr = getDataHoje();
+    const hojeIso = new Date().toISOString().split("T")[0];
+
+    const tracksCopia = (estado.tracks || []).map(t => ({
+        nome: t.nome,
+        nota: querDuplicarNotas ? t.nota : getDefaultNota(),
+        fav: querDuplicarNotas ? !!t.fav : false,
+        duration_ms: t.duration_ms || 0
+    }));
+
+    const novoEstado = {
+        id: novoId,
+        spotifyId: estado.spotifyId || estado.id,
+        album: estado.album,
+        artista: estado.artista,
+        ano: estado.ano || "",
+        capa: estado.capa || "",
+        link: estado.link || "",
+        albumNota: querDuplicarNotas ? estado.albumNota : getDefaultNota(),
+        albumNotaCalculada: 0,
+        calcMode: estado.calcMode || getAutoCalculateMode(),
+        tracks: tracksCopia,
+        data: hojeStr,
+        listened_at: hojeIso,
+        anotacoes: "",
+        isDraft: true,
+        createdAt: Date.now()
+    };
+
+    let historico = getHistorico();
+    historico.push({ ...novoEstado });
+    salvarHistorico(historico);
+
+    navegarParaReview(novoEstado, true);
+}
+
 // renderiza o editor
 
-// atualiza os dados dinamicos do painel lateral direito do editor (resumo, metricas e contador)
+// atualiza os dados dinamicos do painel lateral direito do editor (resumo, metricas e detalhes da avaliacao)
 function atualizarPainelLateralReview() {
     const asideRight = document.getElementById("review-aside-right");
     if (!asideRight || !estado.album) return;
 
-    // data da review
-    const dateEl = document.getElementById("aside-review-date");
-    if (dateEl) {
-        dateEl.textContent = estado.data || getDataHoje();
+    // 1. Status da review (rascunho vs concluida)
+    const statusBadge = document.getElementById("review-status-badge");
+    const statusText = document.getElementById("review-status-text");
+    if (statusBadge && statusText) {
+        if (estado.isDraft) {
+            statusBadge.className = "review-status-badge draft";
+            statusText.textContent = "rascunho";
+        } else {
+            statusBadge.className = "review-status-badge saved";
+            statusText.textContent = "concluída";
+        }
+    }
+
+    // 2. Data de audicao
+    const dateInput = document.getElementById("review-listened-date");
+    if (dateInput) {
+        if (!estado.listened_at) {
+            estado.listened_at = formatarParaInputDate(estado.data) || new Date().toISOString().split("T")[0];
+        }
+        dateInput.value = estado.listened_at;
+    }
+
+    // 3. Comparativo: Media calculada das faixas vs Nota do album (com seletor interativo de modo)
+    const tracksAvgEl = document.getElementById("detail-tracks-avg");
+    const albumScoreEl = document.getElementById("detail-album-score");
+    const btnTracksAvg = document.getElementById("btn-mode-tracks-avg");
+    const btnAlbumManual = document.getElementById("btn-mode-album-manual");
+
+    if (tracksAvgEl && albumScoreEl) {
+        const tracks = estado.tracks || [];
+        const ratedTracks = tracks.filter(isTrackAvaliada);
+        let mediaTracks = 0;
+        if (ratedTracks.length > 0) {
+            const sum = ratedTracks.reduce((acc, t) => acc + (t.nota || 0), 0);
+            mediaTracks = sum / ratedTracks.length;
+        }
+        const mediaScaled = aEscala(mediaTracks, true);
+        const albumScoreScaled = aEscala(estado.albumNota || 0, true);
+        const maxScore = getMaxScoreLabel();
+
+        tracksAvgEl.textContent = `${mediaScaled.toFixed(1)}${maxScore}`;
+        albumScoreEl.textContent = `${albumScoreScaled.toFixed(1)}${maxScore}`;
+
+        const isSimples = isAlbumAutoCalc(estado);
+
+        if (btnTracksAvg && btnAlbumManual) {
+            if (isSimples) {
+                btnTracksAvg.classList.add("active");
+                btnAlbumManual.classList.remove("active");
+                tracksAvgEl.classList.add("highlight");
+                albumScoreEl.classList.remove("highlight");
+            } else {
+                btnTracksAvg.classList.remove("active");
+                btnAlbumManual.classList.add("active");
+                tracksAvgEl.classList.remove("highlight");
+                albumScoreEl.classList.add("highlight");
+            }
+        }
+    }
+
+    // 4. Progresso de faixas avaliadas
+    const progressTextEl = document.getElementById("detail-progress-text");
+    const progressFillEl = document.getElementById("detail-progress-fill");
+    if (progressTextEl && progressFillEl) {
+        const total = estado.tracks ? estado.tracks.length : 0;
+        const avaliadas = estado.tracks ? estado.tracks.filter(isTrackAvaliada).length : 0;
+        const pct = total > 0 ? Math.round((avaliadas / total) * 100) : 0;
+
+        progressTextEl.textContent = `${avaliadas} de ${total} (${pct}%)`;
+        progressFillEl.style.width = `${pct}%`;
+    }
+
+    // 5. Historico de audicoes e reavaliacoes
+    const listensLabelEl = document.getElementById("detail-listens-count-label");
+    const listensChipsEl = document.getElementById("detail-listens-chips");
+    if (listensChipsEl) {
+        listensChipsEl.innerHTML = "";
+        const historico = getHistorico();
+        const reviewsDoMesmo = getReviewsDoMesmoAlbum(historico, estado.album, estado.artista, estado.spotifyId || estado.id);
+        const totalAudicoes = Math.max(1, reviewsDoMesmo.length);
+        const indexAtual = reviewsDoMesmo.findIndex(r => r.id === estado.id);
+        const numeroAudicao = indexAtual !== -1 ? indexAtual + 1 : totalAudicoes;
+
+        if (listensLabelEl) {
+            listensLabelEl.textContent = `audição (${numeroAudicao} de ${totalAudicoes}):`;
+        }
+
+        reviewsDoMesmo.forEach((r, idx) => {
+            const chip = document.createElement("button");
+            chip.type = "button";
+            chip.className = `listen-chip${r.id === estado.id ? " active" : ""}`;
+            
+            const numLabel = `${idx + 1}ª`;
+            const dataLabel = formatarDeInputDate(r.listened_at) || r.data || "";
+            const notaVal = aEscala(getEffectiveAlbumNota(r), true).toFixed(1);
+            const maxScore = getMaxScoreLabel();
+            const scoreLabel = r.isDraft ? "rascunho" : `★ ${notaVal}${maxScore}`;
+
+            chip.innerHTML = `
+                <span>${numLabel}${r.id === estado.id ? " (atual)" : ""}</span>
+                ${dataLabel ? `<span class="chip-date">${dataLabel}</span>` : ""}
+                <span class="chip-score">${scoreLabel}</span>
+            `;
+
+            chip.onclick = () => {
+                if (r.id !== estado.id) {
+                    navegarParaReview(r, true);
+                }
+            };
+
+            listensChipsEl.appendChild(chip);
+        });
+    }
+}
+
+// atualiza os metadados do cabecalho do album (ano, faixas e duracao)
+function atualizarAlbumMetaInfo() {
+    const metaInfo = document.getElementById("album-meta-info");
+    if (!metaInfo) return;
+
+    const totalTracks = estado.tracks ? estado.tracks.length : 0;
+    const totalDurationMs = calcularDuracaoTotal(estado.tracks);
+    if (totalTracks > 0 || estado.ano) {
+        const parts = [];
+        if (estado.ano) {
+            parts.push(estado.ano);
+        }
+        if (totalTracks > 0) {
+            parts.push(`${totalTracks} ${totalTracks === 1 ? 'música' : 'músicas'}`);
+        }
+        const formattedDuration = formatarTempoTotal(totalDurationMs);
+        if (formattedDuration) {
+            parts.push(formattedDuration);
+        }
+        metaInfo.textContent = parts.join(" • ");
+        metaInfo.style.display = "block";
+    } else {
+        metaInfo.style.display = "none";
+    }
+}
+
+// busca ano de lancamento do album se estiver ausente no historico legado
+async function buscarAnoAlbumSeNecessario() {
+    if (!estado || !estado.album || estado.ano) return;
+    const albumUrl = estado.link || (estado.id ? `https://open.spotify.com/album/${estado.id}` : null);
+    if (!albumUrl) return;
+
+    try {
+        const res = await fetch(`/api/album?url=${encodeURIComponent(albumUrl)}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data && data.release_date) {
+            const releaseYear = data.release_date.split("-")[0];
+            if (releaseYear) {
+                estado.ano = releaseYear;
+                let historico = getHistorico();
+                const idx = historico.findIndex((r) => r.id === estado.id || (r.album === estado.album && r.artista === estado.artista));
+                if (idx !== -1) {
+                    historico[idx].ano = releaseYear;
+                    salvarHistorico(historico);
+                }
+                atualizarAlbumMetaInfo();
+            }
+        }
+    } catch (e) {
+        // Silencioso se offline ou falha na API
+    }
+}
+
+let measureCanvas = null;
+function getTitleTextWidth(text, fontSize) {
+    if (!measureCanvas) {
+        measureCanvas = document.createElement("canvas");
+    }
+    const ctx = measureCanvas.getContext("2d");
+    ctx.font = `800 ${fontSize}px 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif`;
+    return ctx.measureText(text).width;
+}
+
+let lastObservedTitleWidth = 0;
+// ajusta o tamanho da fonte do titulo do album para caber sem quebrar linha
+function ajustarTamanhoTituloAlbum(forcar = false) {
+    const tituloEl = document.getElementById("titulo");
+    if (!tituloEl || !estado.album) return;
+
+    const parent = tituloEl.parentElement;
+    if (!parent) return;
+
+    const availableWidth = parent.clientWidth;
+    if (availableWidth <= 0) return;
+
+    if (!forcar && Math.abs(availableWidth - lastObservedTitleWidth) < 2) {
+        return;
+    }
+    lastObservedTitleWidth = availableWidth;
+
+    const isMobile = window.innerWidth <= 650;
+    // Tamanho base MUITO grande: 86px (~5.4rem) no desktop e 46px no mobile
+    const maxFontSize = isMobile ? 46 : 86;
+    const minFontSize = isMobile ? 18 : 22;
+
+    const naturalWidth = getTitleTextWidth(estado.album, maxFontSize);
+
+    if (naturalWidth > availableWidth) {
+        const ratio = (availableWidth - 8) / naturalWidth;
+        const targetSize = Math.max(minFontSize, Math.floor(maxFontSize * ratio));
+        tituloEl.style.fontSize = `${targetSize}px`;
+    } else {
+        tituloEl.style.fontSize = `${maxFontSize}px`;
+    }
+}
+
+let tituloResizeObserver = null;
+function iniciarObservadorTitulo() {
+    const titleGroup = document.querySelector(".album-title-group");
+    if (titleGroup && window.ResizeObserver && !tituloResizeObserver) {
+        tituloResizeObserver = new ResizeObserver((entries) => {
+            for (const entry of entries) {
+                const width = entry.contentRect.width;
+                if (width > 0 && Math.abs(width - lastObservedTitleWidth) >= 4) {
+                    ajustarTamanhoTituloAlbum();
+                }
+            }
+        });
+        tituloResizeObserver.observe(titleGroup);
     }
 }
 
@@ -498,19 +850,9 @@ function render() {
     document.getElementById("titulo").textContent = estado.album;
     document.getElementById("artista").textContent = estado.artista;
 
-    const metaInfo = document.getElementById("album-meta-info");
-    if (metaInfo) {
-        const totalTracks = estado.tracks ? estado.tracks.length : 0;
-        const totalDurationMs = calcularDuracaoTotal(estado.tracks);
-        if (totalTracks > 0) {
-            const formattedDuration = formatarTempoTotal(totalDurationMs);
-            const durationPart = formattedDuration ? ` • ${formattedDuration}` : "";
-            metaInfo.textContent = `${totalTracks} ${totalTracks === 1 ? 'música' : 'músicas'}${durationPart}`;
-            metaInfo.style.display = "block";
-        } else {
-            metaInfo.style.display = "none";
-        }
-    }
+    atualizarAlbumMetaInfo();
+    lastObservedTitleWidth = 0;
+    ajustarTamanhoTituloAlbum(true);
 
     if (!estado.data) {
         estado.data = getDataHoje();
@@ -524,7 +866,7 @@ function render() {
     atualizarFundo(estado.capa);
 
     const maxScoreLabel = getMaxScoreLabel();
-    const autoCalc = getAutoCalculateMode() !== "desativado";
+    const autoCalc = isAlbumAutoCalc(estado);
 
     const albumStarsEl = document.getElementById("album-stars");
     if (albumStarsEl) {
@@ -539,7 +881,14 @@ function render() {
         albumStarsEl,
         aEscala(getEffectiveAlbumNota(estado), true),
         (val) => {
-            if (autoCalc) return;
+            if (autoCalc) {
+                // Ao clicar nas estrelas do album enquanto a media simples esta ativa,
+                // alterna automaticamente o album para o modo de nota manual com a nota escolhida!
+                estado.calcMode = "manual";
+                estado.albumNota = deEscala(val);
+                render();
+                return;
+            }
             estado.albumNota = deEscala(val);
             render();
         },
@@ -578,7 +927,7 @@ function render() {
             } else {
                 track.nota = deEscala(val);
             }
-            if (getAutoCalculateMode() !== "desativado") {
+            if (isAlbumAutoCalc(estado)) {
                 recalcularNotaAlbum();
             }
             render();
@@ -656,7 +1005,7 @@ function salvarReview() {
     estado.isDraft = false;
 
     let historico = getHistorico();
-    const index = historico.findIndex((r) => r.id === estado.id || (r.album === estado.album && r.artista === estado.artista));
+    const index = historico.findIndex((r) => r.id === estado.id || (!r.id && r.album === estado.album && r.artista === estado.artista));
 
     if (index !== -1) {
         historico[index] = { ...estado };
@@ -673,6 +1022,7 @@ function salvarReview() {
 
     salvarHistorico(historico);
     carregarHistorico();
+    atualizarPainelLateralReview();
 
     const btn = document.getElementById("btn-salvar");
     if (btn) {
@@ -749,6 +1099,136 @@ function esconderHistoryTooltip() {
     }
 }
 
+// controle de colunas arrastáveis do histórico
+const HISTORY_COL_WIDTHS = {
+    1: 108,
+    2: 190,
+    3: 272
+};
+
+function getHistoryColumns() {
+    const saved = localStorage.getItem("loopd-history-columns");
+    const num = parseInt(saved, 10);
+    return (num >= 1 && num <= 3) ? num : 1;
+}
+
+function setHistoryColumns(cols, salvar = true) {
+    const validCols = Math.max(1, Math.min(3, cols));
+    const layout = document.querySelector(".editor-layout");
+    const badge = document.getElementById("history-resizer-badge");
+    const resizer = document.getElementById("history-resizer");
+
+    const widthPx = HISTORY_COL_WIDTHS[validCols];
+
+    if (layout) {
+        layout.style.setProperty("--history-cols", validCols);
+        layout.style.setProperty("--history-sidebar-width", `${widthPx}px`);
+    }
+
+    if (badge) {
+        badge.textContent = `${validCols} ${validCols === 1 ? 'coluna' : 'colunas'}`;
+    }
+
+    if (resizer) {
+        resizer.setAttribute("aria-valuenow", validCols);
+    }
+
+    if (salvar) {
+        localStorage.setItem("loopd-history-columns", validCols);
+    }
+
+    if (typeof ajustarTamanhoTituloAlbum === "function") {
+        ajustarTamanhoTituloAlbum(true);
+    }
+}
+
+function inicializarRedimensionamentoHistorico() {
+    const resizer = document.getElementById("history-resizer");
+    const wrapper = document.getElementById("editor-sidebar-wrapper");
+    const badge = document.getElementById("history-resizer-badge");
+    if (!resizer || !wrapper) return;
+
+    let isDragging = false;
+    let currentCols = getHistoryColumns();
+
+    // Aplica o valor inicial salvo
+    setHistoryColumns(currentCols, false);
+
+    resizer.addEventListener("pointerdown", (e) => {
+        if (e.button !== 0) return; // apenas botão esquerdo
+        if (window.innerWidth <= 980) return; // desativa em tablet/mobile
+
+        isDragging = true;
+        currentCols = getHistoryColumns();
+
+        resizer.setPointerCapture(e.pointerId);
+        resizer.classList.add("is-dragging");
+        document.body.classList.add("resizing-sidebar");
+
+        if (badge) {
+            badge.textContent = `${currentCols} ${currentCols === 1 ? 'coluna' : 'colunas'}`;
+        }
+    });
+
+    resizer.addEventListener("pointermove", (e) => {
+        if (!isDragging) return;
+
+        const wrapperRect = wrapper.getBoundingClientRect();
+        // Distância do lado esquerdo da barra até o cursor
+        const currentWidth = e.clientX - wrapperRect.left;
+
+        // Limiares de encaixe:
+        // O tamanho só muda quando outro álbum completo encaixar ao lado!
+        // 1 col = 108px, 2 cols = 190px, 3 cols = 272px
+        let targetCols = currentCols;
+
+        if (currentCols === 1) {
+            if (currentWidth >= 186) {
+                targetCols = 2;
+            }
+        } else if (currentCols === 2) {
+            if (currentWidth < 165) {
+                targetCols = 1;
+            } else if (currentWidth >= 268) {
+                targetCols = 3;
+            }
+        } else if (currentCols === 3) {
+            if (currentWidth < 245) {
+                targetCols = 2;
+            }
+        }
+
+        if (targetCols !== currentCols) {
+            currentCols = targetCols;
+            setHistoryColumns(currentCols, true);
+        }
+    });
+
+    const stopDragging = (e) => {
+        if (!isDragging) return;
+        isDragging = false;
+        try {
+            resizer.releasePointerCapture(e.pointerId);
+        } catch (_) {}
+        resizer.classList.remove("is-dragging");
+        document.body.classList.remove("resizing-sidebar");
+        setHistoryColumns(currentCols, true);
+    };
+
+    resizer.addEventListener("pointerup", stopDragging);
+    resizer.addEventListener("pointercancel", stopDragging);
+
+    // Bônus: clique rápido para alternar (1 -> 2 -> 3 -> 1)
+    let clickStartX = 0;
+    resizer.addEventListener("mousedown", (e) => { clickStartX = e.clientX; });
+    resizer.addEventListener("click", (e) => {
+        if (Math.abs(e.clientX - clickStartX) < 4) {
+            const nextCols = (getHistoryColumns() % 3) + 1;
+            setHistoryColumns(nextCols, true);
+        }
+    });
+}
+
 // variaveis cacheadas para atualizacao instantanea sem layout thrashing
 function recalcularDimensoesEditorSidebar() {
     const sidebar = document.getElementById("editor-sidebar");
@@ -820,8 +1300,14 @@ function carregarHistorico() {
         };
 
         item.onmouseenter = () => {
-            const dataReview = rev.data || (rev.createdAt ? new Date(rev.createdAt).toLocaleDateString("pt-BR") : "");
-            posicionarHistoryTooltip(item, rev.album, rev.artista, rev.isDraft, dataReview);
+            const dataReview = formatarDeInputDate(rev.listened_at) || rev.data || (rev.createdAt ? new Date(rev.createdAt).toLocaleDateString("pt-BR") : "");
+            const reviewsDoMesmo = getReviewsDoMesmoAlbum(historico, rev.album, rev.artista, rev.spotifyId || rev.id);
+            let extraLabel = "";
+            if (reviewsDoMesmo.length > 1) {
+                const idx = reviewsDoMesmo.findIndex(r => r.id === rev.id);
+                if (idx !== -1) extraLabel = ` • ${idx + 1}ª audição`;
+            }
+            posicionarHistoryTooltip(item, rev.album, (rev.artista || "") + extraLabel, rev.isDraft, dataReview);
         };
 
         item.onmouseleave = () => {
@@ -933,6 +1419,7 @@ async function processarTextoReviewImportado(text) {
     }
 
     const artistNames = data.artists.map((a) => a.name).join(", ");
+    const releaseYear = data.release_date ? data.release_date.split("-")[0] : "";
     let historico = getHistorico();
     const index = historico.findIndex((r) => r.id === data.id || (r.album === data.name && r.artista === artistNames));
 
@@ -940,6 +1427,7 @@ async function processarTextoReviewImportado(text) {
         id: data.id,
         album: data.name,
         artista: artistNames,
+        ano: releaseYear,
         capa: data.images[0].url,
         link: data.external_urls.spotify,
         albumNota: getDefaultNota(),
@@ -1041,7 +1529,7 @@ async function processarTextoReviewImportado(text) {
         }
     }
 
-    if (getAutoCalculateMode() !== "desativado") {
+    if (isAlbumAutoCalc(estado)) {
         recalcularNotaAlbum();
     } else {
         estado.albumNotaCalculada = 0;
@@ -1194,11 +1682,42 @@ function deEscala(notaVal) {
     return Math.max(1, notaVal);
 }
 
-// pega nota efetiva do album
+// verifica se um album esta configurado para usar a media simples das faixas
+function isAlbumAutoCalc(rev) {
+    if (!rev) return getAutoCalculateMode() === "simples";
+    const mode = rev.calcMode || getAutoCalculateMode();
+    return mode === "simples";
+}
+window.isAlbumAutoCalc = isAlbumAutoCalc;
+
+// alterna o modo da nota do album entre media simples e nota personalizada/manual
+function alternarModoNotaAlbum(novoModo) {
+    if (!estado.album) return;
+
+    const modoAtual = isAlbumAutoCalc(estado) ? "simples" : "manual";
+    const targetModo = novoModo || (modoAtual === "simples" ? "manual" : "simples");
+
+    estado.calcMode = targetModo;
+
+    if (targetModo === "simples") {
+        recalcularNotaAlbum();
+    } else {
+        // Se a nota do album ainda estava no valor inicial/padrao mas temos faixas pontuadas com media,
+        // preenche albumNota com a media calculada para facilitar o ajuste fino manual
+        if (!isTrackAvaliada({ nota: estado.albumNota }) && estado.albumNotaCalculada > 0) {
+            estado.albumNota = estado.albumNotaCalculada;
+        }
+    }
+
+    autoSaveDraft();
+    render();
+}
+window.alternarModoNotaAlbum = alternarModoNotaAlbum;
+
+// pega nota efetiva do album (respeita se o album esta em modo media simples ou nota manual)
 function getEffectiveAlbumNota(rev) {
     if (!rev) return 0;
-    const calcMode = getAutoCalculateMode();
-    if (calcMode === "simples") {
+    if (isAlbumAutoCalc(rev)) {
         if (rev.albumNotaCalculada !== undefined && rev.albumNotaCalculada > 0) {
             return rev.albumNotaCalculada;
         }
@@ -1219,8 +1738,7 @@ function getEffectiveAlbumNota(rev) {
 function recalcularNotaAlbum() {
     if (!estado.tracks || estado.tracks.length === 0) return;
 
-    const calcMode = getAutoCalculateMode();
-    if (calcMode !== "simples") return;
+    if (!isAlbumAutoCalc(estado)) return;
 
     const ratedTracks = estado.tracks.filter(isTrackAvaliada);
     if (ratedTracks.length === 0) {
@@ -1244,8 +1762,10 @@ function updateRatingScaleSettings(value) {
 // Executa a troca do modo de cálculo da nota do álbum e atualiza o estado
 function updateAutoCalculateSettings(value) {
     setAutoCalculateMode(value);
-    if (value !== "desativado" && estado.id) {
-        recalcularNotaAlbum();
+    if (estado.id) {
+        if (!estado.calcMode && value !== "desativado") {
+            recalcularNotaAlbum();
+        }
     }
     render();
     renderLibrary();
@@ -1296,13 +1816,18 @@ function applyLibraryLayout() {
 // troca de aba
 function switchView(viewName) {
     if (typeof esconderHistoryTooltip === "function") esconderHistoryTooltip();
+    
+    // Compatibilidade reversa com nomes antigos
+    if (viewName === 'dashboard') viewName = 'profile';
+    if (viewName === 'account') viewName = 'settings';
+
     document.querySelectorAll('.app-view').forEach(view => {
         view.style.display = 'none';
     });
 
     const targetView = document.getElementById(`view-${viewName}`);
     if (targetView) {
-        targetView.style.display = (viewName === 'dashboard') ? 'flex' : 'block';
+        targetView.style.display = (viewName === 'profile') ? 'flex' : 'block';
     }
 
     const mainContent = document.querySelector('.main-content');
@@ -1319,19 +1844,71 @@ function switchView(viewName) {
         activeNav.classList.add('active');
     }
 
-    if (viewName === 'dashboard') {
-        renderDashboard();
+    if (viewName === 'profile') {
+        renderProfile();
     } else if (viewName === 'library') {
         renderLibrary();
     } else if (viewName === 'reviews') {
         render();
         atualizarAlturaEditorSidebar();
-    } else if (viewName === 'account') {
+    } else if (viewName === 'settings') {
         if (window.loopdCloud?.refreshUi) {
             window.loopdCloud.refreshUi();
         }
     }
 }
+
+// renderiza tela de perfil (dados do usuario + estatisticas completas)
+function renderProfile() {
+    renderDashboard();
+    atualizarHeaderPerfil();
+}
+
+// atualiza header do perfil (avatar, status de login, email/nome)
+function atualizarHeaderPerfil() {
+    const user = window.loopdCloud?.getUser ? window.loopdCloud.getUser() : null;
+    const nameEl = document.getElementById('profile-user-name');
+    const badgeEl = document.getElementById('profile-badge-status');
+    const badgeTextEl = document.getElementById('profile-badge-text');
+    const subEl = document.getElementById('profile-user-sub');
+    const avatarEl = document.getElementById('profile-user-avatar');
+    const iconEl = document.getElementById('profile-user-icon');
+
+    if (!nameEl) return;
+
+    if (user) {
+        const name = user.user_metadata?.full_name || user.user_metadata?.name || user.email || 'usuário';
+        const email = user.email || '';
+        const avatarUrl = user.user_metadata?.avatar_url;
+
+        nameEl.textContent = name.toLowerCase();
+        if (badgeEl) {
+            badgeEl.className = 'profile-badge-status online';
+        }
+        if (badgeTextEl) badgeTextEl.textContent = 'sincronizado';
+        if (subEl) subEl.textContent = email;
+
+        if (avatarUrl && avatarEl) {
+            avatarEl.src = avatarUrl;
+            avatarEl.style.display = 'block';
+            if (iconEl) iconEl.style.display = 'none';
+        } else {
+            if (avatarEl) avatarEl.style.display = 'none';
+            if (iconEl) iconEl.style.display = 'block';
+        }
+    } else {
+        nameEl.textContent = 'perfil local';
+        if (badgeEl) {
+            badgeEl.className = 'profile-badge-status offline';
+        }
+        if (badgeTextEl) badgeTextEl.textContent = 'offline (local)';
+        if (subEl) subEl.textContent = 'conecte sua conta Google nas opções para sincronizar na nuvem';
+
+        if (avatarEl) avatarEl.style.display = 'none';
+        if (iconEl) iconEl.style.display = 'block';
+    }
+}
+window.atualizarHeaderPerfil = atualizarHeaderPerfil;
 
 // dashboard
 
@@ -1921,9 +2498,20 @@ function renderLibrary() {
 
         const date = document.createElement("span");
         date.className = "library-card-date";
-        date.textContent = rev.isDraft ? "" : (rev.data || "-");
+        date.textContent = rev.isDraft ? "" : (formatarDeInputDate(rev.listened_at) || rev.data || "-");
 
         metaRow.append(score, date);
+
+        const reviewsDoMesmo = getReviewsDoMesmoAlbum(historico, rev.album, rev.artista, rev.spotifyId || rev.id);
+        if (reviewsDoMesmo.length > 1) {
+            const idx = reviewsDoMesmo.findIndex(r => r.id === rev.id);
+            const numAudicao = idx !== -1 ? idx + 1 : reviewsDoMesmo.length;
+            const listensBadge = document.createElement("span");
+            listensBadge.className = "library-badge-listens";
+            listensBadge.title = `${numAudicao}ª audição registrada deste álbum (total: ${reviewsDoMesmo.length})`;
+            listensBadge.innerHTML = `<svg width="10" height="10" style="margin-right:2px;"><use href="icons/sprite.svg#icon-refresh"></use></svg>${numAudicao}ª escuta`;
+            metaRow.appendChild(listensBadge);
+        }
 
         const notes = document.createElement("p");
         notes.className = "library-card-notes";
@@ -2187,14 +2775,18 @@ window.atualizarBgBrightness = atualizarBgBrightness;
 window.resetarBgBlur = resetarBgBlur;
 window.resetarBgBrightness = resetarBgBrightness;
 window.inicializarCustomizacaoVisual = inicializarCustomizacaoVisual;
+window.setHistoryColumns = setHistoryColumns;
+window.getHistoryColumns = getHistoryColumns;
 
 // inicializacao
 
 document.addEventListener("DOMContentLoaded", () => {
     applyLibraryLayout();
+    inicializarRedimensionamentoHistorico();
     carregarHistorico();
     inicializarControlesSegmentados();
     inicializarCustomizacaoVisual();
+    iniciarObservadorTitulo();
     switchView('library');
     atualizarNotificacaoApp(obterContadorRascunhos());
 
@@ -2208,7 +2800,10 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    window.addEventListener("resize", recalcularDimensoesEditorSidebar, { passive: true });
+    window.addEventListener("resize", () => {
+        recalcularDimensoesEditorSidebar();
+        ajustarTamanhoTituloAlbum();
+    }, { passive: true });
     recalcularDimensoesEditorSidebar();
 });
 

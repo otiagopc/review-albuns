@@ -29,7 +29,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=28">
+  <link rel="stylesheet" href="style.css?v=44">
 </head>
 
 <body>
@@ -45,18 +45,14 @@
           <svg class="nav-icon" width="24" height="24"><use href="icons/sprite.svg#icon-library"></use></svg>
           <span>biblioteca</span>
         </a>
-        <a href="#" id="nav-dashboard" class="nav-item" onclick="switchView('dashboard')">
-          <svg class="nav-icon" width="24" height="24"><use href="icons/sprite.svg#icon-dashboard"></use></svg>
-          <span>dashboard</span>
+        <a href="#" id="nav-profile" class="nav-item" onclick="switchView('profile')">
+          <svg id="nav-account-icon" class="nav-icon" width="24" height="24"><use href="icons/sprite.svg#icon-user"></use></svg>
+          <img id="nav-account-avatar" class="nav-account-avatar" alt="" style="display: none;">
+          <span>perfil</span>
         </a>
         <a href="#" id="nav-settings" class="nav-item" onclick="switchView('settings')">
           <svg class="nav-icon" width="24" height="24"><use href="icons/sprite.svg#icon-settings"></use></svg>
           <span>opções</span>
-        </a>
-        <a href="#" id="nav-account" class="nav-item" onclick="switchView('account')">
-          <svg id="nav-account-icon" class="nav-icon" width="24" height="24"><use href="icons/sprite.svg#icon-user"></use></svg>
-          <img id="nav-account-avatar" class="nav-account-avatar" alt="" style="display: none;">
-          <span>conta</span>
         </a>
       </nav>
     </aside>
@@ -81,15 +77,40 @@
         </div>
       </header>
 
-      <!-- aba do dashboard -->
-      <div id="view-dashboard" class="app-view" style="display: none;">
+      <!-- aba do perfil e estatisticas -->
+      <div id="view-profile" class="app-view" style="display: none;">
+        <!-- card de identificacao do perfil -->
+        <div class="profile-header-card">
+          <div class="profile-header-left">
+            <div class="profile-avatar-wrapper">
+              <svg id="profile-user-icon" class="profile-user-svg" width="38" height="38"><use href="icons/sprite.svg#icon-user"></use></svg>
+              <img id="profile-user-avatar" class="profile-user-avatar" alt="Avatar" style="display: none;">
+            </div>
+            <div class="profile-user-details">
+              <div class="profile-name-row">
+                <h2 id="profile-user-name">perfil local</h2>
+                <span id="profile-badge-status" class="profile-badge-status offline">
+                  <span class="status-dot"></span> <span id="profile-badge-text">offline (local)</span>
+                </span>
+              </div>
+              <p id="profile-user-sub" class="profile-user-sub">conecte sua conta Google nas opções para sincronizar na nuvem</p>
+            </div>
+          </div>
+          <div class="profile-header-right">
+            <button type="button" class="btn-secondary btn-profile-settings" onclick="switchView('settings')">
+              <svg width="15" height="15" style="margin-right: 6px;"><use href="icons/sprite.svg#icon-settings"></use></svg>
+              <span>configurações</span>
+            </button>
+          </div>
+        </div>
+
         <div class="dashboard-grid">
           <div class="stat-card">
             <span class="stat-icon">
               <svg class="stat-svg" width="28" height="28"><use href="icons/sprite.svg#icon-crown"></use></svg>
             </span>
             <div class="stat-details">
-              <span class="stat-label">artista mais ouvido</span>
+              <span class="stat-label">artista mais avaliado</span>
               <span id="dash-top-artist" class="stat-value">-</span>
             </div>
           </div>
@@ -211,9 +232,15 @@
       <div id="view-reviews" class="app-view" style="display: none;">
         <div class="editor-layout has-placeholder">
           <!-- historico de reviews -->
-          <aside class="editor-sidebar" id="editor-sidebar">
-            <div id="historico"></div>
-          </aside>
+          <div class="editor-sidebar-wrapper" id="editor-sidebar-wrapper">
+            <aside class="editor-sidebar" id="editor-sidebar">
+              <div id="historico"></div>
+            </aside>
+            <div id="history-resizer" class="history-resizer" title="Arraste para ajustar colunas (1, 2 ou 3)" role="separator" aria-orientation="vertical" aria-label="Ajustar colunas do histórico">
+              <div class="history-resizer-handle"></div>
+              <div class="history-resizer-badge" id="history-resizer-badge">1 coluna</div>
+            </div>
+          </div>
 
           <!-- painel principal do editor -->
           <div class="editor-main">
@@ -230,23 +257,25 @@
                   <img id="capa" alt="capa do album" />
                 </div>
                 <div class="album-info">
-                  <div class="album-title-group">
-                    <h2 id="titulo"></h2>
-                    <p id="artista"></p>
+                  <div class="album-title-row">
+                    <div class="album-title-group">
+                      <h2 id="titulo"></h2>
+                      <p id="artista"></p>
+                    </div>
+                    <div class="album-header-actions">
+                      <button type="button" id="btn-voltar-album" class="btn-voltar-review" title="Desselecionar álbum e voltar" onclick="desselecionarAlbum()">
+                        <svg class="btn-voltar-icon" width="16" height="16"><use href="icons/sprite.svg#icon-arrow-left"></use></svg>
+                        <span>voltar</span>
+                      </button>
+                    </div>
                   </div>
                   <div class="album-meta-row">
                     <div id="album-meta-info" class="album-meta-info"></div>
+                    <div class="stars-score-container">
+                      <span id="album-score-value" class="album-score-value"><span class="current-score">0</span><span class="max-score">/9</span></span>
+                      <div id="album-stars" class="estrelas"></div>
+                    </div>
                   </div>
-                  <div class="stars-score-container">
-                    <span id="album-score-value" class="album-score-value"><span class="current-score">0</span><span class="max-score">/9</span></span>
-                    <div id="album-stars" class="estrelas"></div>
-                  </div>
-                </div>
-                <div class="album-header-actions">
-                  <button type="button" id="btn-voltar-album" class="btn-voltar-review" title="Desselecionar álbum e voltar" onclick="desselecionarAlbum()">
-                    <svg class="btn-voltar-icon" width="16" height="16"><use href="icons/sprite.svg#icon-arrow-left"></use></svg>
-                    <span>voltar</span>
-                  </button>
                 </div>
               </div>
 
@@ -254,15 +283,79 @@
             </div>
           </div>
 
-          <!-- painel lateral direito: anotacoes e acoes (coluna 3) -->
+          <!-- painel lateral direito: detalhes, anotacoes e acoes (coluna 3) -->
           <aside id="review-aside-right" class="review-aside-right" style="display: none;">
             <!-- anotacoes & resenha -->
             <div id="notes-container" class="notes-container">
               <div class="notes-header">
                 <label for="review-notes" class="notes-label">anotações & resenha</label>
-                <span id="aside-review-date" class="aside-review-date"></span>
               </div>
               <textarea id="review-notes" class="review-notes" placeholder="escreva aqui sua resenha ou anotações sobre o álbum..."></textarea>
+            </div>
+
+            <!-- card de detalhes da avaliacao -->
+            <div id="review-details-card" class="review-details-card">
+              <div class="review-details-header">
+                <span class="review-details-title">detalhes da avaliação</span>
+                <span id="review-status-badge" class="review-status-badge draft">
+                  <span class="status-dot"></span>
+                  <span id="review-status-text">rascunho</span>
+                </span>
+              </div>
+
+              <div class="review-details-body">
+                <!-- Data de audicao -->
+                <div class="review-detail-row review-detail-date-row">
+                  <span class="detail-label">
+                    <svg class="detail-icon" width="13" height="13"><use href="icons/sprite.svg#icon-library"></use></svg>
+                    <span>ouvido em:</span>
+                  </span>
+                  <div class="detail-date-controls">
+                    <input type="date" id="review-listened-date" class="review-date-input" onchange="atualizarDataAudicao(this.value)">
+                    <button type="button" class="btn-date-today" onclick="definirDataAudicaoHoje()" title="Marcar como ouvido hoje">hoje</button>
+                  </div>
+                </div>
+
+                <!-- Comparativo media manual vs media simples (seletor de modo) -->
+                <div class="review-detail-row review-detail-scores-row" id="review-score-mode-selector" title="Clique para alternar entre média manual e média simples">
+                  <button type="button" class="score-comparison-item" id="btn-mode-album-manual" onclick="alternarModoNotaAlbum('manual')" title="Usar média manual (nota personalizada do álbum)">
+                    <span class="detail-label">média manual</span>
+                    <span id="detail-album-score" class="detail-score-val highlight">0.0</span>
+                  </button>
+                  <div class="score-comparison-divider">vs</div>
+                  <button type="button" class="score-comparison-item" id="btn-mode-tracks-avg" onclick="alternarModoNotaAlbum('simples')" title="Usar média simples calculada a partir das faixas">
+                    <span class="detail-label">média simples</span>
+                    <span id="detail-tracks-avg" class="detail-score-val">0.0</span>
+                  </button>
+                </div>
+
+                <!-- Progresso de faixas avaliadas -->
+                <div class="review-detail-row review-detail-progress-row">
+                  <div class="progress-labels-row">
+                    <span class="detail-label">progresso:</span>
+                    <span id="detail-progress-text" class="detail-progress-val">0 de 0 (0%)</span>
+                  </div>
+                  <div class="detail-progress-track">
+                    <div id="detail-progress-fill" class="detail-progress-fill" style="width: 0%;"></div>
+                  </div>
+                </div>
+
+                <!-- Historico de audicoes e reavaliar -->
+                <div class="review-detail-row review-detail-listens-row">
+                  <div class="listens-container">
+                    <div class="listens-title-row">
+                      <span class="detail-label">
+                        <svg class="detail-icon" width="13" height="13"><use href="icons/sprite.svg#icon-refresh"></use></svg>
+                        <span id="detail-listens-count-label">audições:</span>
+                      </span>
+                      <button type="button" class="btn-reavaliar-trigger" onclick="iniciarReavaliacao()" title="Registrar nova avaliação deste álbum">
+                        <span>＋ reavaliar</span>
+                      </button>
+                    </div>
+                    <div id="detail-listens-chips" class="detail-listens-chips"></div>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <!-- acoes do album -->
@@ -346,6 +439,106 @@
         <div class="settings-container">
           <h2>configurações e dados</h2>
 
+          <!-- secao 1: conta & sincronizacao -->
+          <!-- se desconectado -->
+          <div id="account-logged-out" class="account-logged-out">
+            <div class="settings-section">
+              <h3>conta & sincronização</h3>
+              <p class="section-description">conecte sua conta Google para sincronizar suas reviews, avaliações e dados entre dispositivos via nuvem.</p>
+
+              <div class="settings-cards">
+                <div class="settings-card">
+                  <h4>Google</h4>
+                  <p>faça login com o Google para backup automático e sincronização em tempo real via Supabase.</p>
+                  <button id="auth-button" class="btn-primary" type="button" onclick="window.loopdCloud?.toggleAuth()">
+                    <svg width="15" height="15" viewBox="0 0 24 24" style="margin-right: 8px; flex-shrink: 0;" fill="currentColor">
+                      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/>
+                      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/>
+                    </svg>
+                    <span>entrar com Google</span>
+                  </button>
+                </div>
+
+                <div class="settings-card">
+                  <h4>armazenamento local</h4>
+                  <p>mesmo sem fazer login, todas as suas reviews permanecem salvas com segurança na memória deste dispositivo.</p>
+                  <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 6px;">utilize a seção de gerenciamento de dados logo abaixo para exportar backups manuais.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- se conectado -->
+          <div id="account-logged-in" class="account-logged-in" style="display: none;">
+            <div class="settings-section">
+              <h3>conta & sincronização</h3>
+              <p class="section-description">sua conta está vinculada e os dados são sincronizados em nuvem.</p>
+
+              <div class="account-profile-header" style="margin-bottom: 20px;">
+                <img id="account-user-avatar" class="account-user-avatar" alt="Foto do perfil" style="display: none;">
+                <div class="account-profile-info">
+                  <div class="account-profile-name-row">
+                    <h3 id="account-user-name">Usuário</h3>
+                    <span class="account-badge-online">
+                      <span class="online-dot"></span> conectado
+                    </span>
+                  </div>
+                  <p id="account-user-email" class="account-email"></p>
+                </div>
+              </div>
+
+              <div class="settings-cards">
+                <div class="settings-card">
+                  <h4>sincronização em nuvem</h4>
+                  <p id="account-sync-status">conectado à nuvem</p>
+                  <p id="account-last-sync" class="account-last-sync"></p>
+                  <button type="button" class="btn-primary" onclick="window.loopdCloud?.uploadNow()">
+                    <svg width="15" height="15" style="margin-right: 8px;"><use href="icons/sprite.svg#icon-import-txt"></use></svg>
+                    <span>sincronizar agora</span>
+                  </button>
+                </div>
+
+                <div class="settings-card card-danger">
+                  <h4>encerrar sessão</h4>
+                  <p>desconecte sua conta Google deste navegador. Seus dados na nuvem e no dispositivo serão preservados.</p>
+                  <button type="button" class="btn-danger-action" onclick="window.loopdCloud?.toggleAuth()">sair da conta</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- secao 2: gerenciamento de dados -->
+          <div class="settings-section">
+            <h3>gerenciamento de dados</h3>
+            <p class="section-description">gerencie suas reviews salvas localmente no navegador (LocalStorage).</p>
+
+            <div class="settings-cards">
+              <div class="settings-card">
+                <h4>exportar backup</h4>
+                <p>salve um arquivo de backup em formato JSON contendo todo o seu histórico de reviews.</p>
+                <button onclick="exportarHistoricoCompleto()" class="btn-primary">exportar .json</button>
+              </div>
+
+              <div class="settings-card">
+                <h4>importar backup</h4>
+                <p>carregue um arquivo JSON de backup salvo anteriormente para restaurar seu histórico.</p>
+                <button onclick="document.getElementById('settings-import-backup').click()"
+                  class="btn-secondary">importar .json</button>
+                <input type="file" id="settings-import-backup" accept=".json" style="display: none;"
+                  onchange="importarHistoricoCompleto(event)">
+              </div>
+
+              <div class="settings-card card-danger">
+                <h4>apagar tudo</h4>
+                <p>exclui permanentemente todo o seu histórico do LocalStorage. ação irreversível!</p>
+                <button onclick="limparTudo()" class="btn-danger-action">apagar dados</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- secao 3: sistema de avaliacao -->
           <div class="settings-section">
             <h3>sistema de avaliação</h3>
             <p class="section-description">personalize as escalas e o método de cálculo das notas das suas reviews.</p>
@@ -375,6 +568,7 @@
             </div>
           </div>
 
+          <!-- secao 4: customizacao -->
           <div class="settings-section">
             <h3>customização</h3>
             <p class="section-description">personalize o desfoque e a iluminação do fundo dinâmico.</p>
@@ -419,107 +613,6 @@
               </div>
             </div>
           </div>
-
-          <div class="settings-section">
-            <h3>gerenciamento de dados</h3>
-            <p class="section-description">gerencie suas reviews salvas localmente no navegador (LocalStorage).</p>
-
-            <div class="settings-cards">
-              <div class="settings-card">
-                <h4>exportar backup</h4>
-                <p>salve um arquivo de backup em formato JSON contendo todo o seu histórico de reviews.</p>
-                <button onclick="exportarHistoricoCompleto()" class="btn-primary">exportar .json</button>
-              </div>
-
-              <div class="settings-card">
-                <h4>importar backup</h4>
-                <p>carregue um arquivo JSON de backup salvo anteriormente para restaurar seu histórico.</p>
-                <button onclick="document.getElementById('settings-import-backup').click()"
-                  class="btn-secondary">importar .json</button>
-                <input type="file" id="settings-import-backup" accept=".json" style="display: none;"
-                  onchange="importarHistoricoCompleto(event)">
-              </div>
-
-              <div class="settings-card card-danger">
-                <h4>apagar tudo</h4>
-                <p>exclui permanentemente todo o seu histórico do LocalStorage. ação irreversível!</p>
-                <button onclick="limparTudo()" class="btn-danger-action">apagar dados</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- aba de conta e sincronizacao -->
-      <div id="view-account" class="app-view" style="display: none;">
-        <div class="settings-container">
-          <h2>conta e sincronização</h2>
-
-          <!-- se desconectado -->
-          <div id="account-logged-out" class="account-logged-out">
-            <div class="settings-section">
-              <h3>sincronização em nuvem</h3>
-              <p class="section-description">conecte sua conta Google para sincronizar suas reviews, avaliações e dados entre dispositivos.</p>
-
-              <div class="settings-cards">
-                <div class="settings-card">
-                  <h4>Google</h4>
-                  <p>faça login com o Google para backup automático e sincronização em tempo real via Supabase.</p>
-                  <button id="auth-button" class="btn-primary" type="button" onclick="window.loopdCloud?.toggleAuth()">
-                    <svg width="15" height="15" viewBox="0 0 24 24" style="margin-right: 8px; flex-shrink: 0;" fill="currentColor">
-                      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-                      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-                      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/>
-                      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/>
-                    </svg>
-                    <span>entrar com Google</span>
-                  </button>
-                </div>
-
-                <div class="settings-card">
-                  <h4>armazenamento local</h4>
-                  <p>mesmo sem fazer login, todas as suas reviews permanecem salvas com segurança na memória deste dispositivo.</p>
-                  <button type="button" class="btn-secondary" onclick="switchView('settings')">gerenciar backup local</button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- se conectado -->
-          <div id="account-logged-in" class="account-logged-in" style="display: none;">
-            <div class="settings-section">
-              <div class="account-profile-header">
-                <img id="account-user-avatar" class="account-user-avatar" alt="Foto do perfil" style="display: none;">
-                <div class="account-profile-info">
-                  <div class="account-profile-name-row">
-                    <h3 id="account-user-name">Usuário</h3>
-                    <span class="account-badge-online">
-                      <span class="online-dot"></span> conectado
-                    </span>
-                  </div>
-                  <p id="account-user-email" class="account-email"></p>
-                </div>
-              </div>
-
-              <div class="settings-cards">
-                <div class="settings-card">
-                  <h4>sincronização em nuvem</h4>
-                  <p id="account-sync-status">conectado à nuvem</p>
-                  <p id="account-last-sync" class="account-last-sync"></p>
-                  <button type="button" class="btn-primary" onclick="window.loopdCloud?.uploadNow()">
-                    <svg width="15" height="15" style="margin-right: 8px;"><use href="icons/sprite.svg#icon-import-txt"></use></svg>
-                    <span>sincronizar agora</span>
-                  </button>
-                </div>
-
-                <div class="settings-card card-danger">
-                  <h4>encerrar sessão</h4>
-                  <p>desconecte sua conta Google deste navegador. Seus dados na nuvem e no dispositivo serão preservados.</p>
-                  <button type="button" class="btn-danger-action" onclick="window.loopdCloud?.toggleAuth()">sair da conta</button>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </main>
@@ -527,7 +620,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
-  <script src="script.js?v=19"></script>
+  <script src="script.js?v=27"></script>
   <script src="cloud.js"></script>
 </body>
 
