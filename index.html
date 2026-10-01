@@ -29,7 +29,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=44">
+  <link rel="stylesheet" href="style.css?v=48">
 </head>
 
 <body>
@@ -298,12 +298,19 @@
               <div class="review-details-header">
                 <span class="review-details-title">detalhes da avaliação</span>
                 <span id="review-status-badge" class="review-status-badge draft">
-                  <span class="status-dot"></span>
                   <span id="review-status-text">rascunho</span>
                 </span>
               </div>
 
               <div class="review-details-body">
+                <!-- Seletor de audicoes com botao + -->
+                <div id="review-listens-row" class="review-detail-row review-listens-row">
+                  <span class="detail-label">
+                    <svg class="detail-icon" width="13" height="13"><use href="icons/sprite.svg#icon-refresh"></use></svg>
+                    <span>audições:</span>
+                  </span>
+                  <div id="detail-listens-chips" class="detail-listens-chips"></div>
+                </div>
                 <!-- Data de audicao -->
                 <div class="review-detail-row review-detail-date-row">
                   <span class="detail-label">
@@ -327,33 +334,6 @@
                     <span class="detail-label">média simples</span>
                     <span id="detail-tracks-avg" class="detail-score-val">0.0</span>
                   </button>
-                </div>
-
-                <!-- Progresso de faixas avaliadas -->
-                <div class="review-detail-row review-detail-progress-row">
-                  <div class="progress-labels-row">
-                    <span class="detail-label">progresso:</span>
-                    <span id="detail-progress-text" class="detail-progress-val">0 de 0 (0%)</span>
-                  </div>
-                  <div class="detail-progress-track">
-                    <div id="detail-progress-fill" class="detail-progress-fill" style="width: 0%;"></div>
-                  </div>
-                </div>
-
-                <!-- Historico de audicoes e reavaliar -->
-                <div class="review-detail-row review-detail-listens-row">
-                  <div class="listens-container">
-                    <div class="listens-title-row">
-                      <span class="detail-label">
-                        <svg class="detail-icon" width="13" height="13"><use href="icons/sprite.svg#icon-refresh"></use></svg>
-                        <span id="detail-listens-count-label">audições:</span>
-                      </span>
-                      <button type="button" class="btn-reavaliar-trigger" onclick="iniciarReavaliacao()" title="Registrar nova avaliação deste álbum">
-                        <span>＋ reavaliar</span>
-                      </button>
-                    </div>
-                    <div id="detail-listens-chips" class="detail-listens-chips"></div>
-                  </div>
                 </div>
               </div>
             </div>
@@ -620,7 +600,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
-  <script src="script.js?v=27"></script>
+  <script src="script.js?v=34"></script>
   <script src="cloud.js"></script>
 </body>
 

@@ -295,7 +295,7 @@ function criarEstrelas(container, valorAtual, onClick, isAlbum = false) {
     const scale = getRatingScale();
     const maxStars = scale === "5" ? 5 : 9;
     const minStars = scale === "5" ? 0 : 1;
-    const permiteMeia = (scale === "5") || !isAlbum;
+    const permiteMeia = true;
 
     for (let i = 1; i <= maxStars; i++) {
         const star = document.createElement("span");
@@ -526,11 +526,14 @@ function getReviewsDoMesmoAlbum(historico, album, artista, spotifyId) {
 function iniciarReavaliacao() {
     if (!estado.album) return;
 
-    const querDuplicarNotas = confirm(
-        `Deseja iniciar uma nova avaliação para "${estado.album}"?\n\n` +
-        `• Clique em "OK" para usar suas notas anteriores como ponto de partida.\n` +
-        `• Clique em "Cancelar" para iniciar uma avaliação limpa do zero.`
-    );
+    const historico = getHistorico();
+    const reviewsDoMesmo = getReviewsDoMesmoAlbum(historico, estado.album, estado.artista, estado.spotifyId || estado.id);
+    const temRascunho = reviewsDoMesmo.some(r => r.isDraft) || estado.isDraft;
+
+    if (temRascunho) {
+        mostrarNotificacao("Conclua e salve a avaliação atual antes de iniciar uma nova audição.", "alerta");
+        return;
+    }
 
     const novoId = "rev_" + Date.now() + "_" + Math.random().toString(36).substr(2, 6);
     const hojeStr = getDataHoje();
@@ -538,8 +541,8 @@ function iniciarReavaliacao() {
 
     const tracksCopia = (estado.tracks || []).map(t => ({
         nome: t.nome,
-        nota: querDuplicarNotas ? t.nota : getDefaultNota(),
-        fav: querDuplicarNotas ? !!t.fav : false,
+        nota: getDefaultNota(),
+        fav: false,
         duration_ms: t.duration_ms || 0
     }));
 
@@ -551,7 +554,7 @@ function iniciarReavaliacao() {
         ano: estado.ano || "",
         capa: estado.capa || "",
         link: estado.link || "",
-        albumNota: querDuplicarNotas ? estado.albumNota : getDefaultNota(),
+        albumNota: getDefaultNota(),
         albumNotaCalculada: 0,
         calcMode: estado.calcMode || getAutoCalculateMode(),
         tracks: tracksCopia,
@@ -562,7 +565,6 @@ function iniciarReavaliacao() {
         createdAt: Date.now()
     };
 
-    let historico = getHistorico();
     historico.push({ ...novoEstado });
     salvarHistorico(historico);
 
@@ -612,8 +614,9 @@ function atualizarPainelLateralReview() {
             const sum = ratedTracks.reduce((acc, t) => acc + (t.nota || 0), 0);
             mediaTracks = sum / ratedTracks.length;
         }
-        const mediaScaled = aEscala(mediaTracks, true);
-        const albumScoreScaled = aEscala(estado.albumNota || 0, true);
+        const mediaArredondada = Math.round(mediaTracks * 2) / 2;
+        const mediaScaled = aEscala(mediaArredondada, false);
+        const albumScoreScaled = aEscala(estado.albumNota || 0, false);
         const maxScore = getMaxScoreLabel();
 
         tracksAvgEl.textContent = `${mediaScaled.toFixed(1)}${maxScore}`;
@@ -636,58 +639,67 @@ function atualizarPainelLateralReview() {
         }
     }
 
-    // 4. Progresso de faixas avaliadas
-    const progressTextEl = document.getElementById("detail-progress-text");
-    const progressFillEl = document.getElementById("detail-progress-fill");
-    if (progressTextEl && progressFillEl) {
-        const total = estado.tracks ? estado.tracks.length : 0;
-        const avaliadas = estado.tracks ? estado.tracks.filter(isTrackAvaliada).length : 0;
-        const pct = total > 0 ? Math.round((avaliadas / total) * 100) : 0;
-
-        progressTextEl.textContent = `${avaliadas} de ${total} (${pct}%)`;
-        progressFillEl.style.width = `${pct}%`;
-    }
-
-    // 5. Historico de audicoes e reavaliacoes
-    const listensLabelEl = document.getElementById("detail-listens-count-label");
+    // 4. Historico de audicoes (sempre aberto, com chips e botao +)
     const listensChipsEl = document.getElementById("detail-listens-chips");
     if (listensChipsEl) {
         listensChipsEl.innerHTML = "";
         const historico = getHistorico();
         const reviewsDoMesmo = getReviewsDoMesmoAlbum(historico, estado.album, estado.artista, estado.spotifyId || estado.id);
-        const totalAudicoes = Math.max(1, reviewsDoMesmo.length);
-        const indexAtual = reviewsDoMesmo.findIndex(r => r.id === estado.id);
-        const numeroAudicao = indexAtual !== -1 ? indexAtual + 1 : totalAudicoes;
-
-        if (listensLabelEl) {
-            listensLabelEl.textContent = `audição (${numeroAudicao} de ${totalAudicoes}):`;
+        
+        let listaReviews = [...reviewsDoMesmo];
+        if (!listaReviews.some(r => r.id === estado.id)) {
+            listaReviews.push(estado);
         }
+        // Garante que a review atual na lista use sempre o estado ao vivo em edicao
+        listaReviews = listaReviews.map(r => r.id === estado.id ? estado : r);
 
-        reviewsDoMesmo.forEach((r, idx) => {
+        listaReviews.forEach((r, idx) => {
             const chip = document.createElement("button");
             chip.type = "button";
-            chip.className = `listen-chip${r.id === estado.id ? " active" : ""}`;
+            const isCurrent = r.id === estado.id;
+            chip.className = `listen-chip${isCurrent ? " active" : ""}`;
             
             const numLabel = `${idx + 1}ª`;
             const dataLabel = formatarDeInputDate(r.listened_at) || r.data || "";
-            const notaVal = aEscala(getEffectiveAlbumNota(r), true).toFixed(1);
-            const maxScore = getMaxScoreLabel();
-            const scoreLabel = r.isDraft ? "rascunho" : `★ ${notaVal}${maxScore}`;
 
-            chip.innerHTML = `
-                <span>${numLabel}${r.id === estado.id ? " (atual)" : ""}</span>
-                ${dataLabel ? `<span class="chip-date">${dataLabel}</span>` : ""}
-                <span class="chip-score">${scoreLabel}</span>
-            `;
+            if (r.isDraft) {
+                chip.innerHTML = `<span>${numLabel}</span>`;
+                chip.title = dataLabel ? `${numLabel} audição (${dataLabel}) - em rascunho` : `${numLabel} audição (em rascunho)`;
+            } else {
+                const notaVal = aEscala(getEffectiveAlbumNota(r), false).toFixed(1);
+                chip.innerHTML = `<span>${numLabel}</span> <span class="chip-score">${notaVal}</span>`;
+                chip.title = dataLabel ? `${numLabel} audição (${dataLabel}) - nota ${notaVal}` : `${numLabel} audição - nota ${notaVal}`;
+            }
 
             chip.onclick = () => {
-                if (r.id !== estado.id) {
+                if (!isCurrent) {
                     navegarParaReview(r, true);
                 }
             };
 
             listensChipsEl.appendChild(chip);
         });
+
+        // Botao [+] para adicionar a proxima audicao
+        const temRascunho = listaReviews.some(r => r.isDraft) || estado.isDraft;
+        const proximoNum = listaReviews.length + 1;
+        const btnAdd = document.createElement("button");
+        btnAdd.type = "button";
+        btnAdd.className = `listen-chip chip-add${temRascunho ? " disabled" : ""}`;
+        btnAdd.innerHTML = `<span>＋</span>`;
+        btnAdd.title = temRascunho 
+            ? "Conclua e salve a avaliação atual antes de adicionar uma nova audição"
+            : `Adicionar ${proximoNum}ª audição deste álbum`;
+
+        btnAdd.onclick = () => {
+            if (temRascunho) {
+                mostrarNotificacao("Conclua e salve a avaliação atual antes de adicionar uma nova audição.", "alerta");
+                return;
+            }
+            iniciarReavaliacao();
+        };
+
+        listensChipsEl.appendChild(btnAdd);
     }
 }
 
@@ -879,17 +891,33 @@ function render() {
 
     criarEstrelas(
         albumStarsEl,
-        aEscala(getEffectiveAlbumNota(estado), true),
+        aEscala(getEffectiveAlbumNota(estado), false),
         (val) => {
             if (autoCalc) {
                 // Ao clicar nas estrelas do album enquanto a media simples esta ativa,
                 // alterna automaticamente o album para o modo de nota manual com a nota escolhida!
                 estado.calcMode = "manual";
                 estado.albumNota = deEscala(val);
+                
+                let historico = getHistorico();
+                const index = historico.findIndex((r) => r.id === estado.id);
+                if (index !== -1) {
+                    historico[index] = { ...historico[index], ...estado };
+                    salvarHistorico(historico);
+                }
+
                 render();
                 return;
             }
             estado.albumNota = deEscala(val);
+            
+            let historico = getHistorico();
+            const index = historico.findIndex((r) => r.id === estado.id);
+            if (index !== -1) {
+                historico[index] = { ...historico[index], ...estado };
+                salvarHistorico(historico);
+            }
+
             render();
         },
         true,
@@ -897,8 +925,9 @@ function render() {
 
     const scoreVal = document.getElementById("album-score-value");
     if (scoreVal) {
-        const notaExibida = aEscala(getEffectiveAlbumNota(estado));
-        scoreVal.innerHTML = `<span class="current-score">${notaExibida}</span><span class="max-score">${maxScoreLabel}</span>`;
+        const notaExibida = aEscala(getEffectiveAlbumNota(estado), false);
+        const notaFormatada = typeof notaExibida === "number" ? (Number.isInteger(notaExibida) ? notaExibida.toFixed(1) : notaExibida.toString()) : notaExibida;
+        scoreVal.innerHTML = `<span class="current-score">${notaFormatada}</span><span class="max-score">${maxScoreLabel}</span>`;
     }
 
     tracksDiv.innerHTML = "<h3>tracklist</h3>";
@@ -1339,8 +1368,11 @@ function gerarTextoReview() {
     });
 
     const maxStars = ratingScale === "5" ? 5 : 9;
-    const notaEstrelas = aEscala(getEffectiveAlbumNota(estado), true);
-    const estrelasStr = "★".repeat(Math.round(notaEstrelas)) + "☆".repeat(maxStars - Math.round(notaEstrelas));
+    const notaEstrelas = aEscala(getEffectiveAlbumNota(estado), false);
+    const fullStars = Math.floor(notaEstrelas);
+    const hasHalf = (notaEstrelas - fullStars) >= 0.25 && (notaEstrelas - fullStars) <= 0.75;
+    const emptyStars = Math.max(0, maxStars - fullStars - (hasHalf ? 1 : 0));
+    const estrelasStr = "★".repeat(fullStars) + (hasHalf ? "½" : "") + "☆".repeat(emptyStars);
     texto += `\n${estrelasStr}\n`;
 
     if (estado.anotacoes && estado.anotacoes.trim() !== "") {
@@ -1520,12 +1552,14 @@ async function processarTextoReviewImportado(text) {
     const estrelasLine = lines.find(l => l.includes("★") || l.includes("☆"));
     if (estrelasLine) {
         const countFull = (estrelasLine.match(/★/g) || []).length;
+        const hasHalf = estrelasLine.includes("½");
         const countEmpty = (estrelasLine.match(/☆/g) || []).length;
-        const total = countFull + countEmpty;
+        const valorNota = countFull + (hasHalf ? 0.5 : 0);
+        const total = countFull + countEmpty + (hasHalf ? 1 : 0);
         if (total === 5) {
-            estado.albumNota = deEscala(countFull);
+            estado.albumNota = deEscala(valorNota);
         } else {
-            estado.albumNota = countFull;
+            estado.albumNota = valorNota;
         }
     }
 
@@ -1664,9 +1698,7 @@ function aEscala(nota, isAlbum = false) {
         const nota5 = (nota * 5) / 9;
         return Math.max(0, Math.round(nota5 * 2) / 2);
     }
-    if (isAlbum) {
-        return Math.max(1, Math.round(nota));
-    }
+    // Na escala de 1 a 9, mantemos a precisão de meia estrela (passos de 0.5) para médias e notas com meia
     return Math.max(1, Math.round(nota * 2) / 2);
 }
 
@@ -1709,6 +1741,14 @@ function alternarModoNotaAlbum(novoModo) {
         }
     }
 
+    // Persiste imediatamente no historico caso a review ja exista
+    let historico = getHistorico();
+    const index = historico.findIndex((r) => r.id === estado.id);
+    if (index !== -1) {
+        historico[index] = { ...historico[index], ...estado };
+        salvarHistorico(historico);
+    }
+
     autoSaveDraft();
     render();
 }
@@ -1718,9 +1758,6 @@ window.alternarModoNotaAlbum = alternarModoNotaAlbum;
 function getEffectiveAlbumNota(rev) {
     if (!rev) return 0;
     if (isAlbumAutoCalc(rev)) {
-        if (rev.albumNotaCalculada !== undefined && rev.albumNotaCalculada > 0) {
-            return rev.albumNotaCalculada;
-        }
         if (rev.tracks && rev.tracks.length > 0) {
             const ratedTracks = rev.tracks.filter(isTrackAvaliada);
             if (ratedTracks.length > 0) {
@@ -1728,6 +1765,9 @@ function getEffectiveAlbumNota(rev) {
                 const media = sum / ratedTracks.length;
                 return Math.round(media * 2) / 2;
             }
+        }
+        if (rev.albumNotaCalculada !== undefined && rev.albumNotaCalculada > 0) {
+            return rev.albumNotaCalculada;
         }
         return 0;
     }

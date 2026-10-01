@@ -1407,6 +1407,12 @@ button svg {
     color: var(--text-color);
 }
 
+.review-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
 .review-status-badge {
     display: inline-flex;
     align-items: center;
@@ -1609,110 +1615,45 @@ button svg {
     align-self: center;
 }
 
-/* progresso */
-.review-detail-progress-row {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
 
-.progress-labels-row {
+
+/* seletor de audicoes (quando ha multiplas) e botao de reavaliar */
+.review-listens-row {
     display: flex;
+    align-items: center;
     justify-content: space-between;
-    align-items: center;
-}
-
-.detail-progress-val {
-    font-size: 0.74rem;
-    font-weight: 700;
-    color: #ffffff;
-    font-family: monospace;
-}
-
-.detail-progress-track {
-    width: 100%;
-    height: 5px;
-    background: rgba(255, 255, 255, 0.06);
-    border-radius: 4px;
-    overflow: hidden;
-}
-
-.detail-progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, var(--color-primary), var(--color-primary-light));
-    border-radius: 4px;
-    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* historico de audicoes e reavaliacao */
-.review-detail-listens-row {
-    flex-direction: column !important;
-    align-items: stretch !important;
-    gap: 8px !important;
-    margin-top: 4px;
-    padding-top: 10px;
-    border-top: 1px dashed rgba(255, 255, 255, 0.08);
-}
-
-.listens-container {
-    display: flex;
-    flex-direction: column;
     gap: 8px;
-    width: 100%;
+    padding-bottom: 4px;
+    border-bottom: 1px dashed rgba(255, 255, 255, 0.06);
 }
 
-.listens-title-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 8px;
-}
-
-.btn-reavaliar-trigger {
-    background: rgba(var(--color-primary-rgb), 0.15);
-    border: 1px solid rgba(var(--color-primary-rgb), 0.35);
-    border-radius: var(--radius-sm);
-    color: var(--color-primary-light);
-    font-size: 0.72rem;
-    font-weight: 700;
-    padding: 3px 8px;
-    cursor: pointer;
-    transition: all var(--transition-fast);
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    text-transform: lowercase;
-}
-
-.btn-reavaliar-trigger:hover {
-    background: var(--color-primary);
-    border-color: var(--color-primary-light);
-    color: #ffffff;
-    box-shadow: 0 0 12px rgba(var(--color-primary-rgb), 0.4);
-    transform: translateY(-1px);
+.review-listens-row .detail-label {
+    flex-shrink: 0;
 }
 
 .detail-listens-chips {
     display: flex;
+    align-items: center;
     flex-wrap: wrap;
-    gap: 6px;
-    width: 100%;
+    gap: 5px;
+    justify-content: flex-end;
 }
 
 .listen-chip {
     display: inline-flex;
     align-items: center;
-    gap: 5px;
+    gap: 4px;
     background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.09);
-    border-radius: 12px;
-    padding: 3px 9px;
-    font-size: 0.72rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    padding: 2px 7px;
+    font-size: 0.7rem;
+    font-weight: 700;
     color: var(--text-muted);
     cursor: pointer;
     transition: all var(--transition-fast);
     font-family: inherit;
-    text-decoration: none;
+    line-height: 1.2;
 }
 
 .listen-chip:hover {
@@ -1722,25 +1663,45 @@ button svg {
 }
 
 .listen-chip.active {
-    background: rgba(var(--color-primary-rgb), 0.2);
+    background: rgba(var(--color-primary-rgb), 0.15);
     border-color: var(--color-primary);
-    color: #ffffff;
-    font-weight: 700;
+    color: var(--color-primary-light);
+    cursor: default;
 }
 
 .listen-chip .chip-score {
     font-family: monospace;
     font-weight: 700;
-    color: var(--color-primary-light);
+    color: var(--text-color);
 }
 
 .listen-chip.active .chip-score {
-    color: #ffffff;
+    color: var(--color-primary-light);
 }
 
-.listen-chip .chip-date {
-    font-size: 0.68rem;
-    opacity: 0.8;
+.listen-chip.chip-add {
+    font-weight: 800;
+    font-size: 0.76rem;
+    padding: 2px 8px;
+    background: rgba(var(--color-primary-rgb), 0.1);
+    border-color: rgba(var(--color-primary-rgb), 0.3);
+    color: var(--color-primary-light);
+}
+
+.listen-chip.chip-add:hover:not(.disabled) {
+    background: var(--color-primary);
+    border-color: var(--color-primary-light);
+    color: #ffffff;
+    box-shadow: 0 0 10px rgba(var(--color-primary-rgb), 0.35);
+}
+
+.listen-chip.chip-add.disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    border-style: dashed;
+    border-color: rgba(255, 255, 255, 0.15);
+    color: var(--text-muted);
+    background: transparent;
 }
 
 .library-badge-listens {
