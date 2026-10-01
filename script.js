@@ -1026,12 +1026,76 @@ function getSortableDate(dateStr) {
     return parseInt(`${y}${parts[1]}${parts[0]}`, 10);
 }
 
+// migra dados legados de watchlist para rascunhos unificados
+function migrarWatchlistLegada() {
+    try {
+        let historico = getHistorico();
+        let modificado = false;
+
+        // 1. Migra itens legados salvos na chave antiga "loopd-watchlist"
+        const raw = localStorage.getItem("loopd-watchlist");
+        if (raw) {
+            const itens = JSON.parse(raw);
+            if (Array.isArray(itens) && itens.length > 0) {
+                itens.forEach(item => {
+                    const jaExiste = historico.some(r => 
+                        (item.id && (r.id === item.id || r.spotifyId === item.id)) ||
+                        (r.album === item.album && r.artista === item.artista)
+                    );
+                    if (!jaExiste) {
+                        historico.push({
+                            id: item.id || ("rev_" + Date.now() + "_" + Math.random().toString(36).substr(2, 6)),
+                            spotifyId: item.spotifyId || item.id,
+                            album: item.album,
+                            artista: item.artista,
+                            ano: item.ano || "",
+                            capa: item.capa || "",
+                            link: item.link || "",
+                            albumNota: getDefaultNota(),
+                            albumNotaCalculada: 0,
+                            calcMode: getAutoCalculateMode(),
+                            tracks: Array.isArray(item.tracks) ? item.tracks.map(t => ({
+                                nome: t.nome,
+                                nota: getDefaultNota(),
+                                fav: false,
+                                duration_ms: t.duration_ms || 0
+                            })) : [],
+                            data: "",
+                            listened_at: "",
+                            anotacoes: "",
+                            isDraft: true,
+                            createdAt: item.addedAt || item.createdAt || Date.now()
+                        });
+                        modificado = true;
+                    }
+                });
+            }
+            localStorage.removeItem("loopd-watchlist");
+        }
+
+        // 2. Converte qualquer item existente com isWatchlist para rascunho
+        historico.forEach(r => {
+            if (r.isWatchlist) {
+                r.isDraft = true;
+                delete r.isWatchlist;
+                delete r.addedAt;
+                modificado = true;
+            }
+        });
+
+        if (modificado) {
+            salvarHistorico(historico);
+        }
+    } catch (_) {}
+}
+
 // salva review definitiva
 function salvarReview() {
     if (!estado.id) return alert("nenhum album para salvar!!!");
 
     if (!estado.createdAt) estado.createdAt = Date.now();
     estado.isDraft = false;
+    delete estado.isWatchlist;
 
     let historico = getHistorico();
     const index = historico.findIndex((r) => r.id === estado.id || (!r.id && r.album === estado.album && r.artista === estado.artista));
@@ -1627,13 +1691,36 @@ async function importarHistoricoCompleto(event) {
         const text = await file.text();
         const json = JSON.parse(text);
 
-        if (!Array.isArray(json)) throw new Error("formato invalido");
+        let reviewsArray = [];
 
-        salvarHistorico(json);
+        if (Array.isArray(json)) {
+            // Formato array direto
+            reviewsArray = json;
+        } else if (json && typeof json === "object" && Array.isArray(json.reviews)) {
+            // Formato objeto { reviews, watchlist }
+            reviewsArray = json.reviews;
+            if (Array.isArray(json.watchlist)) {
+                json.watchlist.forEach(wlItem => {
+                    const jaExiste = reviewsArray.some(r => r.id === wlItem.id || (r.album === wlItem.album && r.artista === wlItem.artista));
+                    if (!jaExiste) {
+                        reviewsArray.push({
+                            ...wlItem,
+                            isDraft: true,
+                            albumNota: getDefaultNota(),
+                            calcMode: getAutoCalculateMode()
+                        });
+                    }
+                });
+            }
+        } else {
+            throw new Error("formato invalido");
+        }
+
+        salvarHistorico(reviewsArray);
         carregarHistorico();
 
-        if (json.length > 0) {
-            estado = { ...json[0] };
+        if (reviewsArray.length > 0) {
+            estado = { ...reviewsArray[0] };
             switchView('dashboard');
             isFirstLoad = true;
             render();
@@ -2449,6 +2536,7 @@ function toggleLibrarySortOrder() {
 // filtra e desenha biblioteca
 function renderLibrary() {
     applyLibraryLayout();
+
     const libraryGrid = document.getElementById("library-grid");
     if (!libraryGrid) return;
     libraryGrid.innerHTML = "";
@@ -2480,11 +2568,11 @@ function renderLibrary() {
         let valA = 0;
         let valB = 0;
         if (sortBy === 'date') {
-            valA = getSortableDate(a.data);
-            valB = getSortableDate(b.data);
+            valA = a.isDraft ? (a.createdAt || 0) : getSortableDate(a.data);
+            valB = b.isDraft ? (b.createdAt || 0) : getSortableDate(b.data);
         } else if (sortBy === 'score') {
-            valA = getEffectiveAlbumNota(a) || 0;
-            valB = getEffectiveAlbumNota(b) || 0;
+            valA = a.isDraft ? -1 : (getEffectiveAlbumNota(a) || 0);
+            valB = b.isDraft ? -1 : (getEffectiveAlbumNota(b) || 0);
         } else if (sortBy === 'tracks_count') {
             valA = a.tracks ? a.tracks.length : 0;
             valB = b.tracks ? b.tracks.length : 0;
@@ -2538,19 +2626,25 @@ function renderLibrary() {
 
         const date = document.createElement("span");
         date.className = "library-card-date";
-        date.textContent = rev.isDraft ? "" : (formatarDeInputDate(rev.listened_at) || rev.data || "-");
+        if (rev.isDraft) {
+            date.textContent = formatarDeInputDate(rev.listened_at) || rev.data || (rev.createdAt ? new Date(rev.createdAt).toLocaleDateString('pt-BR') : "-");
+        } else {
+            date.textContent = formatarDeInputDate(rev.listened_at) || rev.data || "-";
+        }
 
         metaRow.append(score, date);
 
-        const reviewsDoMesmo = getReviewsDoMesmoAlbum(historico, rev.album, rev.artista, rev.spotifyId || rev.id);
-        if (reviewsDoMesmo.length > 1) {
-            const idx = reviewsDoMesmo.findIndex(r => r.id === rev.id);
-            const numAudicao = idx !== -1 ? idx + 1 : reviewsDoMesmo.length;
-            const listensBadge = document.createElement("span");
-            listensBadge.className = "library-badge-listens";
-            listensBadge.title = `${numAudicao}ª audição registrada deste álbum (total: ${reviewsDoMesmo.length})`;
-            listensBadge.innerHTML = `<svg width="10" height="10" style="margin-right:2px;"><use href="icons/sprite.svg#icon-refresh"></use></svg>${numAudicao}ª escuta`;
-            metaRow.appendChild(listensBadge);
+        if (!rev.isDraft) {
+            const reviewsDoMesmo = getReviewsDoMesmoAlbum(historico, rev.album, rev.artista, rev.spotifyId || rev.id);
+            if (reviewsDoMesmo.length > 1) {
+                const idx = reviewsDoMesmo.findIndex(r => r.id === rev.id);
+                const numAudicao = idx !== -1 ? idx + 1 : reviewsDoMesmo.length;
+                const listensBadge = document.createElement("span");
+                listensBadge.className = "library-badge-listens";
+                listensBadge.title = `${numAudicao}ª audição registrada deste álbum (total: ${reviewsDoMesmo.length})`;
+                listensBadge.innerHTML = `<svg width="10" height="10" style="margin-right:2px;"><use href="icons/sprite.svg#icon-refresh"></use></svg>${numAudicao}ª escuta`;
+                metaRow.appendChild(listensBadge);
+            }
         }
 
         const notes = document.createElement("p");
@@ -2575,11 +2669,12 @@ function renderLibrary() {
 
         const deleteBtn = document.createElement("button");
         deleteBtn.className = "library-card-delete-btn";
-        deleteBtn.title = "Excluir review";
+        deleteBtn.title = rev.isDraft ? "Excluir rascunho" : "Excluir review";
         deleteBtn.innerHTML = `<svg class="close-icon" viewBox="0 0 24 24" width="12" height="12"><use href="icons/sprite.svg#icon-close"></use></svg>`;
         deleteBtn.onclick = (e) => {
             e.stopPropagation();
-            if (confirm(`deseja realmente apagar a review de "${rev.album}"?`)) {
+            const tipo = rev.isDraft ? "o rascunho" : "a review";
+            if (confirm(`deseja realmente apagar ${tipo} de "${rev.album}"?`)) {
                 deletarReviewSemConfirmacao(rev.id, rev.album, rev.artista);
                 renderLibrary();
             }
@@ -2596,8 +2691,9 @@ function renderLibrary() {
 
 // apaga historico do localstorage
 function limparTudo() {
-    if (confirm("ATENÇÃO: isso apagará permanentemente todas as suas reviews salvas! esta ação não pode ser desfeita. deseja continuar?")) {
+    if (confirm("ATENÇÃO: isso apagará permanentemente todas as suas reviews e rascunhos! esta ação não pode ser desfeita. deseja continuar?")) {
         localStorage.removeItem("reviews");
+        localStorage.removeItem("loopd-watchlist");
         window.loopdCloud?.scheduleSync(0);
         estado = getEmptyState();
         render();
@@ -2821,6 +2917,7 @@ window.getHistoryColumns = getHistoryColumns;
 // inicializacao
 
 document.addEventListener("DOMContentLoaded", () => {
+    migrarWatchlistLegada();
     applyLibraryLayout();
     inicializarRedimensionamentoHistorico();
     carregarHistorico();

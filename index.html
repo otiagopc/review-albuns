@@ -29,7 +29,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=48">
+  <link rel="stylesheet" href="style.css?v=57">
 </head>
 
 <body>
@@ -363,6 +363,7 @@
       <!-- biblioteca -->
       <div id="view-library" class="app-view" style="display: none;">
         <h2 class="library-title">sua biblioteca de reviews</h2>
+
         <div class="library-header-row">
           <p class="section-description">todos os álbuns salvos por você</p>
 
@@ -379,7 +380,7 @@
             </div>
 
             <!-- ordenacao -->
-            <div class="control-group">
+            <div class="control-group" id="library-sort-control-group">
               <span class="control-label">ordenar por:</span>
               <div class="select-container">
                 <select id="library-sort-by" onchange="renderLibrary()" class="native-select">
@@ -600,8 +601,8 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
-  <script src="script.js?v=34"></script>
-  <script src="cloud.js"></script>
+  <script src="script.js?v=40"></script>
+  <script src="cloud.js?v=3"></script>
 </body>
 
 </html>

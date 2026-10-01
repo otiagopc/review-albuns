@@ -105,10 +105,7 @@
     const lastSyncEl = document.getElementById("account-last-sync");
 
     const button = document.getElementById("auth-button");
-    const status = document.getElementById("auth-status");
-    const avatar = document.getElementById("auth-avatar");
 
-    if (status) status.textContent = message || "";
     if (accountStatus) {
       accountStatus.textContent = message || (state.user ? "conectado à nuvem" : "");
     }
@@ -135,7 +132,6 @@
         button.disabled = true;
         button.title = "Preencha supabase-config.js primeiro";
       }
-      if (avatar) avatar.style.display = "none";
       if (navAvatar && navIcon) {
         navAvatar.style.display = "none";
         navIcon.style.display = "block";
@@ -181,12 +177,6 @@
         button.textContent = name;
         button.title = `${email} — clique para sair`;
       }
-      if (avatar && avatarUrl) {
-        avatar.src = avatarUrl;
-        avatar.style.display = "block";
-      } else if (avatar) {
-        avatar.style.display = "none";
-      }
     } else {
       if (loggedOutSection) loggedOutSection.style.display = "block";
       if (loggedInSection) loggedInSection.style.display = "none";
@@ -200,7 +190,6 @@
         button.disabled = false;
         button.title = "Sincronizar suas reviews entre dispositivos";
       }
-      if (avatar) avatar.style.display = "none";
     }
 
     if (typeof window.atualizarHeaderPerfil === "function") {

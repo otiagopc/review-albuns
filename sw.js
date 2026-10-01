@@ -1,12 +1,15 @@
-const CACHE_NAME = 'loopd-cache-v1';
+const CACHE_NAME = 'loopd-cache-v2';
 const ASSETS = [
   './',
   './index.html',
   './style.css',
   './script.js',
+  './cloud.js',
+  './supabase-config.js',
   './manifest.json',
   './icons/logo.svg',
-  './icons/logo-bg.svg'
+  './icons/logo-bg.svg',
+  './icons/sprite.svg'
 ];
 
 // salva no cache os arquivos iniciais
