@@ -29,7 +29,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=57">
+  <link rel="stylesheet" href="style.css?v=64">
 </head>
 
 <body>
@@ -46,8 +46,7 @@
           <span>biblioteca</span>
         </a>
         <a href="#" id="nav-profile" class="nav-item" onclick="switchView('profile')">
-          <svg id="nav-account-icon" class="nav-icon" width="24" height="24"><use href="icons/sprite.svg#icon-user"></use></svg>
-          <img id="nav-account-avatar" class="nav-account-avatar" alt="" style="display: none;">
+          <svg class="nav-icon" width="24" height="24"><use href="icons/sprite.svg#icon-user"></use></svg>
           <span>perfil</span>
         </a>
         <a href="#" id="nav-settings" class="nav-item" onclick="switchView('settings')">
@@ -317,10 +316,7 @@
                     <svg class="detail-icon" width="13" height="13"><use href="icons/sprite.svg#icon-library"></use></svg>
                     <span>ouvido em:</span>
                   </span>
-                  <div class="detail-date-controls">
-                    <input type="date" id="review-listened-date" class="review-date-input" onchange="atualizarDataAudicao(this.value)">
-                    <button type="button" class="btn-date-today" onclick="definirDataAudicaoHoje()" title="Marcar como ouvido hoje">hoje</button>
-                  </div>
+                  <input type="date" id="review-listened-date" class="review-date-input" onchange="atualizarDataAudicao(this.value)">
                 </div>
 
                 <!-- Comparativo media manual vs media simples (seletor de modo) -->
@@ -602,7 +598,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
   <script src="script.js?v=40"></script>
-  <script src="cloud.js?v=3"></script>
+  <script src="cloud.js?v=4"></script>
 </body>
 
 </html>

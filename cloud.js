@@ -100,8 +100,6 @@
     const accountEmail = document.getElementById("account-user-email");
     const accountAvatar = document.getElementById("account-user-avatar");
     const accountStatus = document.getElementById("account-sync-status");
-    const navAvatar = document.getElementById("nav-account-avatar");
-    const navIcon = document.getElementById("nav-account-icon");
     const lastSyncEl = document.getElementById("account-last-sync");
 
     const button = document.getElementById("auth-button");
@@ -132,10 +130,6 @@
         button.disabled = true;
         button.title = "Preencha supabase-config.js primeiro";
       }
-      if (navAvatar && navIcon) {
-        navAvatar.style.display = "none";
-        navIcon.style.display = "block";
-      }
       if (typeof window.atualizarHeaderPerfil === "function") {
         window.atualizarHeaderPerfil();
       }
@@ -162,17 +156,6 @@
         }
       }
 
-      if (navAvatar && navIcon) {
-        if (avatarUrl) {
-          navAvatar.src = avatarUrl;
-          navAvatar.style.display = "block";
-          navIcon.style.display = "none";
-        } else {
-          navAvatar.style.display = "none";
-          navIcon.style.display = "block";
-        }
-      }
-
       if (button) {
         button.textContent = name;
         button.title = `${email} — clique para sair`;
@@ -180,11 +163,6 @@
     } else {
       if (loggedOutSection) loggedOutSection.style.display = "block";
       if (loggedInSection) loggedInSection.style.display = "none";
-
-      if (navAvatar && navIcon) {
-        navAvatar.style.display = "none";
-        navIcon.style.display = "block";
-      }
 
       if (button) {
         button.disabled = false;

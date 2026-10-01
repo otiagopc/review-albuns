@@ -780,17 +780,27 @@ button svg {
         flex-direction: column;
         align-items: center;
         text-align: center;
-        gap: 18px;
+        gap: 16px;
         position: relative;
+        padding-top: 48px;
     }
 
     .album-header-actions {
         position: absolute;
         top: 0;
-        right: 0;
-        width: auto;
+        left: 0;
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
         margin: 0;
         z-index: 5;
+    }
+
+    .btn-voltar-review {
+        padding: 8px 14px;
+        font-size: 0.84rem;
+        gap: 6px;
     }
 
     .capa-wrapper {
@@ -1438,12 +1448,6 @@ button svg {
 }
 
 /* data de audicao */
-.detail-date-controls {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
 .review-date-input {
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid var(--border-color);
@@ -1459,25 +1463,6 @@ button svg {
 
 .review-date-input:focus {
     border-color: var(--color-primary-light);
-}
-
-.btn-date-today {
-    background: rgba(255, 255, 255, 0.07);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: var(--radius-sm);
-    color: var(--text-color);
-    font-size: 0.7rem;
-    font-weight: 700;
-    padding: 3px 8px;
-    cursor: pointer;
-    transition: all var(--transition-fast);
-    text-transform: lowercase;
-}
-
-.btn-date-today:hover {
-    background: rgba(var(--color-primary-rgb), 0.25);
-    border-color: var(--color-primary);
-    color: #ffffff;
 }
 
 /* comparativo de notas e seletor de modo da nota do album */
@@ -1748,11 +1733,8 @@ button svg {
     max-width: 360px;
     box-sizing: border-box;
     height: 100%;
-    max-height: 100%;
     min-height: 0;
-    overflow-y: auto;
-    overflow-x: hidden;
-    padding-right: 2px;
+    overflow: visible;
 }
 
 .review-aside-right::-webkit-scrollbar {
@@ -1774,8 +1756,6 @@ button svg {
     flex-shrink: 0;
     margin-top: auto;
     transition: none !important;
-    transform: translateZ(0);
-    backface-visibility: hidden;
 }
 
 .actions-secondary-grid {
@@ -2001,13 +1981,17 @@ button svg {
 
     .review-aside-right {
         order: 3;
+        width: 100% !important;
         max-width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
         position: relative !important;
         top: auto !important;
         height: auto !important;
         max-height: none !important;
         animation: none !important;
         overflow-y: visible !important;
+        overflow-x: visible !important;
     }
 
     .review-notes {
@@ -3683,35 +3667,159 @@ body.resizing-sidebar {
 }
 
 @media (max-width: 768px) {
-    .dashboard-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .dashboard-main-columns {
-        grid-template-columns: 1fr;
-        display: flex;
-        flex-direction: column;
-        height: auto !important;
-        overflow: visible !important;
-    }
-
+    /* container do perfil em mobile: fluxo continuo e sem scroll trap */
     #view-profile.app-view {
         height: auto !important;
+        min-height: 0 !important;
+        overflow: visible !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 16px !important;
+    }
+
+    .main-content:has(#view-profile:not([style*="display: none"])),
+    .main-content[data-active-view="profile"] {
+        overflow-y: visible !important;
+        height: auto !important;
+    }
+
+    /* grid de estatisticas resumo */
+    .dashboard-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+
+    .stat-card {
+        height: auto;
+        min-height: 80px;
+        padding: 10px 12px;
+        gap: 10px;
+    }
+
+    .stat-icon {
+        padding: 8px;
+    }
+
+    .stat-svg {
+        width: 22px;
+        height: 22px;
+    }
+
+    .stat-value {
+        font-size: 1.15rem;
+    }
+
+    .stat-label {
+        font-size: 0.65rem;
+    }
+
+    /* colunas em fluxo vertical: elimina sobreposicao de cards */
+    .dashboard-main-columns {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 16px !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: 0 !important;
         overflow: visible !important;
     }
 
-    .dash-panel {
+    .dash-column {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 16px !important;
         height: auto !important;
-        min-height: 280px;
+        min-height: 0 !important;
+        width: 100% !important;
         flex: none !important;
     }
 
+    /* paineis ajustados ao conteudo sem espacos vazios */
+    .dash-panel,
+    .favorites-panel {
+        display: flex !important;
+        flex-direction: column !important;
+        height: auto !important;
+        min-height: 0 !important;
+        flex: none !important;
+        width: 100% !important;
+        padding: 16px 14px !important;
+        box-sizing: border-box !important;
+        overflow: hidden !important;
+    }
+
+    .dash-panel-header {
+        padding-right: 0 !important;
+        margin-bottom: 10px !important;
+    }
+
+    /* grafico com altura fixa confortavel no mobile */
+    .chart-panel .chart-container-wrapper {
+        height: 140px !important;
+        min-height: 140px !important;
+        flex: none !important;
+        margin-top: 6px;
+        padding-right: 0 !important;
+    }
+
+    .chart-stats-summary-row {
+        padding-right: 0 !important;
+        margin-bottom: 6px !important;
+    }
+
+    /* estatisticas & curiosidades sem buraco vazio e sem scroll trap */
+    .insights-panel {
+        height: auto !important;
+        min-height: 0 !important;
+    }
+
+    .dash-insights-grid {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 8px !important;
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+        padding-right: 0 !important;
+        flex: none !important;
+    }
+
+    .dash-insight-card {
+        padding: 10px 12px;
+        min-height: 54px;
+    }
+
+    /* listas de albuns, musicas e atividade sem scroll interno (evita travar scroll da tela) */
     .dash-scroll-list {
-        max-height: 320px;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 6px !important;
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+        padding-right: 0 !important;
+        flex: none !important;
+    }
+
+    .dash-top-album-item,
+    .dash-recent-item,
+    .dash-fav-track-item,
+    .dash-top-artist-item {
+        padding: 8px 10px;
+        width: 100%;
+        box-sizing: border-box;
     }
 }
 
-@media (max-height: 650px) {
+@media (max-width: 480px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+}
+
+/* telas desktop pequenas / altura reduzida (somente desktop) */
+@media (min-width: 981px) and (max-height: 650px) {
     .main-content[data-active-view="profile"],
     .main-content:has(#view-profile:not([style*="display: none"])) {
         overflow-y: auto !important;
@@ -4005,15 +4113,6 @@ body.resizing-sidebar {
 .account-last-sync {
     font-size: 0.75rem !important;
     color: var(--text-muted);
-}
-
-.nav-account-avatar {
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 2px solid var(--color-primary-light);
-    flex-shrink: 0;
 }
 
 @media (max-width: 650px) {

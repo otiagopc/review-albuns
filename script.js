@@ -83,15 +83,7 @@ function formatarDeInputDate(isoDateStr) {
     return isoDateStr;
 }
 
-// define data de audicao para a data atual
-function definirDataAudicaoHoje() {
-    const hoje = new Date();
-    const y = hoje.getFullYear();
-    const m = String(hoje.getMonth() + 1).padStart(2, "0");
-    const d = String(hoje.getDate()).padStart(2, "0");
-    const isoDate = `${y}-${m}-${d}`;
-    atualizarDataAudicao(isoDate);
-}
+
 
 // atualiza data de audicao no estado e salva rascunho
 function atualizarDataAudicao(isoDate) {
